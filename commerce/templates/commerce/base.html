@@ -26,6 +26,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'commerce/img/favicon-32.png' %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'commerce/img/favicon-16.png' %}">
     <link rel="apple-touch-icon" href="{% static 'commerce/img/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% static 'commerce/site.webmanifest' %}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="DOGE POS">
     <link rel="stylesheet" href="{% static 'commerce/css/site.css' %}?v={{ asset_version }}">
     <link rel="stylesheet" href="{% static 'commerce/css/offramp.css' %}?v={{ asset_version }}">
     <script type="application/ld+json">{{ structured_data_json|safe }}</script>
@@ -55,6 +59,7 @@
       </nav>
       <div class="header-utilities">
         <div class="rate-limit-status" id="rateLimitStatus" role="status" aria-live="polite" aria-label="API rate status loading"></div>
+        <a class="button small primary nav-pos-shortcut{% if active == 'pos_terminal' %} is-current{% endif %}" href="{% url 'commerce:pos_terminal' %}">POS</a>
         <button class="nav-toggle" id="navToggle" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Open menu">
           <span class="nav-toggle-bars" aria-hidden="true"></span>
           <span>Menu</span>

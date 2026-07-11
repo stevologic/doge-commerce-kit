@@ -27,17 +27,9 @@
         <p id="posProfileStatus">Merchant profile loads from this browser.</p>
       </div>
       <form class="form-grid compact">
-        <label>
-          <span>Merchant name</span>
-          <input id="posMerchant" value="DOGE Merchant">
-        </label>
-        <label>
-          <span>Dogecoin address</span>
-          <input id="posWallet" value="" placeholder="Load from saved browser wallet" spellcheck="false">
-        </label>
-        <label>
+        <label class="full-row pos-amount-field">
           <span>USD amount</span>
-          <input id="posUsd" type="number" min="0" step="0.01" inputmode="decimal" value="10.00" title="Enter dollars and cents, up to two decimal places.">
+          <input id="posUsd" type="number" min="0" step="0.01" inputmode="decimal" enterkeyhint="done" value="10.00" title="Enter dollars and cents, up to two decimal places.">
         </label>
         <div class="pos-quick-amounts full-row" role="group" aria-label="Quick USD amounts">
           <button class="pos-quick-amount" type="button" data-pos-amount="1">$1</button>
@@ -47,20 +39,33 @@
           <button class="pos-quick-amount" type="button" data-pos-amount="20">$20</button>
           <button class="pos-quick-amount" type="button" data-pos-amount="50">$50</button>
         </div>
-        <label>
-          <span>Extra DOGE fee</span>
-          <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="Optional DOGE fee buffer included in the payment request amount.">
-        </label>
         <label class="full-row">
           <span>Memo</span>
           <input id="posMemo" value="DOGE sale" maxlength="80" list="posMemoSuggestions" autocomplete="off">
           <datalist id="posMemoSuggestions"></datalist>
         </label>
+        <details class="tool-details pos-profile-details full-row" id="posProfileDetails">
+          <summary>Merchant profile and options</summary>
+          <div class="form-grid compact pos-profile-grid">
+            <label>
+              <span>Merchant name</span>
+              <input id="posMerchant" value="DOGE Merchant">
+            </label>
+            <label>
+              <span>Dogecoin address</span>
+              <input id="posWallet" value="" placeholder="Load from saved browser wallet" spellcheck="false">
+            </label>
+            <label>
+              <span>Extra DOGE fee</span>
+              <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="Optional DOGE fee buffer included in the payment request amount.">
+            </label>
+          </div>
+          <div class="inline-actions pos-profile-actions">
+            <button class="button small" id="posSaveMerchant" type="button">Save merchant</button>
+            <a class="button small verify-link" id="posWalletSetupLink" href="{% url 'commerce:wallet' %}">Set wallet</a>
+          </div>
+        </details>
       </form>
-      <div class="inline-actions pos-profile-actions">
-        <button class="button small" id="posSaveMerchant" type="button">Save merchant</button>
-        <a class="button small verify-link" id="posWalletSetupLink" href="{% url 'commerce:wallet' %}">Set wallet</a>
-      </div>
       <p class="note compact-note">Wallet and merchant name are stored in this browser only. This page does not custody funds or move DOGE.</p>
     </article>
 

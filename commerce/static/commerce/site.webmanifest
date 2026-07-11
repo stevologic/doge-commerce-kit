@@ -1,0 +1,25 @@
+{
+  "name": "DOGE Commerce Kit",
+  "short_name": "DOGE POS",
+  "description": "Point-of-sale terminal and toolkit for accepting Dogecoin.",
+  "start_url": "/pos/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfcf7",
+  "theme_color": "#f4bd2a",
+  "icons": [
+    {
+      "src": "/static/commerce/img/doge-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/commerce/img/doge-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

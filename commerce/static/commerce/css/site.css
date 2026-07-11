@@ -3721,6 +3721,40 @@ textarea:focus {
   pointer-events: none;
 }
 
+.nav-pos-shortcut {
+  display: none;
+}
+
+.nav-pos-shortcut.is-current {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.pos-amount-field input {
+  min-height: 52px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pos-profile-details summary {
+  color: var(--teal);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.pos-profile-details[open] {
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 91, 99, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pos-profile-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .pos-quick-amounts {
   display: flex;
   flex-wrap: wrap;
@@ -6568,6 +6602,48 @@ body[data-page="wallet"] main {
 }
 
 @media (max-width: 700px) {
+  /* 16px minimum prevents iOS Safari from auto-zooming focused fields */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .pos-amount-field input {
+    min-height: 58px;
+    font-size: 1.7rem;
+  }
+
+  .pos-quick-amount {
+    flex: 1 1 28%;
+    min-height: 48px;
+    font-size: 1.1rem;
+  }
+
+  /* Counter mode: on a phone the sale form should be one thumb-reach from
+     the top, so the POS hero collapses to a single-line header. */
+  body[data-page="pos_terminal"] .pos-hero-panel {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 12px 14px;
+  }
+
+  body[data-page="pos_terminal"] .pos-hero-panel .pos-step-rail,
+  body[data-page="pos_terminal"] .pos-hero-panel > a,
+  body[data-page="pos_terminal"] .pos-hero-panel p:not(.eyebrow) {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-hero-panel h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    line-height: 1.15;
+  }
+
+  .pos-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
   body[data-page="wallet"] main {
     width: min(100% - 16px, 1180px);
   }
@@ -7087,6 +7163,20 @@ body[data-page="wallet"] main {
     justify-content: center;
     gap: 0;
     padding: 0;
+  }
+
+  .nav-pos-shortcut {
+    display: inline-flex;
+    position: fixed;
+    top: 13px;
+    right: 62px;
+    z-index: 30;
+    min-height: 42px;
+    padding: 8px 16px;
+  }
+
+  .site-header {
+    padding-right: 128px;
   }
 
   .nav-toggle span:last-child {

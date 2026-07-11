@@ -2168,6 +2168,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (!$id("dogePosTerminal")) return;
     if ($id("posMerchant")) $id("posMerchant").value = localStorage.getItem("doge-pos:merchant") || $id("posMerchant").value;
     if ($id("posWallet")) $id("posWallet").value = browserSavedPosWallet();
+    if ($id("posProfileDetails")) $id("posProfileDetails").open = !browserSavedPosWallet();
     initPosMemoTypeahead();
     await fetchDogePrice();
     $id("posUsd")?.addEventListener("input", () => limitDecimalInput($id("posUsd"), 2));
