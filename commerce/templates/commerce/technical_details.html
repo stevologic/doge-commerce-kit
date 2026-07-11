@@ -17,13 +17,11 @@
 </section>
 
 <nav class="tool-filter-bar technical-toc" aria-label="Technical page sections">
-  <a href="#integration-map">Integration map</a>
   <a href="#wallet-keys">Wallet keys</a>
   <a href="#uri-qr">URI &amp; QR</a>
   <a href="#chain-lookup">Chain lookup</a>
   <a href="#market-data">Market data</a>
   <a href="#webhook-demo">Webhook demo</a>
-  <a href="#data-files">Data files</a>
   <a href="#technical-papers">Papers</a>
   <a href="#security-posture">Security</a>
 </nav>
@@ -40,29 +38,6 @@
     <a class="button small" href="{% url 'commerce:merchant_kit' %}">Snippet marketplace</a>
     <a class="button small" href="{% url 'commerce:faq' %}">FAQ</a>
   </div>
-</section>
-
-<section class="technical-summary-grid" id="integration-map" aria-label="Technical implementation map">
-  <article>
-    <span>01</span>
-    <strong>Wallet stays local</strong>
-    <p>The browser can generate or load key material. The server only needs public addresses for QR, lookup, and validation flows.</p>
-  </article>
-  <article>
-    <span>02</span>
-    <strong>URI becomes QR</strong>
-    <p>Tools format a Dogecoin payment URI, then the Django QR endpoint renders an SVG locally instead of calling an external image service.</p>
-  </article>
-  <article>
-    <span>03</span>
-    <strong>Public chain checks</strong>
-    <p>Balance and transaction checks use public address or txid data. No private key is required for watch-only confirmation.</p>
-  </article>
-  <article>
-    <span>04</span>
-    <strong>Receipts are portable</strong>
-    <p>POS orders, snippets, and webhook examples keep order facts beside blockchain proof so a merchant can audit later.</p>
-  </article>
 </section>
 
 <section class="technical-card-grid">
@@ -120,7 +95,7 @@ https://blockchair.com/dogecoin/transaction/{txid}</pre>
   </article>
 </section>
 
-<section class="section-grid two technical-ops-grid">
+<section class="technical-ops-grid">
   <article class="panel" id="webhook-demo">
     <div class="section-heading">
       <p class="eyebrow">Webhook/API demo</p>
@@ -135,20 +110,6 @@ curl -X POST http://localhost:42100/webhook/payment \
   -d "{\"order_id\":\"demo-1\",\"status\":\"paid\",\"txid\":\"sample\"}"</pre>
   </article>
 
-  <article class="panel" id="data-files">
-    <div class="section-heading">
-      <p class="eyebrow">Reusable data files</p>
-      <h2>Bundled records and schemas</h2>
-      <p>Preview the static JSON/CSV files used for campaigns, proof ledgers, merchant scorecards, and scoreboard exports.</p>
-    </div>
-    <div class="download-grid compact-downloads">
-      <button class="template-preview-button" type="button" data-template-preview data-template-name="Campaign data JSON" data-template-url="/static/commerce/data/campaign-data.json">Campaign data</button>
-      <button class="template-preview-button" type="button" data-template-preview data-template-name="Proof schema JSON" data-template-url="/static/commerce/data/proof-schema.json">Proof schema</button>
-      <button class="template-preview-button" type="button" data-template-preview data-template-name="Proof ledger CSV" data-template-url="/static/commerce/data/proof-ledger-template.csv">Proof ledger</button>
-      <button class="template-preview-button" type="button" data-template-preview data-template-name="Merchant scorecard CSV" data-template-url="/static/commerce/data/merchant-scorecard.csv">Merchant scorecard</button>
-      <button class="template-preview-button" type="button" data-template-preview data-template-name="Scoreboard CSV" data-template-url="/static/commerce/data/scoreboard-template.csv">Scoreboard</button>
-    </div>
-  </article>
 </section>
 
 <section class="panel technical-reference-panel" id="technical-papers">
