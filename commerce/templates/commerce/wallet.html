@@ -1,0 +1,203 @@
+{% extends "commerce/base.html" %}
+
+{% block title %}Dogecoin Wallet — Manage, Send, Receive | DOGE Commerce Kit{% endblock %}
+
+{% block content %}
+<section class="wallet-workspace" id="dogeWalletTool">
+  <div class="wallet-workspace-header">
+    <div>
+      <p class="eyebrow">Your Dogecoin wallet</p>
+      <h1>Manage DOGE in this browser.</h1>
+      <p>Create or import a wallet, receive with a scannable QR, send when you load your WIF, and follow balance and activity on the public chain. Private keys never leave your device — save and export before you rely on this tab for real funds.</p>
+    </div>
+    <div class="wallet-workspace-actions">
+      <button class="button primary" id="generateWallet" type="button">Create wallet</button>
+      <button class="button" id="loadWalletWif" type="button">Load wallet</button>
+    </div>
+  </div>
+
+  <div class="pos-step-rail" aria-label="Wallet workflow">
+    <span><b>1</b><strong>Setup</strong><small>Create or load</small></span>
+    <span><b>2</b><strong>Receive</strong><small>QR and address</small></span>
+    <span><b>3</b><strong>Send</strong><small>Sign locally</small></span>
+    <span><b>4</b><strong>Activity</strong><small>Balance and tx</small></span>
+    <span><b>5</b><strong>Manage</strong><small>Save and export</small></span>
+  </div>
+
+  <p class="note compact-note" id="walletHandoffNote">Saved wallet addresses flow into the <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a> and <a href="{% url 'commerce:merchant_kit' %}">Tools marketplace</a> automatically.</p>
+
+  <div class="wallet-workspace-grid">
+    <article class="panel wallet-setup-panel">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 1 — Setup</p>
+        <h2>Create or load your wallet</h2>
+        <p id="walletBalanceStatus">Ready. Generate a new wallet or paste a WIF to unlock sending. Watch-only mode works with a public address alone.</p>
+      </div>
+      <form class="wallet-control-grid">
+        <label>
+          <span>Public address</span>
+          <input id="walletPublicAddress" value="{{ donation_address }}" spellcheck="false" autocomplete="off" placeholder="D… receive address">
+        </label>
+        <label>
+          <span>WIF private key (local only)</span>
+          <input id="walletWif" type="password" spellcheck="false" autocomplete="off" placeholder="Paste WIF to send from this browser">
+        </label>
+      </form>
+      <div class="wallet-action-row">
+        <button class="button small" id="toggleWalletSecret" type="button">Show / hide WIF</button>
+      </div>
+      <div class="wallet-safety-note">
+        <strong>Your keys stay here</strong>
+        <span>Balance and transaction lookups use only the public address. Nothing is sent to Django servers.</span>
+      </div>
+    </article>
+
+    <article class="wallet-receive-card" aria-label="Receive Dogecoin">
+      <div class="wallet-receive-top">
+        <span class="wallet-share-symbol" aria-hidden="true">&#272;</span>
+        <div>
+          <p class="eyebrow">Step 2 — Receive</p>
+          <h2 id="walletAddressTitle">Watch-only wallet</h2>
+          <span id="walletModeOut">Public receive address</span>
+        </div>
+      </div>
+      <div class="wallet-receive-body">
+        <img id="walletQr" alt="Dogecoin wallet receive QR code">
+        <div class="wallet-receive-copy">
+          <span>Share this to get paid</span>
+          <code id="walletAddressOut">{{ donation_address }}</code>
+          <div class="wallet-card-actions">
+            <button class="button primary small" id="copyWalletAddress" type="button">Copy address</button>
+            <button class="button small" id="copyWalletUri" type="button">Copy payment URI</button>
+          </div>
+        </div>
+      </div>
+      <div class="wallet-summary-strip">
+        <span><b id="walletBalanceOut">0 DOGE</b><small>Spendable</small></span>
+        <span><b id="walletReceivedOut">0 DOGE</b><small>Total received</small></span>
+        <span><b id="walletTxOut">0</b><small>Transactions</small></span>
+      </div>
+    </article>
+
+    <article class="panel wallet-send-panel" id="walletSendPanel">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 3 — Send</p>
+        <h2>Pay someone in DOGE</h2>
+        <p id="walletSendStatus">Load a WIF to sign and broadcast from this browser. You will confirm the amount before anything is sent.</p>
+      </div>
+      <form class="wallet-send-grid" id="walletSendForm">
+        <label>
+          <span>Who receives it?</span>
+          <input id="walletSendTo" spellcheck="false" autocomplete="off" placeholder="D… destination address">
+        </label>
+        <label>
+          <span>How much DOGE?</span>
+          <input id="walletSendAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00">
+        </label>
+        <label>
+          <span>Network fee (per byte)</span>
+          <input id="walletSendFee" type="number" min="1" step="100" value="1000">
+        </label>
+      </form>
+      <div class="wallet-send-meta">
+        <span><b id="walletSendFeeOut">—</b><small>Estimated fee</small></span>
+        <span><b id="walletSendChangeOut">—</b><small>Change back to you</small></span>
+      </div>
+      <div class="wallet-action-row">
+        <button class="button primary" id="walletSendDoge" type="button" disabled>Review and send</button>
+        <button class="button small quiet" id="walletEstimateSend" type="button" disabled>Estimate fee</button>
+      </div>
+      <div class="wallet-send-confirm" id="walletSendConfirm" hidden>
+        <strong>Confirm this send</strong>
+        <span id="walletSendConfirmSummary">Review the details before broadcasting.</span>
+        <div class="wallet-action-row">
+          <button class="button primary small" id="walletConfirmSend" type="button">Confirm and broadcast</button>
+          <button class="button small quiet" id="walletCancelSend" type="button">Cancel</button>
+        </div>
+      </div>
+      <div class="wallet-sent-tx" id="walletSentTx" hidden aria-live="polite">
+        <div class="wallet-sent-tx-head">
+          <strong>Submitted transaction</strong>
+          <span class="wallet-sent-tx-pill" id="walletSentTxStatus" data-state="pending">Broadcasting</span>
+        </div>
+        <div class="wallet-sent-tx-facts">
+          <span><b>Amount</b><i id="walletSentTxAmount">—</i></span>
+          <span><b>To</b><i id="walletSentTxTo">—</i></span>
+          <span><b>Via</b><i id="walletSentTxProvider">—</i></span>
+        </div>
+        <a class="wallet-sent-tx-link" id="walletSentTxLink" href="#" target="_blank" rel="noreferrer">—</a>
+        <p class="note compact-note" id="walletSentTxNote">Watching the chain for confirmations.</p>
+      </div>
+      <div class="wallet-safety-note wallet-send-warning">
+        <strong>Real mainnet transaction</strong>
+        <span>Signing stays in your browser. Broadcasting tries Blockchair, then BlockCypher. Never paste a WIF on a shared device.</span>
+      </div>
+    </article>
+
+    <article class="panel wallet-transactions-panel">
+      <div class="wallet-table-header">
+        <div>
+          <p class="eyebrow">Step 4 — Activity</p>
+          <h2>Your public blockchain history</h2>
+          <p id="walletTransactionsStatus">Refresh to load the latest incoming and outgoing transactions for this address.</p>
+        </div>
+        <div class="wallet-table-actions">
+          <button class="button small primary" id="lookupWalletBalance" type="button">Refresh balance</button>
+          <a class="button small" id="walletExplorerLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Open explorer</a>
+        </div>
+      </div>
+      <div class="wallet-table-wrap">
+        <table class="wallet-transactions-table responsive-card-table">
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>DOGE</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="walletTransactionsBody">
+            <tr><td colspan="4">Load or create a wallet, then refresh to see public activity.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-controls wallet-pagination">
+        <button class="button small" id="walletTxPrev" type="button">Previous</button>
+        <span id="walletTxPageOut">Page 1</span>
+        <button class="button small" id="walletTxNext" type="button">Next</button>
+      </div>
+      <p class="note compact-note">Taking payments at a counter? Your saved address also powers the <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>.</p>
+    </article>
+
+    <article class="panel wallet-manage-panel" id="walletManagePanel">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 5 — Manage</p>
+        <h2>Save, export, and reset</h2>
+        <p id="walletManageStatus">Keep a copy of your wallet details outside this tab. Saved addresses sync to POS and Tools on this device.</p>
+      </div>
+      <div class="wallet-action-row">
+        <button class="button primary small" id="saveWalletLocal" type="button">Save in browser</button>
+        <button class="button small" id="downloadWalletDetails" type="button">Download details</button>
+        <button class="button small quiet" id="clearWalletLocal" type="button">Clear saved</button>
+      </div>
+      <label class="full-row">
+        <span>Exportable wallet details (JSON)</span>
+        <textarea id="walletOutput" readonly rows="6" aria-label="Generated Dogecoin wallet details">Load or create a wallet to see exportable details.</textarea>
+      </label>
+      <div class="wallet-safety-note">
+        <strong>Before real funds</strong>
+        <span>Download and store your details somewhere safe. Clearing saved data does not delete on-chain coins — it only removes this browser's copy.</span>
+      </div>
+    </article>
+  </div>
+  <div class="next-steps-strip" aria-label="Suggested next steps">
+    <span>Wallet ready? Next</span>
+    <nav>
+      <a href="{% url 'commerce:pos_terminal' %}">Take a payment at the counter</a>
+      <a href="{% url 'commerce:merchant_kit' %}">Add DOGE to your website</a>
+      <a href="{% url 'commerce:merchant_kit' %}#counter-sign-builder">Print a counter sign</a>
+    </nav>
+  </div>
+  <span class="sr-only" id="walletUnconfirmedOut">0 DOGE</span>
+</section>
+{% endblock %}

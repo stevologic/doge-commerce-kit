@@ -1,0 +1,146 @@
+{% extends "commerce/base.html" %}
+
+{% block title %}Dogecoin Commerce FAQ | Wallets, Confirmations, Taxes, and Security{% endblock %}
+
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">FAQ</p>
+    <h1>Dogecoin commerce questions, answered simply.</h1>
+    <p>Short answers for merchants and builders who want to accept DOGE without reading a full crypto manual first.</p>
+    <div class="inline-actions">
+      <a class="button primary small" href="{% url 'commerce:playbook' %}">Read the playbook</a>
+      <a class="button small" href="{% url 'commerce:wallet' %}">Open wallet</a>
+      <a class="button small" href="{% url 'commerce:pos_terminal' %}">Try POS</a>
+      <a class="button small" href="{% url 'commerce:merchant_kit' %}">Browse snippets</a>
+    </div>
+  </div>
+</section>
+
+<section class="faq-list">
+  <details open>
+    <summary>What is the simplest way for a merchant to start accepting DOGE?</summary>
+    <p>Start with one low-risk product, service deposit, tip, donation, or event ticket. Save a merchant-controlled Dogecoin address, quote the USD price, show a QR code, and confirm the payment before fulfillment. Dogecoin's own merchant guidance describes wallet-based QR payments as the basic in-person setup.</p>
+  </details>
+  <details>
+    <summary>Does this site custody funds?</summary>
+    <p>No. It generates payment requests, QR codes, snippets, and local records. DOGE moves from the buyer wallet to the merchant-controlled address or hosted checkout provider. This site does not hold private keys for production funds and does not move coins.</p>
+  </details>
+  <details>
+    <summary>How safe is the Dogecoin blockchain?</summary>
+    <p>Dogecoin is a mature proof-of-work blockchain that uses Scrypt mining and Auxiliary Proof of Work merged mining with Litecoin. That makes rewriting confirmed history expensive, but not magical. For commerce, "safe" still depends on the merchant workflow: verify the receiving address, amount, and transaction ID; wait for the right number of confirmations for the order value; and keep private keys out of websites, screenshots, and shared devices.</p>
+    <p>The blockchain can help prove that DOGE moved to an address. It does not protect a merchant from sending to the wrong address, using a compromised wallet, accepting a fake screenshot, ignoring underpayment or overpayment, or taking price volatility risk without a policy. Treat small counter sales differently from expensive, shipped, or resaleable goods, and write the confirmation rule before the first sale.</p>
+  </details>
+  <details>
+    <summary>What wallet should a merchant use?</summary>
+    <p>Use a wallet, exchange account, or payment processor the merchant controls and understands. The safest operational pattern is a dedicated receiving wallet, a written cash-out plan, and a separate long-term storage wallet. For serious balances, use a hardware wallet or professional custody workflow.</p>
+  </details>
+  <details>
+    <summary>Can Coinbase or Robinhood be used as the merchant wallet?</summary>
+    <p>They can be part of a manual workflow if the account supports DOGE deposits and withdrawals for that merchant. Robinhood's transfer docs say DOGE transfers use Dogecoin addresses that start with D. Coinbase Commerce offers payment links and donation links, while Coinbase Exchange offers public market-data feeds used by this site's statistics page.</p>
+  </details>
+  <details>
+    <summary>What is a Dogecoin URI?</summary>
+    <p>It is a wallet-deep-link style payment request such as <code>dogecoin:DExampleAddress?amount=25.00000000&amp;message=DOGE%20sale</code>. Wallet support varies, so a merchant should test the exact link on the buyer wallets they expect to see.</p>
+  </details>
+  <details>
+    <summary>How is a Dogecoin address generated?</summary>
+    <p>A private key produces a public key on the secp256k1 curve. The public key is hashed with SHA-256, then RIPEMD-160, prefixed for the Dogecoin network, checksummed, and Base58 encoded. Libdogecoin documents this public-key-to-P2PKH-address flow.</p>
+  </details>
+  <details>
+    <summary>What does the QR code contain?</summary>
+    <p>Usually it contains either a Dogecoin URI or a hosted checkout URL. For direct wallet payments, the QR contains the receiving address, amount, and memo. For processor payments, it should point to the processor's payment link or invoice page.</p>
+  </details>
+  <details>
+    <summary>How should staff confirm payment before fulfillment?</summary>
+    <p>Confirm the receiving address, DOGE amount, transaction ID, and confirmation rule. For a small in-person sale, a merchant may choose a faster policy; for expensive goods or shipped orders, wait for more confirmations. The policy should be written before the first sale.</p>
+  </details>
+  <details>
+    <summary>What does paid mean?</summary>
+    <p>"Paid" should mean the merchant can see a matching transaction to the expected receiving address for at least the expected DOGE amount. "Confirmed" should mean the transaction has reached the merchant's written confirmation threshold. Do not treat a screenshot alone as paid.</p>
+  </details>
+  <details>
+    <summary>How many confirmations should a merchant require?</summary>
+    <p>Use risk tiers. Tips and very small counter sales can tolerate faster confirmation rules. High-value goods, shipped goods, gift cards, or resaleable items should require stricter confirmation. Hosted providers such as BitPay expose invoice states and confirmation settings to help merchants formalize that rule.</p>
+  </details>
+  <details>
+    <summary>What should the cashier do if the buyer underpays?</summary>
+    <p>Do not mark the order paid until the merchant's policy is satisfied. Ask the buyer to send the remainder, cancel and refund according to policy, or convert the order to a lower-value item. Record the transaction ID and amount so support can reconcile it later.</p>
+  </details>
+  <details>
+    <summary>What should the cashier do if the buyer overpays?</summary>
+    <p>Fulfill only under a written overpayment policy. For direct wallet payments, a refund needs a return address and staff approval. For hosted processors, use the provider's dashboard flow where available. BitPay notes that overpaid and underpaid invoice exceptions need explicit handling.</p>
+  </details>
+  <details>
+    <summary>Can Dogecoin payments be reversed like credit-card payments?</summary>
+    <p>No. Confirmed blockchain transactions are not chargebacks. That helps reduce card-style reversal risk, but it also means refunds are a separate outgoing transaction or processor-managed refund. Merchants should publish refund language before launch.</p>
+  </details>
+  <details>
+    <summary>How should a merchant handle price volatility?</summary>
+    <p>Price in USD, compute DOGE at checkout, and keep the quote valid for a short window. If the buyer pays late, underpays, or sends to the wrong route, use the posted exception policy. For businesses that do not want crypto exposure, use a processor that can settle in fiat or a stable settlement asset.</p>
+  </details>
+  <details>
+    <summary>Do merchants owe taxes on DOGE received for goods or services?</summary>
+    <p>In the U.S., IRS digital asset guidance says merchants should keep records including the fair market value in USD of digital assets received as income or payment in the ordinary course of business. The Digital Asset Market Clarity Act of 2025, or CLARITY Act, is useful regulatory context for digital commodities and intermediaries, but it is not a replacement for merchant tax accounting. Tax treatment depends on the business and transaction, so merchants should involve their accountant.</p>
+  </details>
+  <details>
+    <summary>What records should be kept for each sale?</summary>
+    <p>Keep the order ID, time, USD price, DOGE amount, receiving address, transaction ID, confirmation count, refund state, and price source. Avoid storing unnecessary buyer personal data. This kit's proof files are meant to preserve operational facts without exposing private buyer information.</p>
+  </details>
+  <details>
+    <summary>Can hosted checkout providers make this easier?</summary>
+    <p>Yes. Dogecoin's merchant guidance names Coinbase Commerce and BitPay as examples for ecommerce integrations. Hosted checkout can provide payment links, invoices, callbacks, dashboards, settlement options, and refund tooling. The tradeoff is provider fees, account requirements, supported-asset rules, and custody/settlement terms.</p>
+  </details>
+  <details>
+    <summary>When should a merchant use direct wallet payments instead of a processor?</summary>
+    <p>Use direct wallet payments for small pilots, donation jars, community events, or merchants that explicitly want DOGE settlement. Use a processor when the business needs invoices, automatic conversion, ecommerce plugins, webhooks, customer support flows, or fiat bank settlement.</p>
+  </details>
+  <details>
+    <summary>What integrations are realistic for ecommerce?</summary>
+    <p>Fast paths are hosted payment links, payment buttons, Shopify or WooCommerce plugins, and webhook callbacks into an order system. Custom integrations should store order state server-side, never expose private keys, validate callbacks, and reconcile against a wallet or explorer before fulfillment.</p>
+  </details>
+  <details>
+    <summary>Can this kit integrate with webhooks or API calls?</summary>
+    <p>Yes. The POS Terminal includes browser-local orders, and the technical page points to a small Python webhook demo. A production integration should sign or authenticate callbacks, persist order state in a database, retry safely, and require a manual review path for payment exceptions.</p>
+  </details>
+  <details>
+    <summary>How should donations work?</summary>
+    <p>Use a dedicated donation address or processor donation link, show a QR code, and state whether donor information is collected. Nonprofits and campaigns should keep accounting records, publish only aggregate totals unless donors opt in, and check local fundraising and tax rules.</p>
+  </details>
+  <details>
+    <summary>What are the biggest security mistakes to avoid?</summary>
+    <p>Do not paste production private keys into a web page. Do not reuse one wallet for every experiment if clean accounting matters. Do not fulfill expensive orders based on a screenshot. Do not send refunds to a new address without a support trail. Do not publish customer names, addresses, or order details in public proof.</p>
+  </details>
+  <details>
+    <summary>How should employees be trained?</summary>
+    <p>Give staff a one-page rule: choose the DOGE payment option, confirm the displayed amount and address, wait for the required confirmation state, save the transaction ID, and escalate underpayment, overpayment, late payment, or refund requests. Keep the first pilot narrow enough that staff can learn it quickly.</p>
+  </details>
+  <details>
+    <summary>What should be posted publicly to promote adoption?</summary>
+    <p>Post simple, verifiable facts: this merchant accepts DOGE for this specific offer, here is the QR or checkout path, here is the refund policy, and here is the proof summary after the pilot. Avoid price predictions, coordinated trading language, fake volume, or undisclosed paid promotion.</p>
+  </details>
+  <details>
+    <summary>Is this investment advice?</summary>
+    <p>No. The site is about payment utility, merchant setup, and market context. It does not recommend buying, selling, or holding DOGE, and the statistics page is informational rather than financial advice.</p>
+  </details>
+</section>
+
+<section class="panel source-panel">
+  <div class="section-heading">
+    <p class="eyebrow">Research sources</p>
+    <h2>Primary references used for this FAQ</h2>
+  </div>
+  <ul class="clean-list source-list">
+    <li><a class="source-link" href="https://dogecoin.com/dogepedia/articles/how-can-my-business-accept-dogecoin/" target="_blank" rel="noreferrer"><span>Dogecoin Dogepedia: accepting Dogecoin as a business</span><small>dogecoin.com</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://dogecoincore.com/" target="_blank" rel="noreferrer"><span>Dogecoin Core docs: mining, block time, and merged mining</span><small>dogecoincore.com</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://lib.dogecoin.org/docs/address" target="_blank" rel="noreferrer"><span>Libdogecoin address generation documentation</span><small>lib.dogecoin.org</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://docs.cdp.coinbase.com/exchange/websocket-feed" target="_blank" rel="noreferrer"><span>Coinbase Exchange WebSocket feed documentation</span><small>docs.cdp.coinbase.com</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://help.coinbase.com/en/commerce/managing-account/how-to-create-a-payment-link-on-coinbase-commerce" target="_blank" rel="noreferrer"><span>Coinbase Commerce payment and donation links</span><small>help.coinbase.com</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://www.robinhoodinvesting.com/us/en/support/articles/crypto-transfers/index.html" target="_blank" rel="noreferrer"><span>Robinhood supported crypto transfer address formats</span><small>robinhoodinvesting.com</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://www.irs.gov/filing/digital-assets" target="_blank" rel="noreferrer"><span>IRS digital asset recordkeeping and tax guidance</span><small>irs.gov</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://www.congress.gov/bill/119th-congress/house-bill/3633" target="_blank" rel="noreferrer"><span>Congress.gov: Digital Asset Market Clarity Act of 2025</span><small>congress.gov</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://developer.bitpay.com/docs/create-invoice" target="_blank" rel="noreferrer"><span>BitPay invoice creation and confirmation settings</span><small>developer.bitpay.com</small><strong>Open source</strong></a></li>
+    <li><a class="source-link" href="https://support.bitpay.com/hc/en-us/articles/205769245-View-Payments-in-the-merchant-dashboard" target="_blank" rel="noreferrer"><span>BitPay merchant payment statuses and exceptions</span><small>support.bitpay.com</small><strong>Open source</strong></a></li>
+  </ul>
+</section>
+{% endblock %}

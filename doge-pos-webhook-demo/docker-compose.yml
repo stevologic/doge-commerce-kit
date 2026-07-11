@@ -1,0 +1,12 @@
+services:
+  doge-pos-webhook:
+    build: .
+    ports:
+      - "42100:42100"
+    environment:
+      DOGE_POS_DATA: /data/orders.json
+    volumes:
+      - doge-pos-data:/data
+
+volumes:
+  doge-pos-data:

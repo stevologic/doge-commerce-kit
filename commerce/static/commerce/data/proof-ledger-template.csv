@@ -1,0 +1,2 @@
+proof_id,submitted_at,merchant_name,merchant_url,purchase_category,payment_route,product_or_offer,doge_amount,usd_value_at_purchase,txid_or_invoice_reference,artifact_url_or_filename,buyer_handle,privacy_status,verification_status,publish_status,proof_score,next_action
+doge-proof-0001-sample,2026-05-03T00:00:00-07:00,Example Merchant,https://example.com,creator_merch,bitpay_invoice,Sample DOGE Spend Week shirt,250,27.00,invoice-or-redacted-txid,sample-redacted-proof.png,@samplebuyer,needs_redaction,unreviewed,draft,64,Redact personal details and request merchant confirmation

@@ -1,0 +1,303 @@
+{% extends "commerce/base.html" %}
+
+{% block title %}Doge Point of Sale Terminal | Accept DOGE at Checkout{% endblock %}
+
+{% block content %}
+<section class="pos-workspace">
+  <div class="pos-hero-panel">
+    <div>
+      <p class="eyebrow">Doge Point of Sale Terminal</p>
+      <h1>Accept Dogecoin for goods priced in dollars.</h1>
+      <p>Quote the sale in USD, show a scannable DOGE payment request, let the buyer pay from their wallet, verify on chain, then mark the order paid and hand off — like any normal checkout.</p>
+    </div>
+    <div class="pos-step-rail" aria-label="POS workflow">
+      <span><b>1</b><strong>Price</strong><small>USD they know</small></span>
+      <span><b>2</b><strong>QR</strong><small>They scan and pay</small></span>
+      <span><b>3</b><strong>Verify</strong><small>Confirm on chain</small></span>
+      <span><b>4</b><strong>Record</strong><small>Hand off goods</small></span>
+    </div>
+    <a class="button small" href="{% url 'commerce:technical_details' %}#webhook-demo">Integration guide</a>
+  </div>
+
+  <section class="pos-operator-grid">
+    <article class="panel pos-sale-panel" id="dogePosTerminal">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 1</p>
+        <h2>Set sale details</h2>
+        <p id="posProfileStatus">Merchant profile loads from this browser.</p>
+      </div>
+      <form class="form-grid compact">
+        <label>
+          <span>Merchant name</span>
+          <input id="posMerchant" value="DOGE Merchant">
+        </label>
+        <label>
+          <span>Dogecoin address</span>
+          <input id="posWallet" value="" placeholder="Load from saved browser wallet" spellcheck="false">
+        </label>
+        <label>
+          <span>USD amount</span>
+          <input id="posUsd" type="number" min="0" step="0.01" inputmode="decimal" value="10.00" title="Enter dollars and cents, up to two decimal places.">
+        </label>
+        <div class="pos-quick-amounts full-row" role="group" aria-label="Quick USD amounts">
+          <button class="pos-quick-amount" type="button" data-pos-amount="1">$1</button>
+          <button class="pos-quick-amount" type="button" data-pos-amount="2">$2</button>
+          <button class="pos-quick-amount" type="button" data-pos-amount="5">$5</button>
+          <button class="pos-quick-amount" type="button" data-pos-amount="10">$10</button>
+          <button class="pos-quick-amount" type="button" data-pos-amount="20">$20</button>
+          <button class="pos-quick-amount" type="button" data-pos-amount="50">$50</button>
+        </div>
+        <label>
+          <span>Extra DOGE fee</span>
+          <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="Optional DOGE fee buffer included in the payment request amount.">
+        </label>
+        <label class="full-row">
+          <span>Memo</span>
+          <input id="posMemo" value="DOGE sale" maxlength="80" list="posMemoSuggestions" autocomplete="off">
+          <datalist id="posMemoSuggestions"></datalist>
+        </label>
+      </form>
+      <div class="inline-actions pos-profile-actions">
+        <button class="button small" id="posSaveMerchant" type="button">Save merchant</button>
+        <a class="button small verify-link" id="posWalletSetupLink" href="{% url 'commerce:wallet' %}">Set wallet</a>
+      </div>
+      <p class="note compact-note">Wallet and merchant name are stored in this browser only. This page does not custody funds or move DOGE.</p>
+    </article>
+
+    <article class="panel pos-payment-panel">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 2</p>
+        <h2>Show payment QR</h2>
+        <p id="posQuoteMeta">Quote timestamp appears after the DOGE price loads.</p>
+      </div>
+      <div class="checkout-preview pos-preview">
+        <button class="pos-qr-button" id="posQrButton" type="button" title="Show the customer a full-screen QR" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">
+          <img id="posQr" alt="Dogecoin POS QR code">
+          <span class="pos-qr-zoom-hint" aria-hidden="true">Tap to enlarge</span>
+        </button>
+        <div>
+          <span class="preview-label">Amount</span>
+          <strong id="posDogeOut">0 DOGE</strong>
+          <div class="pos-fee-breakdown" id="posFeeBreakdown" aria-live="polite">
+            <span><b>Sale</b><strong id="posBaseDogeOut">0 DOGE</strong></span>
+            <span><b>Fee</b><strong id="posFeeDogeOut">0 DOGE</strong></span>
+            <span><b>Total</b><strong id="posTotalDogeOut">0 DOGE</strong></span>
+          </div>
+          <code id="posUriOut">dogecoin:{{ donation_address }}</code>
+          <div class="inline-actions">
+            <button class="button primary small" id="openPosCustomerDisplay" type="button" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">Customer display</button>
+            <button class="button small" id="posCopyUri" type="button">Copy URI</button>
+            <button class="button small" id="posSaveOrder" type="button">Save order</button>
+            <button class="button small quiet" id="openPosConversionModal" type="button">Conversion chart</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel accent-panel pos-confirm-panel">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 3</p>
+        <h2>Verify before fulfillment</h2>
+      </div>
+      <div class="result-grid">
+        <div><span>Status</span><strong class="pos-status-pill" id="posStatus" data-state="unpaid">Unpaid</strong></div>
+        <div><span>DOGE/USD</span><strong id="posPriceOut">Loading</strong></div>
+      </div>
+      <div class="pos-status-tools">
+        <p class="note" id="posSelectedOrder">No local order loaded. Save an order or load one from the table below.</p>
+        <form class="form-grid compact">
+          <label>
+            <span>Transaction ID</span>
+            <input id="posTxId" spellcheck="false" placeholder="Paste txid or leave blank for manual check" title="Paste a 64-character Dogecoin transaction ID, or leave this blank for a manual register check." aria-label="Transaction ID. Paste a 64-character Dogecoin transaction ID, or leave this blank for a manual register check.">
+          </label>
+          <label>
+            <span>Confirmations</span>
+            <input id="posMinConfirmations" type="number" min="0" step="1" value="1">
+          </label>
+        </form>
+        <div class="inline-actions">
+          <button class="button primary small" id="posConfirmTransaction" type="button">Confirm tx</button>
+          <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
+            <button class="button small" id="posMarkPaid" type="button" disabled>Mark paid</button>
+          </span>
+          <a class="button small verify-link" id="posExplorerLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Explorer</a>
+        </div>
+        <div class="pos-transaction-toggle-card">
+          <div>
+            <p class="eyebrow">Optional lookup</p>
+            <h3>Need to pick from wallet activity?</h3>
+            <p class="note">Keep this hidden unless you want to load a recent incoming transaction into this sale.</p>
+          </div>
+          <button class="button small" id="posShowTransactions" type="button" aria-controls="posTransactionDrawer" aria-expanded="false">Show recent activity</button>
+        </div>
+        <div class="wallet-activity-card pos-transaction-picker" id="posTransactionDrawer" hidden>
+          <div class="wallet-activity-header">
+            <div>
+              <p class="eyebrow">Recent wallet activity</p>
+              <h3>Pick a transaction</h3>
+            </div>
+            <div class="inline-actions compact-actions">
+              <button class="button small quiet" id="posRefreshTransactions" type="button">Refresh</button>
+              <button class="button small quiet" id="posHideTransactions" type="button">Hide</button>
+            </div>
+          </div>
+          <p class="note" id="posTransactionsStatus">Pick a recent wallet transaction to load its transaction ID for this sale.</p>
+          <div class="wallet-activity-list" id="posTransactionList" aria-live="polite"></div>
+        </div>
+        <p class="note" id="posConfirmNote">Enter a txid for blockchain validation, or leave it blank for a manual register check.</p>
+        <p class="note compact-note pos-blockchain-note">
+          <a class="pos-blockchain-link" id="posBlockchainAddressLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Click here to view the Dogecoin blockchain for this wallet</a>.
+        </p>
+      </div>
+    </article>
+  </section>
+
+<section class="panel pos-orders-panel">
+  <div class="table-actions">
+    <div>
+      <p class="eyebrow">Step 4</p>
+      <h2>Local order ledger</h2>
+      <div class="order-table-controls">
+        <label>
+          <span>Rows per page</span>
+          <select id="posOrderPageSize">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+        <p class="note compact-note" id="posOrderPageStatus">Showing local orders.</p>
+      </div>
+    </div>
+    <div class="inline-actions">
+      <button class="button small quiet help-button" id="openPosOrdersHelp" type="button" aria-label="How to use local orders" title="How to use local orders">?</button>
+      <button class="button small" id="posExportCsv" type="button">Export CSV</button>
+      <button class="button small" id="posExportJson" type="button">Export JSON</button>
+      <button class="button small quiet" id="posClearOrders" type="button">Clear local orders</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="responsive-card-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Merchant</th>
+          <th>USD</th>
+          <th>DOGE</th>
+          <th>Status</th>
+          <th>Tx</th>
+          <th>Memo</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="posOrderRows"></tbody>
+    </table>
+  </div>
+  <div class="pagination-controls" id="posOrderPagination" aria-label="Local order pagination">
+    <button class="button small quiet" id="posOrderPrev" type="button">Previous</button>
+    <span id="posOrderPageInfo">Page 1 of 1</span>
+    <button class="button small quiet" id="posOrderNext" type="button">Next</button>
+  </div>
+</section>
+
+<div class="next-steps-strip" aria-label="Suggested next steps">
+  <span>After the sale</span>
+  <nav>
+    <a href="{% url 'commerce:merchant_kit' %}#receipt-snippet-builder">Generate a receipt</a>
+    <a href="{% url 'commerce:merchant_kit' %}#counter-sign-builder">Print a counter sign</a>
+    <a href="{% url 'commerce:playbook' %}">Train staff with the playbook</a>
+  </nav>
+</div>
+</section>
+
+<div class="modal-backdrop" id="posExportModal" hidden>
+  <section class="export-choice-modal" role="dialog" aria-modal="true" aria-labelledby="posExportTitle">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Export local orders</p>
+        <h2 id="posExportTitle">Choose what to download</h2>
+        <p id="posExportMeta">Export the current page or every local order saved in this browser.</p>
+      </div>
+      <button class="button small quiet" type="button" id="closePosExportModal">Close</button>
+    </div>
+    <div class="export-choice-grid">
+      <button class="export-choice-button" type="button" data-pos-export-scope="page">
+        <span>Current page</span>
+        <strong id="posExportPageCount">0 orders</strong>
+      </button>
+      <button class="export-choice-button" type="button" data-pos-export-scope="all">
+        <span>All pages</span>
+        <strong id="posExportAllCount">0 orders</strong>
+      </button>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="posConversionModal" hidden>
+  <section class="conversion-modal" role="dialog" aria-modal="true" aria-labelledby="posConversionTitle">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">DOGE/USD conversion</p>
+        <h2 id="posConversionTitle">Quick conversion chart</h2>
+        <p>Use this as a register-side reference. The payment request still uses the current quote in checkout.</p>
+      </div>
+      <button class="button small quiet" type="button" id="closePosConversionModal">Close</button>
+    </div>
+    <div class="conversion-card modal-conversion-card" id="posConversionChart" aria-live="polite">
+      <div class="conversion-card-header">
+        <div>
+          <p class="eyebrow">DOGE/USD conversion</p>
+          <h3>Common register amounts</h3>
+        </div>
+        <span class="conversion-rate" id="posConversionRate">Loading DOGE/USD</span>
+      </div>
+      <div class="conversion-grid">
+        <div>
+          <span class="preview-label">USD to DOGE</span>
+          <div class="conversion-list" id="posUsdToDogeRows"></div>
+        </div>
+        <div>
+          <span class="preview-label">DOGE to USD</span>
+          <div class="conversion-list" id="posDogeToUsdRows"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop customer-display-backdrop" id="posCustomerDisplayModal" hidden>
+  <section class="customer-display" role="dialog" aria-modal="true" aria-labelledby="posCustomerDisplayTitle">
+    <button class="button small quiet customer-display-close" type="button" id="closePosCustomerDisplay">Close</button>
+    <p class="customer-display-merchant" id="posDisplayMerchant">DOGE Merchant</p>
+    <h2 class="customer-display-title" id="posCustomerDisplayTitle">Scan to pay with Dogecoin</h2>
+    <strong class="customer-display-usd" id="posDisplayUsd">$0.00</strong>
+    <span class="customer-display-doge" id="posDisplayDoge">0 DOGE</span>
+    <div class="customer-display-qr-frame">
+      <img id="posDisplayQr" alt="Dogecoin payment QR code for this sale">
+    </div>
+    <p class="customer-display-hint">Open any Dogecoin wallet and scan this code. The amount fills in automatically.</p>
+    <span class="customer-display-status" id="posDisplayStatus" data-state="unpaid">Awaiting payment</span>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="posOrdersHelpModal" hidden>
+  <section class="export-choice-modal help-modal" role="dialog" aria-modal="true" aria-labelledby="posOrdersHelpTitle">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Local order help</p>
+        <h2 id="posOrdersHelpTitle">How to use the order list</h2>
+        <p>Local orders are the browser audit trail for this device.</p>
+      </div>
+      <button class="button small quiet" type="button" id="closePosOrdersHelp">Close</button>
+    </div>
+    <ol class="help-steps">
+      <li><strong>Save order</strong><span>After showing the QR, save the sale so amount, memo, quote, and status are preserved.</span></li>
+      <li><strong>Load</strong><span>Restore an order into Sale Status before checking or marking it paid.</span></li>
+      <li><strong>Pick transaction</strong><span>Use the transaction picker in Sale Status to fill the transaction ID from recent blockchain activity.</span></li>
+      <li><strong>Confirm then mark paid</strong><span>Confirm the transaction, amount, address, and confirmation count before fulfillment.</span></li>
+      <li><strong>Export</strong><span>Download the current page or every saved local order as CSV or JSON.</span></li>
+    </ol>
+    <p class="note compact-note">Delete removes a single unlocked local row. Clear local orders wipes the browser table.</p>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+services:
+  web:
+    build: .
+    # Loopback-only publish: handy for on-host debugging, never exposed publicly.
+    # All public traffic enters through the caddy service on 80/443.
+    ports:
+      - "127.0.0.1:42069:42069"
+    environment:
+      DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env (see .env.example)}"
+      DJANGO_ALLOWED_HOSTS: "${DOGE_DOMAIN:-localhost},localhost,127.0.0.1,web"
+      DJANGO_HSTS_SECONDS: "${DJANGO_HSTS_SECONDS:-31536000}"
+      DOGE_SITE_URL: "${DOGE_SITE_URL:-}"
+      DOGE_API_RATE_LIMIT: "${DOGE_API_RATE_LIMIT:-60}"
+      DOGE_BLOCKBOOK_BASE_URL: "${DOGE_BLOCKBOOK_BASE_URL:-}"
+      DOGE_BLOCKBOOK_API_KEY: "${DOGE_BLOCKBOOK_API_KEY:-}"
+      DOGE_BLOCKBOOK_API_KEY_HEADER: "${DOGE_BLOCKBOOK_API_KEY_HEADER:-api-key}"
+      DOGE_BLOCKCHAIN_PROVIDER_NAME: "${DOGE_BLOCKCHAIN_PROVIDER_NAME:-Dedicated Dogecoin indexer}"
+      DOGE_ENABLE_BLOCKCYPHER_FALLBACK: "${DOGE_ENABLE_BLOCKCYPHER_FALLBACK:-true}"
+      DOGE_LOOKUP_CACHE_TTL: "${DOGE_LOOKUP_CACHE_TTL:-90}"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOGE_DOMAIN: "${DOGE_DOMAIN:-localhost}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL:-internal@localhost.invalid}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

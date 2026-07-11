@@ -1,0 +1,26 @@
+{
+  "name": "get_code_quality_finding",
+  "description": "Get details of a specific code quality finding in a GitHub repository.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "findingNumber": {
+        "type": "number",
+        "description": "The number of the finding."
+      },
+      "owner": {
+        "type": "string",
+        "description": "The owner of the repository."
+      },
+      "repo": {
+        "type": "string",
+        "description": "The name of the repository."
+      }
+    },
+    "required": [
+      "owner",
+      "repo",
+      "findingNumber"
+    ]
+  }
+}

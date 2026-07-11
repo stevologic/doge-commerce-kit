@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+env/
+.git/
+.gitignore
+db.sqlite3
+staticfiles/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+.env
+verify-artifacts/
+docs/*.png
+.claude/

@@ -1,0 +1,140 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ meta_title|default:"DOGE Commerce Kit" }}{% endblock %}</title>
+    <meta name="description" content="{{ meta_description|default:"A merchant-first Dogecoin adoption workspace for checkout setup, public proof, and legal usage campaigns." }}">
+    <meta name="keywords" content="{{ meta_keywords }}">
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+    <meta name="application-name" content="{{ site_name|default:"DOGE Commerce Kit" }}">
+    <meta name="theme-color" content="#f4bd2a">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <link rel="alternate" type="text/plain" href="{{ site_url }}/llms.txt" title="LLMs.txt">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ site_name|default:"DOGE Commerce Kit" }}">
+    <meta property="og:title" content="{{ meta_title|default:"DOGE Commerce Kit" }}">
+    <meta property="og:description" content="{{ meta_description|default:"Accept Dogecoin with QR codes, POS tools, wallet checks, and adoption playbooks." }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{{ og_image_url }}">
+    <meta property="og:image:alt" content="DOGE Commerce Kit logo">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ meta_title|default:"DOGE Commerce Kit" }}">
+    <meta name="twitter:description" content="{{ meta_description|default:"Accept Dogecoin with QR codes, POS tools, wallet checks, and adoption playbooks." }}">
+    <meta name="twitter:image" content="{{ og_image_url }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'commerce/img/favicon-32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'commerce/img/favicon-16.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'commerce/img/apple-touch-icon.png' %}">
+    <link rel="stylesheet" href="{% static 'commerce/css/site.css' %}?v={{ asset_version }}">
+    <link rel="stylesheet" href="{% static 'commerce/css/offramp.css' %}?v={{ asset_version }}">
+    <script type="application/ld+json">{{ structured_data_json|safe }}</script>
+    <script defer src="{% static 'commerce/js/rate_limit_core.js' %}?v={{ asset_version }}"></script>
+    <script defer src="{% static 'commerce/js/rate_limit_bootstrap.js' %}?v={{ asset_version }}"></script>
+    <script defer src="{% static 'commerce/js/wallet_core.js' %}?v={{ asset_version }}"></script>
+    <script defer src="{% static 'commerce/js/site.js' %}?v={{ asset_version }}"></script>
+    <script defer src="{% static 'commerce/js/offramp.js' %}?v={{ asset_version }}"></script>
+    {% block extra_scripts %}{% endblock %}
+    <script defer src="{% static 'commerce/js/doge_tools.js' %}?v={{ asset_version }}"></script>
+  </head>
+  <body data-page="{{ active }}" data-doge-logo="{{ doge_logo_data_uri }}" data-donation-address="{{ donation_address }}">
+    <header class="site-header">
+      <a class="brand" href="{% url 'commerce:home' %}">
+        <img src="{% static 'commerce/img/doge-logo-256.png' %}" alt="DOGE Commerce Kit logo">
+        <span>DOGE Commerce Kit</span>
+      </a>
+      <nav class="main-nav" id="primaryNav" aria-label="Primary navigation">
+        <a class="{% if active == 'home' %}active{% endif %}" {% if active == 'home' %}aria-current="page"{% endif %} href="{% url 'commerce:home' %}">Start</a>
+        <a class="{% if active == 'wallet' %}active{% endif %}" {% if active == 'wallet' %}aria-current="page"{% endif %} href="{% url 'commerce:wallet' %}">Wallet</a>
+        <a class="{% if active == 'pos_terminal' %}active{% endif %}" {% if active == 'pos_terminal' %}aria-current="page"{% endif %} href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
+        <a class="{% if active == 'merchant_kit' %}active{% endif %}" {% if active == 'merchant_kit' %}aria-current="page"{% endif %} href="{% url 'commerce:merchant_kit' %}">Tools</a>
+        <a class="{% if active == 'statistics' %}active{% endif %}" {% if active == 'statistics' %}aria-current="page"{% endif %} href="{% url 'commerce:statistics' %}">Statistics</a>
+        <a class="{% if active == 'playbook' %}active{% endif %}" {% if active == 'playbook' %}aria-current="page"{% endif %} href="{% url 'commerce:playbook' %}">Playbook</a>
+        <a class="{% if active == 'faq' %}active{% endif %}" {% if active == 'faq' %}aria-current="page"{% endif %} href="{% url 'commerce:faq' %}">FAQ</a>
+        <a class="{% if active == 'technical_details' %}active{% endif %}" {% if active == 'technical_details' %}aria-current="page"{% endif %} href="{% url 'commerce:technical_details' %}">Technical</a>
+      </nav>
+      <div class="header-utilities">
+        <div class="rate-limit-status" id="rateLimitStatus" role="status" aria-live="polite" aria-label="API rate status loading"></div>
+        <button class="nav-toggle" id="navToggle" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Open menu">
+          <span class="nav-toggle-bars" aria-hidden="true"></span>
+          <span>Menu</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <div class="toast-status" id="toastStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <footer class="site-footer">
+      <div class="footer-brand-copy">
+        <img class="footer-doge" src="{% static 'commerce/img/doge-logo-256.png' %}" alt="Doge dog">
+        <div>
+          <strong>DOGE Commerce Kit</strong>
+          <span class="footer-note">MIT-licensed and built with love. Do Only Good Everyday!!!! 🐕 Donate if this helps, but better yet send and receive Dogecoin so it keeps becoming more useful in everyday commerce. Much wow.</span>
+        </div>
+      </div>
+      <div class="footer-actions" aria-label="Community links">
+        <a class="footer-button donate" href="dogecoin:{{ donation_address }}?message=DOGE%20Commerce%20Kit%20donation" data-doge-donate data-address="{{ donation_address }}" data-memo="DOGE Commerce Kit donation" title="Donate DOGE to {{ donation_address }}">
+          Donate DOGE
+        </a>
+        <a class="footer-button contribute" href="https://github.com/stevologic/doge-commerce-kit" target="_blank" rel="noreferrer">
+          <svg aria-hidden="true" viewBox="0 0 16 16" width="17" height="17" focusable="false">
+            <path fill="currentColor" d="M8 0C3.58 0 0 3.68 0 8.22c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.2-.01-.86-.01-1.56-2.01.38-2.53-.5-2.69-.96-.09-.24-.48-.96-.82-1.16-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.84.72 1.24 1.87.89 2.33.68.07-.53.28-.89.51-1.09-1.78-.21-3.64-.91-3.64-4.04 0-.89.31-1.62.82-2.19-.08-.21-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.45 7.45 0 0 1 8 4.01c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.16.51.57.82 1.3.82 2.19 0 3.14-1.87 3.83-3.65 4.04.29.26.54.75.54 1.52 0 1.09-.01 1.97-.01 2.24 0 .22.15.48.55.4A8.13 8.13 0 0 0 16 8.22C16 3.68 12.42 0 8 0Z"/>
+          </svg>
+          <span>Contribute</span>
+        </a>
+      </div>
+    </footer>
+
+    <div class="modal-backdrop" id="donateModal" hidden>
+      <section class="donate-modal" role="dialog" aria-modal="true" aria-labelledby="donateModalTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Dogecoin donation</p>
+            <h2 id="donateModalTitle">Scan to donate DOGE</h2>
+          </div>
+          <button class="button small quiet" type="button" id="closeDonateModal">Close</button>
+        </div>
+        <div class="donate-modal-grid">
+          <img id="donateQr" alt="Dogecoin donation QR code">
+          <div class="form-grid">
+            <label>
+              <span>Amount</span>
+              <input id="donateAmount" type="range" min="0" max="1000" step="5" value="25">
+            </label>
+            <strong id="donateAmountOut">25 DOGE</strong>
+            <code id="donateUriOut">dogecoin:{{ donation_address }}</code>
+            <div class="inline-actions">
+              <button class="button small" type="button" id="copyDonateWallet">Copy wallet</button>
+              <button class="button primary small" type="button" id="copyDonateUri">Copy URI</button>
+              <button class="button small" type="button" id="copyDonateSnippet">Copy donate snippet</button>
+            </div>
+          </div>
+        </div>
+        <textarea class="code-box" id="donateSnippetOut" aria-label="Self-contained Donate DOGE snippet"></textarea>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="filePreviewModal" hidden>
+      <section class="file-preview-modal" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Template preview</p>
+            <h2 id="filePreviewTitle">Reusable file</h2>
+            <p id="filePreviewMeta">Load a file to inspect it before download.</p>
+          </div>
+          <button class="button small quiet" type="button" id="closeFilePreview">Close</button>
+        </div>
+        <pre class="copy-output file-preview-output" id="filePreviewOutput">Select a template to preview.</pre>
+        <div class="inline-actions file-preview-actions">
+          <button class="button small" type="button" id="copyFilePreview">Copy preview</button>
+          <a class="button primary small" id="downloadFilePreview" href="#" download>Download file</a>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
+

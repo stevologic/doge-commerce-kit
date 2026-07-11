@@ -1,0 +1,21 @@
+{
+  "name": "list_label",
+  "description": "List labels from a repository",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "owner": {
+        "type": "string",
+        "description": "Repository owner (username or organization name) - required for all operations"
+      },
+      "repo": {
+        "type": "string",
+        "description": "Repository name - required for all operations"
+      }
+    },
+    "required": [
+      "owner",
+      "repo"
+    ]
+  }
+}

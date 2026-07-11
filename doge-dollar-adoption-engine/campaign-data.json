@@ -1,0 +1,45 @@
+{
+  "baseline": {
+    "captured_at": "2026-05-03",
+    "doge_usd_reference": 0.1063,
+    "circulating_supply_reference": 169740000000,
+    "target_price_usd": 1,
+    "target_network_value_usd": 169740000000,
+    "gap_multiple": 9.41
+  },
+  "legal_strategy": [
+    "Promote DOGE as a payment method, not as guaranteed investment performance.",
+    "Prioritize merchant acceptance, public receipt-level proof, and repeat purchases.",
+    "Use existing compliance-aware payment rails where appropriate.",
+    "Disclose sponsorships, holdings, incentives, and merchant relationships.",
+    "Avoid coordinated buying, fabricated adoption metrics, misleading scarcity claims, or pressure tactics."
+  ],
+  "six_month_targets": [
+    { "week": 2, "live_merchants": 10, "focus": "prove one repeatable merchant pitch" },
+    { "week": 6, "live_merchants": 100, "focus": "clone sprint across captains" },
+    { "week": 12, "live_merchants": 1000, "focus": "merchant clusters and weekly spend events" },
+    { "week": 20, "live_merchants": 5000, "focus": "checkout templates and support office hours" },
+    { "week": 26, "live_merchants": 25000, "focus": "proof compounding and merchant case studies" }
+  ],
+  "merchant_segments": [
+    {
+      "name": "gaming and creator merch",
+      "why": "community overlap, online fulfillment, visible proof posts"
+    },
+    {
+      "name": "food trucks and local quick serve",
+      "why": "small tickets, repeat spend, city-based events"
+    },
+    {
+      "name": "pet, rescue, and community shops",
+      "why": "natural brand affinity and cause-linked purchase campaigns"
+    }
+  ],
+  "sources": [
+    "https://coinmarketcap.com/currencies/dogecoin/",
+    "https://dogecoin.org/",
+    "https://dogebox.dogecoin.org/",
+    "https://support.bitpay.com/hc/en-us/articles/203411543-What-cryptocurrencies-can-I-use-to-pay-a-BitPay-Invoice",
+    "https://support.bitpay.com/hc/en-us/articles/201890513-What-are-my-options-for-settlement"
+  ]
+}

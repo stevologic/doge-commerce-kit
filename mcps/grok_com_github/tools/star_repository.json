@@ -1,0 +1,21 @@
+{
+  "name": "star_repository",
+  "description": "Star a GitHub repository",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "owner": {
+        "type": "string",
+        "description": "Repository owner"
+      },
+      "repo": {
+        "type": "string",
+        "description": "Repository name"
+      }
+    },
+    "required": [
+      "owner",
+      "repo"
+    ]
+  }
+}

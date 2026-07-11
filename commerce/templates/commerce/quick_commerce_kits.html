@@ -1,0 +1,280 @@
+<section class="page-section" id="quick-commerce-kits" aria-labelledby="quickKitsTitle">
+  <div class="section-heading">
+    <p class="eyebrow">Quick commerce kits</p>
+    <h2 id="quickKitsTitle">Start with one buying moment people already understand</h2>
+    <p>Start from the situation in front of you, then let the kit keep the payment route, badge, memo, proof handoff, buyer sign, and next-merchant pitch aligned.</p>
+  </div>
+  <div class="kit-finder-panel" aria-label="Quick commerce kit finder">
+    <div class="setup-shortcut-panel" aria-label="Fast DOGE transaction setup shortcuts">
+      <div>
+        <p class="eyebrow">Fastest path</p>
+        <h3>Choose what already exists</h3>
+        <p>These shortcuts apply a starter kit, route, amount, and memo so the first transaction setup is ready to edit instead of rebuilt from scratch.</p>
+      </div>
+      <div class="setup-shortcut-grid">
+        {% for shortcut in kit_shortcuts %}
+          <button
+            class="setup-shortcut"
+            type="button"
+            aria-pressed="false"
+            data-kit="{{ shortcut.kit }}"
+            data-audience="{{ shortcut.audience }}"
+            data-vertical="{{ shortcut.vertical }}"
+            data-rail="{{ shortcut.rail }}"
+            data-speed="{{ shortcut.speed }}"
+            data-query="{{ shortcut.query }}"
+            data-amount="{{ shortcut.amount }}"
+            data-memo="{{ shortcut.memo }}">
+            <span>{{ shortcut.label }}</span>
+            <strong>{{ shortcut.action }}</strong>
+            <small>{{ shortcut.summary }}</small>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="kit-presets" aria-label="Common DOGE commerce launch presets">
+      {% for preset in kit_presets %}
+        <button
+          class="kit-preset"
+          type="button"
+          aria-pressed="false"
+          data-kit="{{ preset.kit }}"
+          data-audience="{{ preset.audience }}"
+          data-vertical="{{ preset.vertical }}"
+          data-rail="{{ preset.rail }}"
+          data-speed="{{ preset.speed }}"
+          data-query="{{ preset.query }}">
+          <span>{{ preset.label }}</span>
+          <strong>{{ preset.summary }}</strong>
+        </button>
+      {% endfor %}
+    </div>
+    <div class="finder-grid">
+      <label>
+        <span>Buyer lane</span>
+        <select id="kitAudienceFilter">
+          <option value="all">Any buyer lane</option>
+          <option value="merchant">Merchant</option>
+          <option value="creator">Creator</option>
+          <option value="nonprofit">Nonprofit or club</option>
+        </select>
+      </label>
+      <label>
+        <span>Vertical</span>
+        <select id="kitVerticalFilter">
+          <option value="all">Any vertical</option>
+          {% for segment in segments %}
+            <option value="{{ segment }}">{{ segment|title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Payment route</span>
+        <select id="kitRailFilter">
+          <option value="all">Any route</option>
+          <option value="hosted">Hosted checkout or link</option>
+          <option value="wallet">Wallet QR</option>
+        </select>
+      </label>
+      <label>
+        <span>Launch speed</span>
+        <select id="kitSpeedFilter">
+          <option value="all">Any speed</option>
+          <option value="same day">Same day</option>
+          <option value="1 day">1 day</option>
+          <option value="1-2 days">1-2 days</option>
+          <option value="2 days">2 days</option>
+        </select>
+      </label>
+      <label>
+        <span>Search</span>
+        <input id="kitSearchFilter" type="search" placeholder="coffee, tips, events, invoices">
+      </label>
+    </div>
+    <div class="kit-finder-status" aria-live="polite">
+      <strong id="kitMatchCount">{{ quick_commerce_kits|length }} kits available</strong>
+      <span id="kitPathSummary">Pick the buying moment that already exists, then add DOGE as the payment option.</span>
+      <div class="inline-actions">
+        <button class="button primary small" id="applyQuickKitTop" type="button">Apply selected kit</button>
+        <button class="button small quiet" id="clearKitFilters" type="button">Clear filters</button>
+      </div>
+    </div>
+  </div>
+  <div class="adoption-pack-panel" id="adoptionPacks" aria-label="DOGE adoption pack builder">
+    <div class="pack-panel-header">
+      <div>
+        <p class="eyebrow">Commerce pack builder</p>
+        <h3>Turn one DOGE checkout into a repeatable local program</h3>
+        <p>Use a pack when you are onboarding a block, event, building, creator audience, or service cluster. It filters the kit library to a practical launch sequence.</p>
+      </div>
+      <div class="inline-actions">
+        <button class="button primary small" id="applyCommercePack" type="button">Open first kit</button>
+        <button class="button small" id="copyCommercePack" type="button">Copy pack plan</button>
+      </div>
+    </div>
+    <div class="commerce-pack-picker" aria-label="Adoption pack selector">
+      {% for pack in commerce_packs %}
+        <button
+          class="commerce-pack-option {% if forloop.first %}active{% endif %}"
+          type="button"
+          aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+          data-pack="{{ pack.key }}"
+          data-name="{{ pack.name }}"
+          data-program="{{ pack.program }}"
+          data-summary="{{ pack.summary }}"
+          data-best="{{ pack.best_for }}"
+          data-kit-keys="{{ pack.kit_keys|join:',' }}"
+          data-kit-names="{{ pack.kit_names }}"
+          data-first-kit="{{ pack.first_kit }}"
+          data-launch-window="{{ pack.launch_window }}"
+          data-first-step="{{ pack.first_step }}"
+          data-relay="{{ pack.relay }}"
+          data-proof-metric="{{ pack.proof_metric }}">
+          <span>{{ pack.program }}</span>
+          <strong>{{ pack.name }}</strong>
+          <small>{{ pack.summary }}</small>
+        </button>
+      {% endfor %}
+    </div>
+    <div class="pack-output-grid" aria-live="polite">
+      <div>
+        <span>Active pack</span>
+        <strong id="activePackName">Main Street First Mile</strong>
+      </div>
+      <div>
+        <span>Launch window</span>
+        <strong id="activePackWindow">One block, one week, four fixed-price DOGE offers.</strong>
+      </div>
+      <div>
+        <span>Proof metric</span>
+        <strong id="activePackMetric">Completed DOGE orders by venue, failed scans, repeat buyers, and merchant approval.</strong>
+      </div>
+    </div>
+    <textarea class="code-box" id="commercePackOutput" aria-label="DOGE adoption pack plan"></textarea>
+  </div>
+  <div class="kit-layout">
+    <div class="kit-picker-shell">
+      <div class="kit-picker-header">
+        <strong>Kit library</strong>
+        <button class="button small quiet" id="toggleKitList" type="button" aria-expanded="false">Expand list</button>
+      </div>
+      <div class="kit-picker collapsed" id="kitPicker" role="group" aria-label="Quick commerce kit selector">
+        {% for kit in quick_commerce_kits %}
+          <button
+            class="kit-option {% if forloop.first %}active{% endif %}"
+            type="button"
+            aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+            aria-controls="kit-{{ kit.key }}"
+            data-kit="{{ kit.key }}"
+            data-audience="{{ kit.audience }}"
+            data-rail="{{ kit.rail }}"
+            data-speed="{{ kit.time|lower }}"
+            data-vertical="{{ kit.vertical }}"
+            data-search="{{ kit.name }} {{ kit.best_for }} {{ kit.offer }} {{ kit.placement }} {{ kit.adoption_channel }} {{ kit.vertical }}">
+            <strong>{{ kit.name }}</strong>
+            <span>{{ kit.best_for }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="kit-stage">
+      {% for kit in quick_commerce_kits %}
+        <article
+          class="panel commerce-kit-card"
+          id="kit-{{ kit.key }}"
+          data-name="{{ kit.name }}"
+          data-offer="{{ kit.offer }}"
+          data-route="{{ kit.route }}"
+          data-placement="{{ kit.placement }}"
+          data-buyer="{{ kit.buyer_prompt }}"
+          data-best="{{ kit.best_for }}"
+          data-setup="{{ kit.merchant_setup }}"
+          data-repeat="{{ kit.repeat_hook }}"
+          data-channel="{{ kit.adoption_channel }}"
+          data-staff="{{ kit.staff_script }}"
+          data-proof="{{ kit.proof_prompt }}"
+          data-next="{{ kit.next_step }}"
+          data-proof-route="{{ kit.proof_route|default:'' }}"
+          data-audience="{{ kit.audience }}"
+          data-rail="{{ kit.rail }}"
+          data-vertical="{{ kit.vertical }}"
+          data-time="{{ kit.time }}"
+          {% if not forloop.first %}hidden{% endif %}>
+          <div class="kit-card-header">
+            <div>
+              <p class="eyebrow">{{ kit.time }} launch</p>
+              <h3>{{ kit.name }}</h3>
+            </div>
+            <span class="status-pill pending">{{ kit.route }}</span>
+          </div>
+          <p>{{ kit.best_for }}</p>
+          <dl class="kit-specs">
+            <div>
+              <dt>Offer</dt>
+              <dd>{{ kit.offer }}</dd>
+            </div>
+            <div>
+              <dt>Placement</dt>
+              <dd>{{ kit.placement }}</dd>
+            </div>
+            <div>
+              <dt>Buyer prompt</dt>
+              <dd>{{ kit.buyer_prompt }}</dd>
+            </div>
+            <div>
+              <dt>Staff script</dt>
+              <dd>{{ kit.staff_script }}</dd>
+            </div>
+            <div>
+              <dt>Proof prompt</dt>
+              <dd>{{ kit.proof_prompt }}</dd>
+            </div>
+            <div>
+              <dt>Next adoption move</dt>
+              <dd>{{ kit.next_step }}</dd>
+            </div>
+          </dl>
+        </article>
+      {% endfor %}
+      <div class="panel kit-output-panel">
+        <div class="selected-kit-brief" aria-live="polite">
+          <div>
+            <span>Buyer moment</span>
+            <strong id="selectedBuyerMoment">Use DOGE for one named counter item while the line is already moving.</strong>
+          </div>
+          <div>
+            <span>Staff action</span>
+            <strong id="selectedStaffMoment">Scan the QR, confirm the amount, and mark the receipt paid in DOGE.</strong>
+          </div>
+          <div>
+            <span>Adoption spread</span>
+            <strong id="selectedSpreadMoment">Use the recap to invite the next shop on the block.</strong>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button class="button primary small" id="applyQuickKit" type="button">Apply kit to forms</button>
+          <button class="button small" id="copyQuickKit" type="button">Copy handoff pack</button>
+          <button class="button small" id="copyBuyerSign" type="button">Copy buyer sign</button>
+          <button class="button small" id="copyPromoterPitch" type="button">Copy next merchant ask</button>
+          <button class="button small" id="copyAdoptionRelay" type="button">Copy reuse plan</button>
+        </div>
+        <p class="note">The handoff below is the operational packet. The buyer sign is shorter copy for a counter, product page, event table, or QR placard.</p>
+        <div class="adoption-relay" aria-live="polite">
+          <div>
+            <span>Next target</span>
+            <strong id="relayTarget">Neighboring counters, food trucks, and pickup windows.</strong>
+          </div>
+          <div>
+            <span>Buyer reason</span>
+            <strong id="relayBuyerReason">Run the same DOGE window every Friday morning until repeat buyers appear.</strong>
+          </div>
+          <div>
+            <span>Proof metric</span>
+            <strong id="relayMetric">Completed DOGE orders, failed attempts, repeat buyers, and merchant approval.</strong>
+          </div>
+        </div>
+        <textarea class="code-box tall" id="quickKitOutput" aria-label="Quick commerce kit handoff pack"></textarea>
+      </div>
+    </div>
+  </div>
+</section>

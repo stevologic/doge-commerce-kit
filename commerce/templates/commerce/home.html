@@ -1,0 +1,119 @@
+{% extends "commerce/base.html" %}
+{% load static %}
+
+{% block title %}DOGE Commerce Kit | Accept Dogecoin in a Few Minutes{% endblock %}
+
+{% block content %}
+<section class="hero simple-hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Free, open-source Dogecoin commerce toolkit</p>
+    <h1>Make Dogecoin feel normal to use.</h1>
+    <p class="hero-lede">DOGE Commerce Kit gives any business, creator, or individual the tools to accept Dogecoin today: a point-of-sale terminal for the counter, a browser wallet, copy-paste website snippets, and a live market dashboard. No accounts, no processor fees, no custody — everything runs in your browser.</p>
+    <div class="hero-actions">
+      <a class="button primary" href="{% url 'commerce:pos_terminal' %}">Take a DOGE payment</a>
+      <a class="button" href="{% url 'commerce:wallet' %}">Manage your wallet</a>
+      <a class="button" href="{% url 'commerce:playbook' %}">Why DOGE helps you</a>
+    </div>
+  </div>
+  <div class="hero-visual doge-hero-visual" aria-hidden="true">
+    <img src="{% static 'commerce/img/doge-logo-256.png' %}" alt="">
+  </div>
+</section>
+
+<section class="panel passion-panel">
+  <div class="section-heading">
+    <h2>One kit, four tools.</h2>
+    <p>Every tool shares the same saved wallet and works without a sign-up. Keys and sales records stay on your device.</p>
+  </div>
+  <div class="playbook-tool-strip home-capability-strip">
+    <a class="playbook-tool-card" href="{% url 'commerce:pos_terminal' %}">
+      <strong>POS Terminal</strong>
+      <span>Quote a sale in dollars, show a scannable DOGE QR, verify payment on chain, and mark it paid.</span>
+    </a>
+    <a class="playbook-tool-card" href="{% url 'commerce:wallet' %}">
+      <strong>Wallet</strong>
+      <span>Create or import a Dogecoin wallet, receive with a QR, send, and follow your balance.</span>
+    </a>
+    <a class="playbook-tool-card" href="{% url 'commerce:merchant_kit' %}">
+      <strong>Website snippets</strong>
+      <span>Copy-paste payment buttons, badges, receipts, and printable counter signs.</span>
+    </a>
+    <a class="playbook-tool-card" href="{% url 'commerce:statistics' %}">
+      <strong>Live statistics</strong>
+      <span>Real-time DOGE price, order flow, and plain-English technical analysis.</span>
+    </a>
+  </div>
+</section>
+
+<section class="panel wallet-share-section" id="share-doge-card">
+  <div class="wallet-share-copy">
+    <div class="section-heading">
+      <p class="eyebrow">Wallet share snippet</p>
+      <h2>Give people a DOGE card they will actually post.</h2>
+      <p>Create a polished, self-contained QR card for storefronts, profile pages, receipts, booth signs, and X posts. It shows a public Dogecoin address, a Dogecoin mark, a scannable QR, a commerce.dog link, and a reusable DOGE Commerce Kit credit.</p>
+    </div>
+    <div class="inline-actions">
+      <a class="button primary" href="{% url 'commerce:merchant_kit' %}#wallet-share-card">Build share card</a>
+      <a class="button" href="{% url 'commerce:wallet' %}">Use saved wallet</a>
+    </div>
+  </div>
+  <div class="wallet-share-card home-wallet-share-card" aria-label="Example branded Dogecoin wallet share card">
+    <div class="wallet-share-top">
+      <span class="wallet-share-symbol" aria-hidden="true">&#272;</span>
+      <span><strong>DOGE Commerce Kit</strong><small>Postable DOGE wallet QR</small></span>
+    </div>
+    <div class="wallet-share-card-body">
+      <div class="wallet-share-copy-stack">
+        <span class="wallet-share-ribbon">Postable DOGE wallet QR</span>
+        <strong class="wallet-share-headline">Scan. Send. Share DOGE.</strong>
+        <span class="wallet-share-message">Proudly share a wallet address and help more people discover commerce.dog.</span>
+        <span class="wallet-share-address-label">Public address</span>
+        <code>{{ donation_address }}</code>
+        <a class="wallet-share-domain" href="https://commerce.dog" target="_blank" rel="noopener">https://commerce.dog</a>
+      </div>
+      <a class="wallet-share-qr-wrap" href="dogecoin:{{ donation_address }}" aria-label="Open Dogecoin wallet QR">
+        <img src="{% url 'commerce:qr_svg' %}?data=dogecoin%3A{{ donation_address|urlencode }}" alt="Dogecoin wallet QR code">
+      </a>
+    </div>
+    <div class="wallet-share-credit-row">
+      <a class="wallet-share-credit" href="https://commerce.dog" target="_blank" rel="noopener">Made with &lt;3 by DOGE Commerce Kit</a>
+    </div>
+  </div>
+</section>
+
+<section class="panel accent-panel home-start-panel">
+  <div class="section-heading">
+    <p class="eyebrow">Start here</p>
+    <h2>Use DOGE for one real checkout, then keep a clean record.</h2>
+    <p>The fastest path is not a giant integration. Pick one buying moment, create the payment instruction, test it, and save only the support details a merchant actually needs.</p>
+  </div>
+  <div class="workflow-steps setup-flow">
+    {% for step in dashboard_steps %}
+      <a class="step-card" href="{{ step.href }}">
+        <span>{{ step.kicker }}</span>
+        <h3>{{ step.title }}</h3>
+        <p>{{ step.summary }}</p>
+        <strong>{{ step.action }}</strong>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="section-heading">
+    <p class="eyebrow">Choose a lane</p>
+    <h2>Make the next action obvious.</h2>
+  </div>
+  <div class="role-path-grid">
+    {% for path in role_paths %}
+      <a class="role-path-card" href="{{ path.href }}">
+        <span>{{ path.role }}</span>
+        <h3>{{ path.title }}</h3>
+        <p>{{ path.summary }}</p>
+        <strong>{{ path.action }}</strong>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

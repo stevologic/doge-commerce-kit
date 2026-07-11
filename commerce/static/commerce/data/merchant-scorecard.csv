@@ -1,0 +1,5 @@
+merchant,category,audience_size,community_fit_1_to_5,repeat_purchase_1_to_5,checkout_complexity_1_to_5,shareability_1_to_5,estimated_week_1_orders,doge_offer,priority_score,next_action,owner,status
+Example Coffee,coffee,25000,5,5,2,4,300,10% off DOGE orders,17,Send short DM,,not started
+Creator Merch Shop,creator merch,80000,5,3,3,5,640,limited DOGE-only shirt,18,Find payment owner,,not started
+Indie Game Store,gaming,45000,4,2,2,5,360,DOGE cosmetic bundle,17,Prepare partnership pitch,,not started
+

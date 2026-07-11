@@ -1,0 +1,21 @@
+{
+  "name": "doge-commerce-kit-launch-video",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "render": "remotion render src/index.tsx DogeCommerceLaunch out/doge-commerce-kit-launch.mp4 --codec h264 --crf 20 --overwrite",
+    "render:webm": "remotion render src/index.tsx DogeCommerceLaunch out/doge-commerce-kit-launch.webm --codec vp8 --overwrite",
+    "poster": "remotion still src/index.tsx DogeCommerceLaunch out/doge-commerce-kit-launch-poster.jpg --frame 38 --overwrite"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.457",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "remotion": "4.0.457"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "typescript": "5.9.2"
+  }
+}
