@@ -1,6 +1,10 @@
 # doge-commerce-kit
 
-**DOGE Commerce Kit** — the free, open-source Dogecoin commerce toolkit, live at [commerce.dog](https://commerce.dog). A consolidated Django site built around direct Dogecoin acceptance:
+**DOGE Commerce Kit** — the free, open-source Dogecoin commerce toolkit, live at [commerce.dog](https://commerce.dog). A consolidated Django site built around direct Dogecoin acceptance.
+
+![DOGE Commerce Kit home page](docs/readme/home.png)
+
+Everything runs in the browser against a stateless Django backend — no accounts, no processor fees, no custody:
 
 - `Start` - short explanation, Donate DOGE modal, and links into the working tools
 - `Wallet` - generate a local/dev Dogecoin wallet, load WIF, save watch-only browser state, and query blockchain balances
@@ -20,6 +24,47 @@ The site stays inside a lawful adoption lane:
 - no custody of customer or merchant funds
 
 Current adoption expansion is now expressed as lightweight kit examples inside the Playbook and Tools pages rather than a large multi-page campaign workflow.
+
+## Screenshots
+
+### POS Terminal — price in dollars, get paid in DOGE
+
+Quote a sale in USD with quick-amount chips, show the customer a scannable QR
+(or flip to a full-screen customer display), verify the payment on chain, and
+keep a local order ledger.
+
+![POS terminal](docs/readme/pos-terminal.png)
+
+### Live market dashboard
+
+Real-time Coinbase price with an animated sparkline over a three.js starfield,
+KPI strip, candles with moving averages, and a live trade tape.
+
+![Statistics dashboard](docs/readme/statistics.png)
+
+Classic indicators — RSI, MACD, Bollinger position, support/resistance,
+volatility — computed live from the loaded candles, each with a plain-English
+read and a one-line market summary.
+
+![Technical analysis panel](docs/readme/technical-analysis.png)
+
+### Wallet and snippet marketplace
+
+| Browser wallet | Tools marketplace |
+| --- | --- |
+| ![Wallet](docs/readme/wallet.png) | ![Tools](docs/readme/tools.png) |
+
+Create or import a wallet with keys that never leave the device, send with an
+inline confirm step and live transaction tracking — then copy self-contained
+website snippets, badges, receipts, and printable counter signs that auto-fill
+from the same saved wallet.
+
+### Playbook
+
+Checklists, printables, and a runbook that turn Dogecoin acceptance into a
+counter-ready workflow.
+
+![Playbook routes](docs/readme/playbook.png)
 
 ## Deploy to Production (DigitalOcean droplet or any Docker host)
 
