@@ -1,25 +1,26 @@
-# DOGE Commerce Kit MVP Roadmap
+# DOGE Commerce Kit Roadmap
 
-## Phase 1
+## Shipped (live at commerce.dog)
 
-Ship the static operator MVP.
+The consolidated Django site replaced the original static operator MVP and
+covers the first two phases of the original plan without requiring accounts
+or a merchant database:
 
-- finalize product framing
-- support merchant planning and onboarding
-- standardize templates and integration payloads
-- define proof reporting inputs
+- browser wallet: local key generation/import, receive QR, send with inline
+  confirm and a live submitted-transaction tracker
+- POS terminal: USD quotes with quick amounts, scannable QR, full-screen
+  customer display, on-chain confirmation, exportable local order ledger
+- snippet marketplace: payment QR builder, wallet share card, printable
+  counter sign, accepted badge, donate button, price/spark snippets,
+  integration pieces, validation, receipts, checkout policy
+- statistics dashboard: live Coinbase feed, sparkline, candles + moving
+  averages, plain-English technical analysis, capital map, holder distribution
+- playbook with printables (counter sign, cashier quick card), FAQ, and a
+  technical reference with copyable code
+- production stack: Caddy TLS with automatic Let's Encrypt, hardened Django
+  settings, per-IP API rate limiting, non-root container with healthchecks
 
-## Phase 2
-
-Turn the static demo into a lightweight app.
-
-- persistent merchant database
-- user accounts for operators
-- shared pilot workspaces
-- better QR and invoice rendering
-- webhook-driven transaction confirmation
-
-## Phase 3
+## Next
 
 Build direct merchant integrations.
 
@@ -27,8 +28,9 @@ Build direct merchant integrations.
 - WooCommerce plugin
 - simple hosted checkout page
 - event mode for fast in-person checkout
+- webhook-driven order confirmation beyond the bundled demo receiver
 
-## Phase 4
+## Later
 
 Build distribution and reporting.
 

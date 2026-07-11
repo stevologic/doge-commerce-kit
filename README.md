@@ -6,14 +6,14 @@
 
 Everything runs in the browser against a stateless Django backend — no accounts, no processor fees, no custody:
 
-- `Start` - short explanation, Donate DOGE modal, and links into the working tools
-- `Wallet` - generate a local/dev Dogecoin wallet, load WIF, save watch-only browser state, and query blockchain balances
-- `POS Terminal` - browser-stored merchant wallet, local QR generation, order state, and local receipt list
-- `Tools` - QR generator, self-contained Dogecoin Accepted snippet, Donate DOGE snippet, simplified kit examples, and testable validation
-- `Statistics` - Coinbase DOGE-USD live ticker, candles, moving averages, standard deviation, trade tape, and rich-list distribution
-- `Playbook` - business readiness checklists and simplified market adoption examples
-- `FAQ` - plain-language merchant and builder answers
-- `Technical` - Dogecoin URI notes, QR endpoint, Coinbase/Robinhood integration notes, reusable data files, and webhook demo instructions
+- `Start` - what the kit is, the four tools at a glance, and role-based entry paths
+- `Wallet` - create or import a Dogecoin wallet in the browser (keys never leave the device), receive with a QR, send with an inline confirm step and a live submitted-transaction tracker, and follow balance and public activity
+- `POS Terminal` - quote sales in USD with quick-amount chips, show a scannable DOGE QR or a full-screen customer display, verify payment on chain, and keep an exportable local order ledger
+- `Tools` - snippet marketplace: payment QR builder, postable wallet card, printable "Dogecoin accepted here" counter sign, accepted badge, donate button, live price and spark-chart snippets, website integration pieces, transaction validation, receipts, and checkout policy — all auto-filled from the saved wallet
+- `Statistics` - live dashboard: Coinbase DOGE-USD price with animated sparkline over a three.js starfield, KPI strip, candles with moving averages, trade tape, plain-English technical analysis (RSI, MACD, Bollinger, support/resistance, volatility), capital map, and rich-list distribution
+- `Playbook` - why-DOGE benefits, route picker, four-step checkout runbook, launch checklist, and printables (counter sign, cashier quick card)
+- `FAQ` - plain-language merchant and builder answers with primary sources
+- `Technical` - sticky section navigator, wallet key derivation, payment URI/QR reference, chain lookup config, copyable code blocks, reusable data files, webhook demo, and papers
 
 The site stays inside a lawful adoption lane:
 
@@ -166,15 +166,22 @@ http://127.0.0.1:42069
 ## Project Structure
 
 - `manage.py` - Django command entry point
-- `doge2moon/` - Django project settings and root URLs
+- `doge2moon/` - Django project settings (production hardening lives here) and root URLs
 - `commerce/` - consolidated site app
+- `commerce/middleware.py` - per-IP rate limiting for `/api/` endpoints
 - `commerce/templates/commerce/` - primary pages
-- `commerce/templates/commerce/quick_commerce_kits.html` - reusable quick-kit finder and kit handoff partial
 - `commerce/static/commerce/css/site.css` - shared interface styling
-- `commerce/static/commerce/js/site.js` - shared browser tools
-- `commerce/static/commerce/js/offramp.js` - DOGE-to-USD conversion planner
+- `commerce/static/commerce/js/site.js` - shared page tools (snippet builders, filters, code copy)
+- `commerce/static/commerce/js/doge_tools.js` - wallet, POS, statistics, and technical-analysis logic
+- `commerce/static/commerce/js/wallet_core.js` - client-side key derivation and transaction signing
+- `commerce/static/commerce/js/stats_dashboard.js` - d3 price sparkline for the statistics header
+- `commerce/static/commerce/js/stats_visuals.js` - three.js starfield accent behind the statistics header
+- `commerce/static/commerce/vendor/` - self-hosted d3, topojson, and three.js
 - `commerce/static/commerce/data/` - reusable JSON and CSV templates
-- `Dockerfile` - production container build
-- `docker-compose.yml` - local container orchestration
+- `Dockerfile` - production container build (non-root, healthcheck, tuned gunicorn)
+- `docker-compose.yml` - production stack: web + Caddy TLS termination
+- `Caddyfile` - automatic Let's Encrypt for commerce.dog
+- `.env.example` - documented production environment template
+- `docs/` - product spec, strategy, legal guardrails, and README screenshots
 
-The original static files remain in the repository as source material, but the Django app is the primary runnable site.
+The original static prototypes remain in the repository as source material, but the Django app is the primary runnable site.

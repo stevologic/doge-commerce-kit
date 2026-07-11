@@ -1,26 +1,36 @@
 # Release Checklist
 
-Use this gate before public launch.
+Use this gate before public launch and after significant releases at
+[commerce.dog](https://commerce.dog).
 
 ## Product
 
-- The app opens from `index.html` or `http://localhost:8080`.
-- DOGE price sync works or clearly falls back.
-- Payment URI generation works with a merchant-owned Dogecoin address.
-- QR code renders.
-- Pledge form saves locally.
-- CSV export works.
-- Sprint checklist persists locally.
-- Campaign assets can be copied.
+- All eight pages return 200: `/`, `/wallet/`, `/pos/`, `/merchant-kit/`,
+  `/statistics/`, `/playbook/`, `/faq/`, `/technical-details/`.
+- DOGE price loads on POS/Tools/Statistics, or clearly falls back.
+- POS: quick-amount chips update the QR, customer display opens full screen,
+  txid confirmation works, orders save/export/delete locally.
+- Wallet: create/import works, receive QR renders, send flow shows the inline
+  confirm step and the submitted-transaction tracker after broadcast.
+- Tools: every snippet builder previews and copies; the counter sign prints;
+  saved wallet auto-fills builders.
+- Statistics: live feed connects, sparkline draws, candles + technical
+  analysis render, holder distribution loads.
+- No browser pop-ups anywhere (`window.confirm/alert/prompt` count is zero).
+- `python manage.py test commerce.tests` passes (browser tests need
+  `requirements-dev.txt` + `playwright install chromium`).
 
-## Campaign
+## Deployment
 
-- 50 initial merchants identified.
-- 10 merchants verbally committed before launch.
-- 10 creators briefed with disclosure rules.
-- 3 nonprofits selected for donation pilots.
-- One city cluster chosen for concentrated proof.
-- First proof-report publish date set.
+- `.env` has a generated `DJANGO_SECRET_KEY` (container refuses defaults).
+- `DOGE_DOMAIN`, `DOGE_SITE_URL`, `LETSENCRYPT_EMAIL` point at production.
+- `docker compose up -d --build` healthy; `curl -I https://commerce.dog/health/`
+  returns 200 over TLS.
+- HSTS, X-Frame-Options, referrer-policy headers present on responses.
+- `/api/` rate limiting returns 429 after the configured burst.
+- Blockbook indexer configured (`DOGE_BLOCKBOOK_BASE_URL`) for real traffic.
+- Canonical URLs, sitemap.xml, robots.txt, and llms.txt resolve on the
+  production domain.
 
 ## Legal And Trust
 
@@ -30,16 +40,13 @@ Use this gate before public launch.
 - No fake transaction incentives.
 - No custody of customer funds.
 - All sponsor relationships disclosed.
-- Data methodology published.
+- Statistics page labeled as market context, not investment advice.
 
 ## Launch Day
 
-- Publish the app.
-- Publish the rulebook.
-- Publish the first merchant pledge list.
-- Announce the first proof-report date.
-- Invite merchants to join.
-- Invite creators to demonstrate real usage.
+- Publish the app and confirm the GitHub repo (footer Contribute link) is live.
+- Announce with verifiable claims only.
+- Invite merchants to run one real checkout via the Playbook.
 - Track every claim that needs later proof.
 
 ## Six-Month Confidence Gate
