@@ -1047,30 +1047,52 @@ function walletShareSnippet(values, qrSource) {
 
   function counterSignMarkup(values, qrSource) {
     const uri = dogeUri(values.address, 0, `Pay ${values.name} in DOGE`);
-    return `<div aria-label="Dogecoin accepted here sign" style="box-sizing:border-box;display:grid;justify-items:center;gap:14px;width:100%;max-width:640px;margin:0 auto;padding:34px 30px;border:4px solid #f4bd2a;border-radius:22px;background:#fffdf5;color:#171715;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center">
-  <span aria-hidden="true" style="display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#f4bd2a;color:#171715;font-size:40px;font-weight:900;box-shadow:inset 0 0 0 4px rgba(255,255,255,.5)">&#272;</span>
-  <strong style="font-size:34px;line-height:1.05;letter-spacing:.01em;text-transform:uppercase">Dogecoin accepted here</strong>
-  <span style="font-size:20px;font-weight:800;color:#96690e">${escapeHtml(values.name)}</span>
-  <img src="${escapeHtml(qrSource || qrUrl(uri))}" alt="Dogecoin payment QR code for ${escapeHtml(values.name)}" style="display:block;width:270px;max-width:100%;height:auto;aspect-ratio:1/1;padding:12px;box-sizing:content-box;border:1px solid #dfe4dd;border-radius:16px;background:#fff">
-  <span style="font-size:15px;line-height:1.4;color:#5d625f;max-width:440px">${escapeHtml(values.tagline)}</span>
-  <code style="display:block;max-width:100%;padding:8px 12px;border-radius:10px;background:#f2f3ec;font-family:ui-monospace,Consolas,monospace;font-size:13px;overflow-wrap:anywhere">${escapeHtml(values.address)}</code>
-  <span style="font-size:12px;font-weight:700;color:#8a8f8a">Powered by DOGE Commerce Kit &middot; commerce.dog</span>
+    const step = (number, label) => `<span style="display:grid;justify-items:center;gap:7px;min-width:0"><span style="display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#f4bd2a;color:#102324;font-size:16px;font-weight:900">${number}</span><span style="font-size:12.5px;font-weight:800;line-height:1.25;color:#33403c">${label}</span></span>`;
+    return `<div aria-label="Dogecoin accepted here sign" style="box-sizing:border-box;width:100%;max-width:640px;margin:0 auto;overflow:hidden;border:1px solid #d9c47c;border-radius:20px;background:#fff;color:#171715;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center;box-shadow:0 24px 60px rgba(16,35,36,.18);-webkit-print-color-adjust:exact;print-color-adjust:exact">
+  <div style="position:relative;padding:36px 30px 78px;background:radial-gradient(circle at 82% 14%,rgba(244,189,42,.3),transparent 44%),linear-gradient(135deg,#102324,#123f48 55%,#14201b);color:#fff">
+    <span aria-hidden="true" style="display:grid;place-items:center;width:86px;height:86px;margin:0 auto 16px;border-radius:50%;background:#f4bd2a;color:#171715;font-size:54px;font-weight:900;box-shadow:inset 0 0 0 5px rgba(255,255,255,.5),0 12px 30px rgba(0,0,0,.35)">&#272;</span>
+    <div style="font-size:14px;font-weight:900;letter-spacing:.42em;text-transform:uppercase;color:#f4bd2a">We proudly accept</div>
+    <div style="margin-top:7px;font-size:48px;line-height:1;font-weight:900;letter-spacing:.02em;text-transform:uppercase">Dogecoin</div>
+  </div>
+  <div style="position:relative;margin:-54px auto 0;width:max-content;max-width:84%;padding:15px;border-radius:18px;border:3px solid #f4bd2a;background:#fff;box-shadow:0 14px 34px rgba(16,35,36,.16)">
+    <img src="${escapeHtml(qrSource || qrUrl(uri))}" alt="Dogecoin payment QR code for ${escapeHtml(values.name)}" style="display:block;width:250px;max-width:100%;height:auto;aspect-ratio:1/1">
+  </div>
+  <div style="padding:20px 34px 26px">
+    <div style="font-size:13px;font-weight:900;letter-spacing:.24em;text-transform:uppercase;color:#96690e">Scan to pay &middot; ${escapeHtml(values.name)}</div>
+    <div style="display:flex;justify-content:center;gap:26px;margin:20px auto 18px;max-width:460px">
+      ${step(1, "Open your<br>DOGE wallet")}
+      ${step(2, "Scan<br>this code")}
+      ${step(3, "Show staff the<br>confirmation")}
+    </div>
+    <div style="max-width:440px;margin:0 auto 16px;font-size:14.5px;line-height:1.45;color:#5d625f">${escapeHtml(values.tagline)}</div>
+    <code style="display:inline-block;max-width:100%;padding:8px 14px;border-radius:999px;border:1px solid #e6e0c8;background:#faf8ef;font-family:ui-monospace,Consolas,monospace;font-size:12px;overflow-wrap:anywhere">${escapeHtml(values.address)}</code>
+  </div>
+  <div style="padding:11px 16px;background:#102324;color:rgba(255,255,255,.78);font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase">Powered by DOGE Commerce Kit &middot; commerce.dog</div>
 </div>`;
   }
 
   function openPrintWindow(title, bodyHtml) {
-    const win = window.open("", "_blank", "width=880,height=1040");
-    if (!win) {
-      if (window.dogeAnnounce) window.dogeAnnounce("Allow pop-ups for this site to print.");
-      return;
-    }
-    win.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{margin:0;padding:28px;display:grid;place-items:center;background:#fff}@media print{body{padding:0}}</style></head><body>${bodyHtml}</body></html>`);
-    win.document.close();
-    win.focus();
-    const image = win.document.querySelector("img");
-    const printNow = () => win.print();
+    // Hidden-iframe printing: opens the print dialog directly without a
+    // pop-up window, so pop-up blockers can never eat the print action.
+    document.getElementById("dogePrintFrame")?.remove();
+    const frame = document.createElement("iframe");
+    frame.id = "dogePrintFrame";
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    doc.open();
+    doc.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>@page{size:letter portrait;margin:12mm}body{margin:0;padding:16px;display:grid;justify-items:center;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{padding:0}}</style></head><body>${bodyHtml}</body></html>`);
+    doc.close();
+    const win = frame.contentWindow;
+    win.addEventListener("afterprint", () => setTimeout(() => frame.remove(), 300));
+    const printNow = () => {
+      win.focus();
+      win.print();
+    };
+    const image = doc.querySelector("img");
     if (image && !image.complete) image.addEventListener("load", printNow);
-    else win.setTimeout(printNow, 200);
+    else setTimeout(printNow, 150);
   }
 
   async function updateCounterSignBuilder() {
