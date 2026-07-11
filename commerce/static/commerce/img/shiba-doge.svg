@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Shiba Inu doge mascot">
+  <!-- Original DOGE Commerce Kit mascot: a friendly shiba inu with a D-coin collar tag. MIT licensed with the project. -->
+  <g>
+    <!-- ears -->
+    <path d="M52 78 L38 22 Q37 16 43 18 L92 44 Z" fill="#e9a83c"/>
+    <path d="M188 78 L202 22 Q203 16 197 18 L148 44 Z" fill="#e9a83c"/>
+    <path d="M58 68 L49 33 L82 51 Z" fill="#8a5a1d"/>
+    <path d="M182 68 L191 33 L158 51 Z" fill="#8a5a1d"/>
+    <!-- head -->
+    <path d="M120 34 C168 34 198 66 198 108 C198 152 166 178 120 178 C74 178 42 152 42 108 C42 66 72 34 120 34 Z" fill="#efb954"/>
+    <!-- cheek fluff -->
+    <path d="M44 120 q-10 8 -6 20 q8 -2 14 -10 Z" fill="#efb954"/>
+    <path d="M196 120 q10 8 6 20 q-8 -2 -14 -10 Z" fill="#efb954"/>
+    <!-- brow patches -->
+    <ellipse cx="86" cy="84" rx="14" ry="9" fill="#f8dfae"/>
+    <ellipse cx="154" cy="84" rx="14" ry="9" fill="#f8dfae"/>
+    <!-- muzzle -->
+    <path d="M120 96 C150 96 168 116 166 138 C164 160 146 172 120 172 C94 172 76 160 74 138 C72 116 90 96 120 96 Z" fill="#fbf0d7"/>
+    <!-- eyes: the doge side-glance squint -->
+    <g fill="#241c10">
+      <ellipse cx="90" cy="99" rx="7.5" ry="9"/>
+      <ellipse cx="150" cy="99" rx="7.5" ry="9"/>
+    </g>
+    <circle cx="92.5" cy="96" r="2.6" fill="#fff"/>
+    <circle cx="152.5" cy="96" r="2.6" fill="#fff"/>
+    <!-- nose + mouth -->
+    <path d="M112 122 q8 -6 16 0 q1 8 -8 12 q-9 -4 -8 -12 Z" fill="#241c10"/>
+    <path d="M120 134 q0 8 -10 11 M120 134 q0 8 10 11" fill="none" stroke="#241c10" stroke-width="3.4" stroke-linecap="round"/>
+    <!-- blush -->
+    <ellipse cx="70" cy="122" rx="9" ry="5.5" fill="#f2a25c" opacity="0.55"/>
+    <ellipse cx="170" cy="122" rx="9" ry="5.5" fill="#f2a25c" opacity="0.55"/>
+    <!-- chest -->
+    <path d="M74 176 C84 166 156 166 166 176 C176 188 178 206 174 224 L66 224 C62 206 64 188 74 176 Z" fill="#efb954"/>
+    <path d="M96 180 C104 174 136 174 144 180 C152 188 154 206 152 224 L88 224 C86 206 88 188 96 180 Z" fill="#fbf0d7"/>
+    <!-- collar with D-coin tag -->
+    <path d="M76 182 C92 194 148 194 164 182 L162 196 C146 208 94 208 78 196 Z" fill="#c64763"/>
+    <circle cx="120" cy="206" r="16" fill="#f4bd2a" stroke="#96690e" stroke-width="3"/>
+    <text x="120" y="213" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="900" fill="#7a5510">&#272;</text>
+  </g>
+</svg>

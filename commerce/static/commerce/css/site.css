@@ -876,6 +876,7 @@ body[data-page="technical_details"] main {
 
 .doge-meme-word {
   position: absolute;
+  z-index: 2;
   left: var(--x, 8%);
   top: var(--y, 8%);
   color: var(--c, #e754c5);
@@ -915,6 +916,12 @@ body[data-page="technical_details"] main {
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+.mascot-hero-shiba img,
+.playbook-hero-art .mascot-hero-shiba img {
+  width: 88%;
+  margin-top: 4%;
 }
 
 .mascot-counter img {
