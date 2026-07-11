@@ -52,6 +52,7 @@
   let posTransactionsLoaded = false;
   let marketChartPreset = "7D";
   let sentTxWatchTimer = null;
+  let posWalletPanelOpen = true;
   const posDeleteArmed = new Set();
 
   function logo() {
@@ -2105,12 +2106,24 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const source = browserSavedPosWalletSource();
     if (!status) return;
     if (source && state.wallet) {
-      status.textContent = `Loaded receiving wallet from ${source}. Merchant name saves in this browser.`;
+      status.textContent = "Payments land at this Dogecoin address. It is saved in this browser only.";
     } else if (state.wallet) {
-      status.textContent = "Using the Dogecoin address typed here. Click Save merchant so it loads automatically on every POS session.";
+      status.textContent = "Address entered — click Use this address so it loads automatically on every session.";
     } else {
-      status.textContent = "No wallet yet. Open Merchant profile and options below to paste a Dogecoin address or generate a new wallet.";
+      status.textContent = "Paste a Dogecoin address or generate a new wallet. Keys stay in this browser.";
     }
+  }
+
+  function syncPosWalletSetup() {
+    const wallet = ($id("posWallet")?.value || "").trim();
+    const collapsed = !posWalletPanelOpen && Boolean(wallet);
+    if ($id("posWalletActive")) $id("posWalletActive").hidden = !collapsed;
+    if ($id("posWalletActiveOut")) {
+      $id("posWalletActiveOut").textContent = wallet ? `${wallet.slice(0, 10)}…${wallet.slice(-6)}` : "—";
+    }
+    if ($id("posWalletSetupBody")) $id("posWalletSetupBody").hidden = collapsed;
+    const setup = $id("posWalletSetup");
+    if (setup) setup.classList.toggle("is-collapsed", collapsed);
   }
 
   function savePosMerchant() {
@@ -2177,6 +2190,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       updatePosBlockchainAddressLink(state.wallet);
     }
     updatePosQuickAmountSelection(state.usd);
+    syncPosWalletSetup();
     if (!$id("posCustomerDisplayModal")?.hidden) updatePosCustomerDisplay(state);
   }
 
@@ -2190,9 +2204,27 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (!$id("dogePosTerminal")) return;
     if ($id("posMerchant")) $id("posMerchant").value = localStorage.getItem("doge-pos:merchant") || $id("posMerchant").value;
     if ($id("posWallet")) $id("posWallet").value = browserSavedPosWallet();
-    if ($id("posProfileDetails")) $id("posProfileDetails").open = !browserSavedPosWallet();
+    posWalletPanelOpen = !browserSavedPosWallet();
     // Wallet setup wires up before any network awaits so it works even when
     // the price fetch is slow or offline.
+    $id("posUseWallet")?.addEventListener("click", () => {
+      const wallet = ($id("posWallet")?.value || "").trim();
+      if (!wallet) {
+        updatePosProfileStatus();
+        $id("posWallet")?.focus();
+        return;
+      }
+      localStorage.setItem("doge-pos:wallet", wallet);
+      localStorage.setItem("doge-wallet:address", wallet);
+      posWalletPanelOpen = false;
+      updatePos();
+      if (window.dogeAnnounce) window.dogeAnnounce("Receiving wallet saved for this browser.");
+    });
+    $id("posChangeWallet")?.addEventListener("click", () => {
+      posWalletPanelOpen = true;
+      syncPosWalletSetup();
+      $id("posWallet")?.focus();
+    });
     let posGeneratedWallet = null;
     $id("posGenerateWallet")?.addEventListener("click", async () => {
       try {
@@ -2232,6 +2264,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       posGeneratedWallet = null;
       if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = "••• hidden •••";
       if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
+      posWalletPanelOpen = false;
+      syncPosWalletSetup();
     });
     if ($id("posFeeAuto")) {
       $id("posFeeAuto").checked = posFeeAutoEnabled();
@@ -2248,7 +2282,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       limitDecimalInput($id("posUsd"), 2, true);
       updatePos();
     });
-    document.querySelectorAll("#dogePosTerminal input").forEach((input) => input.addEventListener("input", updatePos));
+    document.querySelectorAll("#dogePosTerminal input, #posWalletSetup input").forEach((input) => input.addEventListener("input", updatePos));
     $id("posWallet")?.addEventListener("change", () => {
       resetPosTransactions("Wallet changed. Open recent wallet activity to load transactions for this address.");
       if (isPosTransactionPickerOpen()) refreshPosTransactions().catch((error) => setPosTransactionsStatus(error.message));

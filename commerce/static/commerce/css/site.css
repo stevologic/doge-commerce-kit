@@ -3792,6 +3792,82 @@ label.pos-fee-auto {
   font-weight: 800;
 }
 
+.pos-wallet-setup {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-color: rgba(244, 189, 42, 0.5);
+  background:
+    linear-gradient(120deg, rgba(244, 189, 42, 0.1), rgba(15, 143, 120, 0.05)),
+    var(--surface);
+}
+
+.pos-wallet-setup.is-collapsed {
+  gap: 0;
+}
+
+.pos-wallet-setup-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 18px;
+  align-items: center;
+}
+
+.pos-wallet-setup-head .section-heading {
+  margin: 0;
+}
+
+.pos-wallet-setup.is-collapsed .section-heading p {
+  display: none;
+}
+
+.pos-wallet-active {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(15, 143, 120, 0.3);
+  border-radius: 999px;
+  background: rgba(15, 143, 120, 0.08);
+}
+
+.pos-wallet-active > span {
+  color: var(--teal);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pos-wallet-active code {
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.pos-wallet-setup-body {
+  display: grid;
+  gap: 10px;
+}
+
+.pos-wallet-setup-body[hidden] {
+  display: none;
+}
+
+.pos-wallet-setup-body input {
+  min-height: 44px;
+}
+
+@media (max-width: 700px) {
+  .pos-wallet-setup-head {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-wallet-active {
+    justify-self: start;
+  }
+}
+
 .pos-new-wallet {
   display: grid;
   gap: 7px;

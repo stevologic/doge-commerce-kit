@@ -19,12 +19,52 @@
     <a class="button small" href="{% url 'commerce:technical_details' %}#webhook-demo">Integration guide</a>
   </div>
 
+  <section class="panel pos-wallet-setup" id="posWalletSetup" aria-labelledby="posWalletSetupTitle">
+    <div class="pos-wallet-setup-head">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Step 0 — Wallet</p>
+        <h2 id="posWalletSetupTitle">Set your receiving wallet</h2>
+        <p id="posProfileStatus">Payments land at this Dogecoin address. It stays in this browser only.</p>
+      </div>
+      <div class="pos-wallet-active" id="posWalletActive" hidden>
+        <span>Active wallet</span>
+        <code id="posWalletActiveOut">—</code>
+        <button class="button small" id="posChangeWallet" type="button">Change</button>
+      </div>
+    </div>
+    <div class="pos-wallet-setup-body" id="posWalletSetupBody">
+      <div class="form-grid compact">
+        <label class="full-row">
+          <span>Dogecoin address</span>
+          <input id="posWallet" value="" placeholder="Paste your D… address, or generate a new wallet" spellcheck="false" autocomplete="off">
+        </label>
+      </div>
+      <div class="inline-actions">
+        <button class="button primary small" id="posUseWallet" type="button">Use this address</button>
+        <button class="button small" id="posGenerateWallet" type="button">Generate new wallet</button>
+      </div>
+      <div class="pos-new-wallet" id="posNewWallet" hidden>
+        <strong>New wallet created — back it up now</strong>
+        <span class="preview-label">Receiving address</span>
+        <code id="posNewWalletAddress"></code>
+        <span class="preview-label">WIF private key (shown only once)</span>
+        <code id="posNewWalletWif"></code>
+        <div class="inline-actions">
+          <button class="button primary small" id="posDownloadWallet" type="button">Download backup</button>
+          <button class="button small" id="posCopyWalletWif" type="button">Copy WIF</button>
+          <button class="button small quiet" id="posDismissNewWallet" type="button">I saved it</button>
+        </div>
+        <p class="note compact-note">This site never stores the private key — anyone holding the WIF can spend the funds, so keep the backup offline. For meaningful balances prefer a hardware or dedicated wallet and paste its address here instead.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="pos-operator-grid">
     <article class="panel pos-sale-panel" id="dogePosTerminal">
       <div class="section-heading compact-heading">
         <p class="eyebrow">Step 1</p>
         <h2>Set sale details</h2>
-        <p id="posProfileStatus">Merchant profile loads from this browser.</p>
+        <p>Quote the sale in dollars — the DOGE amount updates live.</p>
       </div>
       <form class="form-grid compact">
         <label class="full-row pos-amount-field">
@@ -52,10 +92,6 @@
               <input id="posMerchant" value="DOGE Merchant">
             </label>
             <label>
-              <span>Dogecoin address</span>
-              <input id="posWallet" value="" placeholder="Load from saved browser wallet" spellcheck="false">
-            </label>
-            <label>
               <span>Extra DOGE fee</span>
               <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="DOGE fee buffer included in the payment request amount. Auto mode covers a typical network transaction fee.">
             </label>
@@ -66,20 +102,6 @@
           </div>
           <div class="inline-actions pos-profile-actions">
             <button class="button small" id="posSaveMerchant" type="button">Save merchant</button>
-            <button class="button small" id="posGenerateWallet" type="button">Generate new wallet</button>
-          </div>
-          <div class="pos-new-wallet" id="posNewWallet" hidden>
-            <strong>New wallet created — back it up now</strong>
-            <span class="preview-label">Receiving address</span>
-            <code id="posNewWalletAddress"></code>
-            <span class="preview-label">WIF private key (shown only once)</span>
-            <code id="posNewWalletWif"></code>
-            <div class="inline-actions">
-              <button class="button primary small" id="posDownloadWallet" type="button">Download backup</button>
-              <button class="button small" id="posCopyWalletWif" type="button">Copy WIF</button>
-              <button class="button small quiet" id="posDismissNewWallet" type="button">I saved it</button>
-            </div>
-            <p class="note compact-note">This site never stores the private key — anyone holding the WIF can spend the funds, so keep the backup offline. For meaningful balances prefer a hardware or dedicated wallet and paste its address here instead.</p>
           </div>
         </details>
       </form>
