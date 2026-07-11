@@ -1208,6 +1208,11 @@ body[data-page="technical_details"] main {
 .mission-art img {
   width: 100%;
   height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 3px solid #fff;
+  border-radius: 16px;
+  box-shadow: 0 16px 34px rgba(16, 35, 36, 0.22);
 }
 
 @media (max-width: 700px) {
