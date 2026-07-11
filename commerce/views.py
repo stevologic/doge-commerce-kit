@@ -44,7 +44,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20260710-tools-stats-mascots-v1"
+ASSET_VERSION = "20260711-neutral-market-data-v1"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -96,7 +96,7 @@ SEO_PAGES = [
         "priority": "0.85",
         "changefreq": "daily",
         "title": "Live Dogecoin Market Statistics | DOGE Price, Volume, and Holders",
-        "description": "Live DOGE-USD price, Coinbase trade tape, moving averages, $1 market cap scenario, holder distribution, and market flow charts.",
+        "description": "Live DOGE-USD price, Coinbase trade tape, moving averages, technical analysis, holder distribution, and market flow charts.",
     },
     {
         "active": "playbook",
@@ -923,8 +923,6 @@ def transaction_outputs(payload):
 BASELINE = {
     "price": "$0.1063",
     "supply": "169.74B DOGE",
-    "target_value": "$169.74B",
-    "gap": "9.4x",
 }
 
 RAILS = [

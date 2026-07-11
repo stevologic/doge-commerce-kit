@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This project is an adoption campaign, not a trading campaign. Its job is to
-make Dogecoin easier to use, easier to verify, and easier to evaluate without
-promising returns or trying to force market action.
+This project is an MIT-licensed payments tool, not a trading campaign. Its job
+is to make Dogecoin easier to use, easier to verify, and easier to evaluate
+without promising returns or trying to force market action.
 
 ## Required Rules
 
@@ -45,7 +45,7 @@ Every public message should pass these tests:
 
 ## Release Gate
 
-Do not ship a campaign asset unless it:
+Do not ship a public asset unless it:
 
 - avoids price-prediction language in calls to action,
 - includes sponsor and holdings disclosure where relevant,

@@ -906,11 +906,15 @@ body[data-page="technical_details"] main {
   box-shadow: 0 12px 26px rgba(21, 25, 23, 0.12);
 }
 
-.doge-mascot-scene img {
+.doge-mascot-scene img,
+.playbook-hero-art .doge-mascot-scene img {
   position: relative;
   z-index: 1;
   width: 56%;
   height: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .mascot-counter img {

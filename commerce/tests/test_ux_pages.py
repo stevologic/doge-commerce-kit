@@ -54,14 +54,15 @@ class HumanCentricPageTests(SimpleTestCase):
             ],
         )
 
-    def test_statistics_page_relays_hopium_and_utility(self):
+    def test_statistics_page_relays_market_data_and_utility(self):
         self._assert_contains_all(
             "/statistics/",
             [
-                "hopium",
-                "statsHopiumTitle",
+                "statsUtilityTitle",
                 "Low-fee counter sales",
                 "dogeMarketChart",
+                "Technical analysis",
+                "not investment advice",
             ],
         )
 

@@ -45,18 +45,6 @@ Use this gate before public launch and after significant releases at
 ## Launch Day
 
 - Publish the app and confirm the GitHub repo (footer Contribute link) is live.
-- Announce with verifiable claims only.
+- Announce with verifiable claims only — no price predictions or targets.
 - Invite merchants to run one real checkout via the Playbook.
 - Track every claim that needs later proof.
-
-## Six-Month Confidence Gate
-
-Do not claim confidence in a `$1.00` outcome unless the campaign has evidence of
-scale beyond normal community promotion:
-
-- Thousands of active merchants, not just pledges.
-- Repeated monthly DOGE payment volume growth.
-- Processor or ecommerce integrations live.
-- Public proof reports cited outside the Dogecoin community.
-- Transparent creator and nonprofit participation.
-- Sustained demand independent of one celebrity, exchange, or news cycle.

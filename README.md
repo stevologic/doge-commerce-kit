@@ -182,6 +182,6 @@ http://127.0.0.1:42069
 - `docker-compose.yml` - production stack: web + Caddy TLS termination
 - `Caddyfile` - automatic Let's Encrypt for commerce.dog
 - `.env.example` - documented production environment template
-- `docs/` - product spec, strategy, legal guardrails, and README screenshots
+- `docs/` - product spec, legal guardrails, release checklist, and README screenshots
 
 The original static prototypes remain in the repository as source material, but the Django app is the primary runnable site.

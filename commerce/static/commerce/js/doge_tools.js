@@ -1,7 +1,6 @@
 (function () {
   const DOGE_FALLBACK = 0.1063;
   const SUPPLY = 169.74e9;
-  const TARGET_PRICE = 1;
   const PRODUCT = "DOGE-USD";
   const QUOTE_WINDOW_MINUTES = 10;
   const POS_PAGE_SIZES = [10, 25, 50];
@@ -2641,15 +2640,9 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   function updateStatsPriceDisplays(price) {
     if (!Number.isFinite(price) || price <= 0) return;
     const currentCap = price * SUPPLY;
-    const priceProgress = (price / TARGET_PRICE) * 100;
     if ($id("statsPrice")) $id("statsPrice").textContent = money.format(price);
     if ($id("statsHeroPrice")) $id("statsHeroPrice").textContent = money.format(price);
     if ($id("statsCurrentCap")) $id("statsCurrentCap").textContent = formatUsdBillions(currentCap);
-    if ($id("statsTargetCap")) $id("statsTargetCap").textContent = formatUsdBillions(SUPPLY * TARGET_PRICE);
-    if ($id("statsGap")) $id("statsGap").textContent = `${(TARGET_PRICE / price).toFixed(2)}x`;
-    if ($id("statsHeroGap")) $id("statsHeroGap").textContent = `${(TARGET_PRICE / price).toFixed(2)}x move`;
-    updateHeroBar("price", priceProgress, `${priceProgress.toFixed(2)}% of $1`);
-    updateHeroBar("cap", priceProgress, formatUsdBillions(currentCap));
   }
 
   function marketDateValue(date) {
@@ -2940,7 +2933,6 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const latest = closes.at(-1) || dogeUsd;
     dogeUsd = latest;
     updateStatsPriceDisplays(latest);
-    if ($id("statsTargetCap")) $id("statsTargetCap").textContent = formatUsdBillions(SUPPLY * TARGET_PRICE);
     const ma20 = mean(closes.slice(-20));
     const ma50 = mean(closes.slice(-50));
     const sd = stdDev(closes.slice(-50));

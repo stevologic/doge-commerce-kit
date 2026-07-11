@@ -16,8 +16,8 @@
   <div class="stats-hero-scene" id="statsHeroScene" aria-hidden="true"></div>
   <div class="stats-hero-copy">
     <p class="eyebrow">DOGE market statistics</p>
-    <h1>The hopium dashboard — live DOGE, read like a pro.</h1>
-    <p>Live price, order flow, technical analysis, and holder concentration from Coinbase and Blockchair — context for the community dream of $1 DOGE, not investment advice.</p>
+    <h1>The live DOGE market dashboard — read like a pro.</h1>
+    <p>Live price, candles, technical analysis, and holder concentration from Coinbase and Blockchair — market context for merchants and builders, not investment advice.</p>
     <button class="button primary stats-reconnect" id="statsReconnect" type="button">Reconnect live feed</button>
   </div>
   <div class="stats-dash-price" aria-label="Live DOGE price">
@@ -25,7 +25,7 @@
       <span>DOGE/USD</span>
       <strong id="statsHeroPrice">$0.0000</strong>
       <svg class="dash-sparkline" id="dashSparkline" viewBox="0 0 280 64" preserveAspectRatio="none" role="img" aria-label="Recent DOGE price sparkline"></svg>
-      <small class="dash-sparkline-meta"><b id="statsHeroGap">0x move</b> to the $1 dream</small>
+      <small class="dash-sparkline-meta">Recent candles · <b>live Coinbase feed</b></small>
     </div>
   </div>
 </section>
@@ -39,8 +39,7 @@
   <div><span>24h Volume</span><strong id="statsVolume">Loading</strong></div>
   <div><span>Exchange trades/min</span><strong id="statsTradeRate">0/min</strong></div>
   <div><span>Current market cap</span><strong id="statsCurrentCap">Loading</strong></div>
-  <div><span>Market cap at $1</span><strong id="statsTargetCap">$169.74 billion</strong></div>
-  <div><span>Move to $1</span><strong id="statsGap">0x</strong></div>
+  <div><span>Circulating supply</span><strong id="statsSupply">169.74B DOGE</strong></div>
 </section>
 
 <section class="section-grid two">
@@ -156,11 +155,11 @@
   </div>
 </section>
 
-<section class="panel accent-panel" aria-labelledby="statsHopiumTitle">
+<section class="panel accent-panel" aria-labelledby="statsUtilityTitle">
   <div class="section-heading">
-    <p class="eyebrow">Why we watch $1</p>
-    <h2 id="statsHopiumTitle">Hopium with a practical point</h2>
-    <p>If DOGE reached $1, a $5 coffee would be five coins, a $25 tab would be twenty-five, and tipping a creator $1 would feel as natural as handing over a dollar bill. The dream matters because it makes small, fast, global payments feel normal — the same checkout muscle memory you build on the <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a> today.</p>
+    <p class="eyebrow">Why merchants watch this data</p>
+    <h2 id="statsUtilityTitle">Market data with a practical point</h2>
+    <p>Price and volatility decide how long a checkout quote stays fair, and volume shows how easy it is to convert DOGE when you need to. This dashboard exists to inform real payment decisions — the same checkout flow you run on the <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a> — not to predict prices.</p>
   </div>
   <div class="result-grid three-cols">
     <div><span>For merchants</span><strong>Low-fee counter sales</strong><small>QR checkout without card rails</small></div>
@@ -189,7 +188,7 @@
     <div class="section-heading">
       <p class="eyebrow">Holder concentration</p>
       <h2>Rich-list distribution</h2>
-      <p id="distributionStatus">Loading live rich-list data from BitInfoCharts.</p>
+      <p id="distributionStatus">Loading live rich-list data from Blockchair.</p>
     </div>
     <div class="distribution-card">
       <div class="distribution-donut-frame">
