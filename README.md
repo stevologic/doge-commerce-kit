@@ -1,6 +1,6 @@
-# DOGE Commerce Kit
+# doge-commerce-kit
 
-`DOGE Commerce Kit` is a consolidated Django site for the DOGE2MOON merchant adoption project. The current build is simplified around direct Dogecoin acceptance:
+**DOGE Commerce Kit** — the free, open-source Dogecoin commerce toolkit, live at [commerce.dog](https://commerce.dog). A consolidated Django site built around direct Dogecoin acceptance:
 
 - `Start` - short explanation, Donate DOGE modal, and links into the working tools
 - `Wallet` - generate a local/dev Dogecoin wallet, load WIF, save watch-only browser state, and query blockchain balances
@@ -36,9 +36,9 @@ enters through Caddy on 80/443.
    python3 -c "import secrets; print(secrets.token_urlsafe(50))"   # paste into DJANGO_SECRET_KEY
    ```
 
-   In `.env`, set `DOGE_DOMAIN` (e.g. `commerce.dog`), `LETSENCRYPT_EMAIL`,
-   and `DOGE_SITE_URL` (e.g. `https://commerce.dog` — required for correct
-   canonical URLs, sitemap, and social previews).
+   The example file already targets production at `commerce.dog`
+   (`DOGE_DOMAIN`, `DOGE_SITE_URL`, `LETSENCRYPT_EMAIL`) — adjust if you
+   deploy elsewhere.
 
 3. Launch:
 
@@ -63,13 +63,13 @@ Production notes:
 ## Run With Docker (local)
 
 ```powershell
-cp .env.example .env   # then set DJANGO_SECRET_KEY (any long random string)
+cp .env.example .env   # set DJANGO_SECRET_KEY (any long random string) and DOGE_DOMAIN=localhost
 docker compose up --build
 ```
 
-With the default `DOGE_DOMAIN=localhost`, Caddy serves `https://localhost`
-using a self-signed local certificate (accept the browser warning), and the
-app is also reachable directly at `http://127.0.0.1:42069`.
+With `DOGE_DOMAIN=localhost`, Caddy serves `https://localhost` using a
+self-signed local certificate (accept the browser warning), and the app is
+also reachable directly at `http://127.0.0.1:42069`.
 
 To reproduce the build verification logs locally:
 

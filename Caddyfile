@@ -1,14 +1,13 @@
-# Caddy terminates TLS with automatic Let's Encrypt certificates for DOGE_DOMAIN
-# and proxies everything to the Django/gunicorn container.
+# Caddy terminates TLS with automatic Let's Encrypt certificates for
+# commerce.dog and proxies everything to the Django/gunicorn container.
 #
-# With DOGE_DOMAIN=localhost (the default), Caddy issues a local self-signed
-# certificate instead of contacting Let's Encrypt — fine for trying compose
-# locally. Set a real domain + email in .env for production.
+# Override DOGE_DOMAIN=localhost in .env to try compose locally — Caddy then
+# issues a local self-signed certificate instead of contacting Let's Encrypt.
 {
 	email {$LETSENCRYPT_EMAIL}
 }
 
-{$DOGE_DOMAIN} {
+{$DOGE_DOMAIN:commerce.dog} {
 	encode zstd gzip
 
 	reverse_proxy web:42069
