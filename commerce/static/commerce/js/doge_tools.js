@@ -1395,7 +1395,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   function browserSavedPosWalletSource() {
-    if (savedWalletAddress()) return "Wallet page";
+    if (savedWalletAddress()) return "saved browser wallet";
     if (savedPosWalletAddress()) return "POS browser storage";
     return "";
   }
@@ -2102,16 +2102,14 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function updatePosProfileStatus(state = posState()) {
     const status = $id("posProfileStatus");
-    const setupLink = $id("posWalletSetupLink");
     const source = browserSavedPosWalletSource();
-    if (setupLink) setupLink.textContent = state.wallet ? "Manage wallet" : "Set wallet";
     if (!status) return;
     if (source && state.wallet) {
       status.textContent = `Loaded receiving wallet from ${source}. Merchant name saves in this browser.`;
     } else if (state.wallet) {
-      status.textContent = "Using the Dogecoin address typed here. Save it on the Wallet page if this should load automatically on every POS session.";
+      status.textContent = "Using the Dogecoin address typed here. Click Save merchant so it loads automatically on every POS session.";
     } else {
-      status.textContent = "No saved merchant Dogecoin wallet yet. Set one on the Wallet page before creating POS payment requests.";
+      status.textContent = "No wallet yet. Open Merchant profile and options below to paste a Dogecoin address or generate a new wallet.";
     }
   }
 
@@ -2193,6 +2191,48 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posMerchant")) $id("posMerchant").value = localStorage.getItem("doge-pos:merchant") || $id("posMerchant").value;
     if ($id("posWallet")) $id("posWallet").value = browserSavedPosWallet();
     if ($id("posProfileDetails")) $id("posProfileDetails").open = !browserSavedPosWallet();
+    // Wallet setup wires up before any network awaits so it works even when
+    // the price fetch is slow or offline.
+    let posGeneratedWallet = null;
+    $id("posGenerateWallet")?.addEventListener("click", async () => {
+      try {
+        const core = window.dogeWalletCore;
+        if (!core) throw new Error("Wallet tools are unavailable in this browser.");
+        posGeneratedWallet = await core.generateWallet();
+        if ($id("posWallet")) $id("posWallet").value = posGeneratedWallet.address;
+        localStorage.setItem("doge-wallet:address", posGeneratedWallet.address);
+        localStorage.setItem("doge-pos:wallet", posGeneratedWallet.address);
+        if ($id("posNewWalletAddress")) $id("posNewWalletAddress").textContent = posGeneratedWallet.address;
+        if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = posGeneratedWallet.wif;
+        if ($id("posNewWallet")) $id("posNewWallet").hidden = false;
+        updatePos();
+        if (window.dogeAnnounce) window.dogeAnnounce("New wallet created. Back up the private key before taking real payments.");
+      } catch (error) {
+        setPosConfirmNote(error.message || "Could not generate a wallet.");
+      }
+    });
+    $id("posDownloadWallet")?.addEventListener("click", () => {
+      if (!posGeneratedWallet) return;
+      downloadText(
+        `doge-wallet-${posGeneratedWallet.address.slice(0, 8)}.json`,
+        JSON.stringify({
+          address: posGeneratedWallet.address,
+          wif: posGeneratedWallet.wif,
+          public_key: posGeneratedWallet.public_key,
+          created_at: new Date().toISOString(),
+          warning: "Anyone with this WIF can spend the funds. Store offline and never share it.",
+        }, null, 2),
+        "application/json",
+      );
+    });
+    $id("posCopyWalletWif")?.addEventListener("click", () => {
+      if (posGeneratedWallet) copy(posGeneratedWallet.wif, "WIF copied — store it somewhere safe.");
+    });
+    $id("posDismissNewWallet")?.addEventListener("click", () => {
+      posGeneratedWallet = null;
+      if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = "••• hidden •••";
+      if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
+    });
     if ($id("posFeeAuto")) {
       $id("posFeeAuto").checked = posFeeAutoEnabled();
       applyPosFeeMode();

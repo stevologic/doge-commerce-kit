@@ -40,22 +40,27 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
-            page.goto(f"{base}/wallet/", wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_selector("#generateWallet", timeout=20000)
-            page.click("#generateWallet")
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.wait_for_selector("#posGenerateWallet", timeout=20000)
+            page.click("#posGenerateWallet")
             page.wait_for_function(
-                "() => window.dogeWalletToolApi?.getCurrentWalletDetails()?.address?.startsWith('D')",
+                "() => document.getElementById('posWallet')?.value?.startsWith('D')",
                 timeout=20000,
             )
-            wallet_address = page.evaluate(
-                "() => window.dogeWalletToolApi.getCurrentWalletDetails().address"
-            )
-            page.click("#saveWalletLocal")
-            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_selector("#posWallet", timeout=20000)
-            pos_wallet = page.input_value("#posWallet")
+            wallet_address = page.input_value("#posWallet")
+            backup_shown = page.evaluate("() => !document.getElementById('posNewWallet').hidden")
+            wif_shown = page.evaluate("() => document.getElementById('posNewWalletWif').textContent")
             log_lines.append(f"wallet_address={wallet_address}")
-            log_lines.append(f"pos_wallet={pos_wallet}")
+            log_lines.append(f"backup_panel_shown={backup_shown}")
+            self.assertTrue(backup_shown)
+            self.assertTrue(wif_shown.startswith("Q") or len(wif_shown) > 40)
+
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            # The profile disclosure collapses once a wallet is saved, so wait
+            # for attachment rather than visibility.
+            page.wait_for_selector("#posWallet", state="attached", timeout=20000)
+            pos_wallet = page.input_value("#posWallet")
+            log_lines.append(f"pos_wallet_after_reload={pos_wallet}")
             self.assertEqual(pos_wallet, wallet_address)
 
             page.goto(f"{base}/merchant-kit/", wait_until="domcontentloaded", timeout=45000)
@@ -80,15 +85,13 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
-            page.goto(f"{base}/wallet/", wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_selector("#generateWallet", timeout=20000)
-            page.click("#generateWallet")
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.wait_for_selector("#posGenerateWallet", timeout=20000)
+            page.click("#posGenerateWallet")
             page.wait_for_function(
-                "() => window.dogeWalletToolApi?.getCurrentWalletDetails()?.address?.startsWith('D')",
+                "() => document.getElementById('posWallet')?.value?.startsWith('D')",
                 timeout=20000,
             )
-            page.click("#saveWalletLocal")
-            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
             page.wait_for_selector("#posSaveOrder", timeout=20000)
             page.wait_for_function(
                 """

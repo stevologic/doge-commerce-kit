@@ -66,7 +66,20 @@
           </div>
           <div class="inline-actions pos-profile-actions">
             <button class="button small" id="posSaveMerchant" type="button">Save merchant</button>
-            <a class="button small verify-link" id="posWalletSetupLink" href="{% url 'commerce:wallet' %}">Set wallet</a>
+            <button class="button small" id="posGenerateWallet" type="button">Generate new wallet</button>
+          </div>
+          <div class="pos-new-wallet" id="posNewWallet" hidden>
+            <strong>New wallet created — back it up now</strong>
+            <span class="preview-label">Receiving address</span>
+            <code id="posNewWalletAddress"></code>
+            <span class="preview-label">WIF private key (shown only once)</span>
+            <code id="posNewWalletWif"></code>
+            <div class="inline-actions">
+              <button class="button primary small" id="posDownloadWallet" type="button">Download backup</button>
+              <button class="button small" id="posCopyWalletWif" type="button">Copy WIF</button>
+              <button class="button small quiet" id="posDismissNewWallet" type="button">I saved it</button>
+            </div>
+            <p class="note compact-note">This site never stores the private key — anyone holding the WIF can spend the funds, so keep the backup offline. For meaningful balances prefer a hardware or dedicated wallet and paste its address here instead.</p>
           </div>
         </details>
       </form>

@@ -5,13 +5,15 @@ Use this gate before public launch and after significant releases at
 
 ## Product
 
-- All eight pages return 200: `/`, `/wallet/`, `/pos/`, `/merchant-kit/`,
-  `/statistics/`, `/playbook/`, `/faq/`, `/technical-details/`.
+- All pages return 200: `/`, `/pos/`, `/merchant-kit/`, `/statistics/`,
+  `/playbook/`, `/faq/`, `/technical-details/`; `/wallet/` 301-redirects
+  to `/pos/`.
 - DOGE price loads on POS/Tools/Statistics, or clearly falls back.
 - POS: quick-amount chips update the QR, customer display opens full screen,
   txid confirmation works, orders save/export/delete locally.
-- Wallet: create/import works, receive QR renders, send flow shows the inline
-  confirm step and the submitted-transaction tracker after broadcast.
+- POS wallet setup: generating a new wallet fills the address, shows the
+  one-time WIF backup panel, and offers the backup download; pasted
+  addresses persist after Save merchant.
 - Tools: every snippet builder previews and copies; the counter sign prints;
   saved wallet auto-fills builders.
 - Statistics: live feed connects, sparkline draws, candles + technical

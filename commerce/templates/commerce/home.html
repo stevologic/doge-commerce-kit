@@ -11,7 +11,7 @@
     <p class="hero-lede">DOGE Commerce Kit gives any business, creator, or individual the tools to accept Dogecoin today: a point-of-sale terminal for the counter, a browser wallet, copy-paste website snippets, and a live market dashboard. No accounts, no processor fees, no custody — everything runs in your browser.</p>
     <div class="hero-actions">
       <a class="button primary" href="{% url 'commerce:pos_terminal' %}">Take a DOGE payment</a>
-      <a class="button" href="{% url 'commerce:wallet' %}">Manage your wallet</a>
+      <a class="button" href="{% url 'commerce:merchant_kit' %}">Browse snippet tools</a>
       <a class="button" href="{% url 'commerce:playbook' %}">Why DOGE helps you</a>
     </div>
   </div>
@@ -30,9 +30,9 @@
       <strong>POS Terminal</strong>
       <span>Quote a sale in dollars, show a scannable DOGE QR, verify payment on chain, and mark it paid.</span>
     </a>
-    <a class="playbook-tool-card" href="{% url 'commerce:wallet' %}">
-      <strong>Wallet</strong>
-      <span>Create or import a Dogecoin wallet, receive with a QR, send, and follow your balance.</span>
+    <a class="playbook-tool-card" href="{% url 'commerce:pos_terminal' %}">
+      <strong>Wallet setup</strong>
+      <span>Generate a new Dogecoin wallet or paste your address right inside the POS — keys never leave your device.</span>
     </a>
     <a class="playbook-tool-card" href="{% url 'commerce:merchant_kit' %}">
       <strong>Website snippets</strong>
@@ -54,7 +54,7 @@
     </div>
     <div class="inline-actions">
       <a class="button primary" href="{% url 'commerce:merchant_kit' %}#wallet-share-card">Build share card</a>
-      <a class="button" href="{% url 'commerce:wallet' %}">Use saved wallet</a>
+      <a class="button" href="{% url 'commerce:pos_terminal' %}">Set wallet in POS</a>
     </div>
   </div>
   <div class="wallet-share-card home-wallet-share-card" aria-label="Example branded Dogecoin wallet share card">

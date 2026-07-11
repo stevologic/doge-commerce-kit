@@ -12,20 +12,20 @@ class HumanCentricPageTests(SimpleTestCase):
         for marker in markers:
             self.assertIn(marker, html, f"{path} missing {marker!r}")
 
-    def test_wallet_page_relays_full_management_flow(self):
+    def test_wallet_url_redirects_to_pos(self):
+        response = self.client.get("/wallet/")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.headers["Location"], "/pos/")
+
+    def test_pos_page_contains_wallet_setup(self):
         self._assert_contains_all(
-            "/wallet/",
+            "/pos/",
             [
-                "Manage DOGE in this browser",
-                "Step 1 — Setup",
-                "Step 2 — Receive",
-                "Step 3 — Send",
-                "Step 4 — Activity",
-                "Step 5 — Manage",
-                "walletManagePanel",
-                "walletManageStatus",
-                "walletHandoffNote",
-                "POS Terminal",
+                "posGenerateWallet",
+                "posNewWallet",
+                "posNewWalletWif",
+                "posDownloadWallet",
+                "Merchant profile and options",
             ],
         )
 
@@ -83,7 +83,7 @@ class HumanCentricPageTests(SimpleTestCase):
             "/",
             [
                 "Make Dogecoin feel normal",
-                "Manage your wallet",
+                "Browse snippet tools",
                 "Take a DOGE payment",
                 "role-path-card",
             ],
@@ -92,7 +92,7 @@ class HumanCentricPageTests(SimpleTestCase):
     def test_faq_and_technical_link_back_to_tools(self):
         faq = self.client.get("/faq/").content.decode("utf-8")
         technical = self.client.get("/technical-details/").content.decode("utf-8")
-        self.assertIn("Open wallet", faq)
+        self.assertIn("Browse tools", faq)
         self.assertIn("Browse snippets", faq)
         self.assertIn("technicalHumanPathTitle", technical)
         self.assertIn("Snippet marketplace", technical)

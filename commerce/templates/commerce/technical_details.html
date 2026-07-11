@@ -35,7 +35,7 @@
     <p>Merchants usually need wallet → POS → receipt. Website builders need snippets → validation → webhooks. Read the section below that matches you, then open the linked tool when you are ready to try it.</p>
   </div>
   <div class="inline-actions">
-    <a class="button primary small" href="{% url 'commerce:wallet' %}">Wallet API flow</a>
+    <a class="button primary small" href="{% url 'commerce:pos_terminal' %}">POS wallet flow</a>
     <a class="button small" href="{% url 'commerce:pos_terminal' %}">POS checkout</a>
     <a class="button small" href="{% url 'commerce:merchant_kit' %}">Snippet marketplace</a>
     <a class="button small" href="{% url 'commerce:faq' %}">FAQ</a>
@@ -70,7 +70,7 @@
     <div class="section-heading">
       <p class="eyebrow">Wallet generation</p>
       <h2>Dogecoin key material</h2>
-      <p>The Wallet page derives compressed Dogecoin mainnet keys in browser JavaScript using secp256k1, WIF prefix <code>0x9e</code>, and P2PKH address prefix <code>0x1e</code>.</p>
+      <p>The POS Terminal's wallet setup derives compressed Dogecoin mainnet keys in browser JavaScript using secp256k1, WIF prefix <code>0x9e</code>, and P2PKH address prefix <code>0x1e</code>.</p>
     </div>
     <pre class="copy-output compact-tech-code">d = random 256-bit integer, 1 &lt;= d &lt; n
 Q = d * G on secp256k1

@@ -44,7 +44,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20260711-shiba-hero-v1"
+ASSET_VERSION = "20260711-pos-wallet-merge-v1"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -61,15 +61,6 @@ SEO_PAGES = [
         "changefreq": "weekly",
         "title": "DOGE Commerce Kit | Accept Dogecoin in a Few Minutes",
         "description": "Free MIT-licensed Dogecoin commerce kit for QR payments, POS checkout, wallet balance checks, snippets, adoption playbooks, and DOGE market stats.",
-    },
-    {
-        "active": "wallet",
-        "path": "/wallet/",
-        "nav": "Wallet",
-        "priority": "0.9",
-        "changefreq": "weekly",
-        "title": "Dogecoin Wallet Generator and Balance Checker | DOGE Commerce Kit",
-        "description": "Generate or load a Dogecoin wallet address, create receive QR codes, and check live blockchain balances in a local browser workflow.",
     },
     {
         "active": "pos_terminal",
@@ -1061,10 +1052,10 @@ ROLE_PATHS = [
     },
     {
         "role": "I hold DOGE",
-        "title": "Manage my own wallet",
-        "summary": "Create or load a wallet, receive with QR, send when ready, and watch public activity.",
-        "href": "/wallet/",
-        "action": "Open wallet",
+        "title": "Set up my wallet",
+        "summary": "Generate a new Dogecoin wallet or paste an address right inside the POS Terminal — keys stay in your browser.",
+        "href": "/pos/",
+        "action": "Open POS setup",
     },
 ]
 
@@ -1072,9 +1063,9 @@ DASHBOARD_STEPS = [
     {
         "kicker": "Step 1",
         "title": "Save your receive address",
-        "summary": "Create or load a wallet in the browser so every tool knows where payments should land.",
-        "href": "/wallet/",
-        "action": "Manage wallet",
+        "summary": "Generate a wallet or paste your Dogecoin address in the POS Terminal so every tool knows where payments land.",
+        "href": "/pos/",
+        "action": "Set wallet in POS",
     },
     {
         "kicker": "Step 2",
@@ -2619,10 +2610,6 @@ def home(request):
         "commerce_packs": COMMERCE_PACKS[:5],
     }
     return render(request, "commerce/home.html", context)
-
-
-def wallet(request):
-    return render(request, "commerce/wallet.html", base_context("wallet", request))
 
 
 def merchant_kit(request):

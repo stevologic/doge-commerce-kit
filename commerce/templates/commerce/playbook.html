@@ -10,8 +10,8 @@
     <h1>Wrap your head around why DOGE is useful — then run one real checkout.</h1>
     <p>Dogecoin is fast, inexpensive to move, irreversible once confirmed, and easy to show as a QR. That combination helps humans pay friends, tip creators, and buy at a counter without card fees or chargebacks. This playbook turns those benefits into a flow you can actually run today.</p>
     <div class="hero-actions">
-      <a class="button primary" href="{% url 'commerce:wallet' %}">Create or load wallet</a>
-      <a class="button" href="{% url 'commerce:pos_terminal' %}">Open POS Terminal</a>
+      <a class="button primary" href="{% url 'commerce:pos_terminal' %}">Open POS Terminal</a>
+      <a class="button" href="{% url 'commerce:merchant_kit' %}#counter-sign-builder">Print a counter sign</a>
       <a class="button" href="{% url 'commerce:merchant_kit' %}">Build snippets</a>
     </div>
   </div>
@@ -112,7 +112,7 @@
       <h2>Load the receive address</h2>
       <p>Create or load a wallet in the browser. Put only the public address into checkout tools.</p>
     </div>
-    <a class="text-link" href="{% url 'commerce:wallet' %}">Manage wallet</a>
+    <a class="text-link" href="{% url 'commerce:pos_terminal' %}">Set wallet in POS</a>
   </article>
   <article class="playbook-guide-card">
     <span class="playbook-step-number">2</span>
@@ -203,13 +203,13 @@
       <h2>Open the exact workspace.</h2>
     </div>
     <div class="playbook-tool-strip">
-      <a class="playbook-tool-card" href="{% url 'commerce:wallet' %}">
-        <strong>Wallet</strong>
-        <span>Create, load, copy QR, download details.</span>
-      </a>
       <a class="playbook-tool-card" href="{% url 'commerce:pos_terminal' %}">
         <strong>POS Terminal</strong>
-        <span>Set sale, show QR, save local order.</span>
+        <span>Set wallet, show QR, save local order.</span>
+      </a>
+      <a class="playbook-tool-card" href="{% url 'commerce:merchant_kit' %}#counter-sign-builder">
+        <strong>Counter sign</strong>
+        <span>Print a scannable "Dogecoin accepted here" sign.</span>
       </a>
       <a class="playbook-tool-card" href="{% url 'commerce:merchant_kit' %}">
         <strong>QR and snippets</strong>

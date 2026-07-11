@@ -7,17 +7,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class WalletTemplateStructureTests(SimpleTestCase):
-    def test_wallet_page_contains_send_receive_and_chain_controls(self):
-        wallet_html = (ROOT / "templates" / "commerce" / "wallet.html").read_text(encoding="utf-8")
+    def test_pos_page_contains_wallet_setup_controls(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
         for marker in (
-            "walletSendDoge",
-            "walletSendTo",
-            "walletQr",
-            "walletTransactionsBody",
-            "walletWif",
-            "generateWallet",
+            "posWallet",
+            "posGenerateWallet",
+            "posNewWalletAddress",
+            "posNewWalletWif",
+            "posDownloadWallet",
+            "posDismissNewWallet",
         ):
-            self.assertIn(marker, wallet_html)
+            self.assertIn(marker, pos_html)
 
     def test_base_header_contains_rate_limit_indicator(self):
         base_html = (ROOT / "templates" / "commerce" / "base.html").read_text(encoding="utf-8")

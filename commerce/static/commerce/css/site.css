@@ -3792,6 +3792,29 @@ label.pos-fee-auto {
   font-weight: 800;
 }
 
+.pos-new-wallet {
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 1px solid rgba(198, 71, 99, 0.35);
+  border-radius: 8px;
+  background: rgba(198, 71, 99, 0.06);
+}
+
+.pos-new-wallet > strong {
+  color: var(--rose);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.pos-new-wallet code {
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
 .pos-quick-amounts {
   display: flex;
   flex-wrap: wrap;

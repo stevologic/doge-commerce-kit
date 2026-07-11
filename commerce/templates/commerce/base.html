@@ -49,7 +49,6 @@
       </a>
       <nav class="main-nav" id="primaryNav" aria-label="Primary navigation">
         <a class="{% if active == 'home' %}active{% endif %}" {% if active == 'home' %}aria-current="page"{% endif %} href="{% url 'commerce:home' %}">Start</a>
-        <a class="{% if active == 'wallet' %}active{% endif %}" {% if active == 'wallet' %}aria-current="page"{% endif %} href="{% url 'commerce:wallet' %}">Wallet</a>
         <a class="{% if active == 'pos_terminal' %}active{% endif %}" {% if active == 'pos_terminal' %}aria-current="page"{% endif %} href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
         <a class="{% if active == 'merchant_kit' %}active{% endif %}" {% if active == 'merchant_kit' %}aria-current="page"{% endif %} href="{% url 'commerce:merchant_kit' %}">Tools</a>
         <a class="{% if active == 'statistics' %}active{% endif %}" {% if active == 'statistics' %}aria-current="page"{% endif %} href="{% url 'commerce:statistics' %}">Statistics</a>

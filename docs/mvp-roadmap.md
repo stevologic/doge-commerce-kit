@@ -6,9 +6,8 @@ The consolidated Django site replaced the original static operator MVP and
 covers the first two phases of the original plan without requiring accounts
 or a merchant database:
 
-- browser wallet: local key generation/import, receive QR, send with inline
-  confirm and a live submitted-transaction tracker
-- POS terminal: USD quotes with quick amounts, scannable QR, full-screen
+- POS terminal: built-in wallet setup (generate with one-time key backup or
+  paste an address), USD quotes with quick amounts, scannable QR, full-screen
   customer display, on-chain confirmation, exportable local order ledger
 - snippet marketplace: payment QR builder, wallet share card, printable
   counter sign, accepted badge, donate button, price/spark snippets,

@@ -7,8 +7,7 @@
 Everything runs in the browser against a stateless Django backend — no accounts, no processor fees, no custody:
 
 - `Start` - what the kit is, the four tools at a glance, and role-based entry paths
-- `Wallet` - create or import a Dogecoin wallet in the browser (keys never leave the device), receive with a QR, send with an inline confirm step and a live submitted-transaction tracker, and follow balance and public activity
-- `POS Terminal` - quote sales in USD with quick-amount chips, show a scannable DOGE QR or a full-screen customer display, verify payment on chain, and keep an exportable local order ledger
+- `POS Terminal` - built-in wallet setup (generate a new Dogecoin wallet with a one-time key backup, or paste your own address), quote sales in USD with quick-amount chips, show a scannable DOGE QR or a full-screen customer display, verify payment on chain, and keep an exportable local order ledger
 - `Tools` - snippet marketplace: payment QR builder, postable wallet card, printable "Dogecoin accepted here" counter sign, accepted badge, donate button, live price and spark-chart snippets, website integration pieces, transaction validation, receipts, and checkout policy — all auto-filled from the saved wallet
 - `Statistics` - live dashboard: Coinbase DOGE-USD price with animated sparkline over a three.js starfield, KPI strip, candles with moving averages, trade tape, plain-English technical analysis (RSI, MACD, Bollinger, support/resistance, volatility), capital map, and rich-list distribution
 - `Playbook` - why-DOGE benefits, route picker, four-step checkout runbook, launch checklist, and printables (counter sign, cashier quick card)
@@ -48,16 +47,13 @@ read and a one-line market summary.
 
 ![Technical analysis panel](docs/readme/technical-analysis.png)
 
-### Wallet and snippet marketplace
+### Snippet marketplace
 
-| Browser wallet | Tools marketplace |
-| --- | --- |
-| ![Wallet](docs/readme/wallet.png) | ![Tools](docs/readme/tools.png) |
+Copy self-contained website snippets, badges, receipts, and printable counter
+signs that auto-fill from the wallet saved in the POS Terminal — where you can
+generate a new wallet (with a one-time key backup) or paste your own address.
 
-Create or import a wallet with keys that never leave the device, send with an
-inline confirm step and live transaction tracking — then copy self-contained
-website snippets, badges, receipts, and printable counter signs that auto-fill
-from the same saved wallet.
+![Tools](docs/readme/tools.png)
 
 ### Playbook
 

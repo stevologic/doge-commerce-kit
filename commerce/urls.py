@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import views
 
@@ -7,7 +8,7 @@ app_name = "commerce"
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("wallet/", views.wallet, name="wallet"),
+    path("wallet/", RedirectView.as_view(url="/pos/", permanent=True)),
     path("pos/", views.pos_terminal, name="pos_terminal"),
     path("merchant-kit/", views.merchant_kit, name="merchant_kit"),
     path("statistics/", views.statistics, name="statistics"),
