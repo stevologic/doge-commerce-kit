@@ -2436,7 +2436,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (txid && isRealDogeTxid(txid)) {
         setPosConfirmNote("Transaction ID entered. Click Confirm tx to validate, then Mark paid when you are ready to hand off goods.");
       } else if (!txid) {
-        setPosConfirmNote("Enter a txid for blockchain validation, or leave it blank for a manual register check.");
+        setPosConfirmNote("");
       }
     });
     $id("posOrderRows")?.addEventListener("click", (event) => {

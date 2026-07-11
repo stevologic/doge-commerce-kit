@@ -3874,6 +3874,10 @@ label.pos-fee-auto {
   }
 }
 
+#posConfirmNote:empty {
+  display: none;
+}
+
 .pos-auto-verify {
   display: grid;
   gap: 8px;
