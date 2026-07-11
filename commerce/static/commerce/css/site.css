@@ -4726,6 +4726,25 @@ pre.copy-output.has-copy-button {
   border-bottom: 2px solid rgba(244, 189, 42, 0.55);
 }
 
+.tool-band-heading .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.tool-band-number {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #241c05;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
 .tool-card {
   scroll-margin-top: 150px;
 }

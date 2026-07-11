@@ -23,20 +23,18 @@
 
   <nav class="tool-filter-bar" aria-label="Snippet marketplace categories">
     <button class="tool-filter is-active" type="button" data-tool-filter="all">Browse all</button>
-    <button class="tool-filter" type="button" data-tool-filter="qr">QR</button>
-    <button class="tool-filter" type="button" data-tool-filter="snippets">Snippets</button>
-    <button class="tool-filter" type="button" data-tool-filter="validation">Validation</button>
-    <button class="tool-filter" type="button" data-tool-filter="receipts">Receipts</button>
-    <button class="tool-filter" type="button" data-tool-filter="ops">Operations</button>
+    <button class="tool-filter" type="button" data-tool-filter="getpaid">Get paid in person</button>
+    <button class="tool-filter" type="button" data-tool-filter="website">Website</button>
+    <button class="tool-filter" type="button" data-tool-filter="backoffice">Back office</button>
   </nav>
 
-  <section class="tool-category-band" data-tool-group="qr" id="qr-tools">
-    <div class="section-heading compact-heading">
-      <p class="eyebrow">QR tools</p>
-      <h2>Generate scan-ready payment surfaces</h2>
+  <section class="tool-category-band" data-tool-group="getpaid" id="get-paid-tools">
+    <div class="section-heading compact-heading tool-band-heading">
+      <p class="eyebrow"><span class="tool-band-number">01</span> Get paid in person</p>
+      <h2>QR requests, wallet cards, and printable signs</h2>
     </div>
     <div class="tool-card-grid">
-      <article class="panel tool-card qr-tool-card" id="checkout-builder" data-tool-category="qr">
+      <article class="panel tool-card qr-tool-card" id="checkout-builder" data-tool-category="getpaid">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Generate a transaction QR</p>
           <h2>Create a payment request</h2>
@@ -110,7 +108,7 @@
         </details>
       </article>
 
-      <article class="panel snippet-panel wallet-share-builder-panel tool-card" id="wallet-share-card" data-tool-category="qr snippets">
+      <article class="panel snippet-panel wallet-share-builder-panel tool-card" id="wallet-share-card" data-tool-category="getpaid">
         <div class="section-heading compact-heading">
           <p class="eyebrow">QR snippets</p>
           <h2>Postable wallet QR card</h2>
@@ -148,7 +146,7 @@
         </details>
       </article>
 
-      <article class="panel snippet-panel tool-card tool-card-wide" id="counter-sign-builder" data-tool-category="qr snippets">
+      <article class="panel snippet-panel tool-card tool-card-wide" id="counter-sign-builder" data-tool-category="getpaid">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Printable counter sign</p>
           <h2>Print a "Dogecoin accepted here" sign</h2>
@@ -181,13 +179,13 @@
     </div>
   </section>
 
-  <section class="tool-category-band" data-tool-group="snippets" id="snippet-tools">
-    <div class="section-heading compact-heading">
-      <p class="eyebrow">Website snippets</p>
+  <section class="tool-category-band" data-tool-group="website" id="website-tools">
+    <div class="section-heading compact-heading tool-band-heading">
+      <p class="eyebrow"><span class="tool-band-number">02</span> Add DOGE to your website</p>
       <h2>Copy buttons, badges, prices, and charts</h2>
     </div>
     <div class="tool-card-grid">
-      <article class="panel snippet-panel accepted-snippet-panel tool-card" id="badge-builder" data-tool-category="snippets">
+      <article class="panel snippet-panel accepted-snippet-panel tool-card" id="badge-builder" data-tool-category="website">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Dogecoin accepted buttons</p>
           <h2>Add DOGE accepted to your site</h2>
@@ -223,7 +221,7 @@
         </details>
       </article>
 
-      <article class="panel snippet-panel donate-snippet-panel tool-card" data-tool-category="snippets">
+      <article class="panel snippet-panel donate-snippet-panel tool-card" data-tool-category="website">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Donate buttons</p>
           <h2>Add a Donate DOGE button</h2>
@@ -273,7 +271,7 @@
         </details>
       </article>
 
-      <article class="panel snippet-panel tool-card" id="doge-price-snippet" data-tool-category="snippets">
+      <article class="panel snippet-panel tool-card" id="doge-price-snippet" data-tool-category="website">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Dogecoin price snippet</p>
           <h2>Live DOGE price badge</h2>
@@ -298,7 +296,7 @@
         </details>
       </article>
 
-      <article class="panel snippet-panel tool-card" id="doge-spark-snippet" data-tool-category="snippets">
+      <article class="panel snippet-panel tool-card" id="doge-spark-snippet" data-tool-category="website">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Dogecoin spark chart</p>
           <h2>Mini DOGE chart snippet</h2>
@@ -323,7 +321,7 @@
         </details>
       </article>
 
-      <article class="panel integration-helper-panel tool-card tool-card-wide" id="website-integration-kit" data-tool-category="snippets ops">
+      <article class="panel integration-helper-panel tool-card tool-card-wide" id="website-integration-kit" data-tool-category="website">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Checkout snippets</p>
           <h2>Website integration pieces</h2>
@@ -377,13 +375,13 @@
     </div>
   </section>
 
-  <section class="tool-category-band" data-tool-group="validation receipts" id="validation-tools">
-    <div class="section-heading compact-heading">
-      <p class="eyebrow">Validation and receipts</p>
-      <h2>Check a payment and generate proof</h2>
+  <section class="tool-category-band" data-tool-group="backoffice" id="back-office-tools">
+    <div class="section-heading compact-heading tool-band-heading">
+      <p class="eyebrow"><span class="tool-band-number">03</span> Back office</p>
+      <h2>Validate payments, generate proof, set the rules</h2>
     </div>
     <div class="tool-card-grid">
-      <article class="panel tool-card" id="transaction-validation" data-tool-category="validation">
+      <article class="panel tool-card" id="transaction-validation" data-tool-category="backoffice">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Validate a transaction</p>
           <h2>Build a transaction check</h2>
@@ -416,7 +414,7 @@
         <textarea class="code-box tall" id="validationOutput" aria-label="Dogecoin transaction validation checklist"></textarea>
       </article>
 
-      <article class="panel snippet-panel tool-card" id="receipt-snippet-builder" data-tool-category="receipts validation">
+      <article class="panel snippet-panel tool-card" id="receipt-snippet-builder" data-tool-category="backoffice">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Receipt by transaction ID</p>
           <h2>Generate a receipt snippet</h2>
@@ -457,16 +455,8 @@
           <textarea class="code-box compact-code-box" id="receiptSnippetCode" readonly aria-label="Generated Dogecoin receipt snippet"></textarea>
         </details>
       </article>
-    </div>
-  </section>
 
-  <section class="tool-category-band" data-tool-group="ops" id="ops-tools">
-    <div class="section-heading compact-heading">
-      <p class="eyebrow">Operations</p>
-      <h2>Policy copy for real checkout handoff</h2>
-    </div>
-    <div class="tool-card-grid">
-      <article class="panel tool-card tool-card-wide" id="payment-policy" data-tool-category="ops validation">
+      <article class="panel tool-card tool-card-wide" id="payment-policy" data-tool-category="backoffice">
         <div class="section-heading compact-heading">
           <p class="eyebrow">Exception policy</p>
           <h2>Generate checkout rules</h2>
