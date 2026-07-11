@@ -69,7 +69,11 @@ health-checked) and `caddy` (TLS termination with automatic Let's Encrypt
 certificates). The app port is bound to loopback only; all public traffic
 enters through Caddy on 80/443.
 
-1. Point your domain's A/AAAA records at the server, and open ports 80 + 443.
+1. Point A/AAAA records at the server for every hostname you want served, and
+   open ports 80 + 443. The bundled config expects four: `commerce.dog`
+   (canonical, serves the app) plus `www.commerce.dog`, `doge-commerce-kit.com`,
+   and `www.doge-commerce-kit.com` (each gets its own certificate and redirects
+   to the canonical). Adjust `DOGE_REDIRECT_DOMAINS` in `.env` for a different set.
 2. Clone the repo and create the environment file:
 
    ```bash

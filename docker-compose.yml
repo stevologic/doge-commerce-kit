@@ -8,7 +8,7 @@ services:
     environment:
       DJANGO_DEBUG: "false"
       DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env (see .env.example)}"
-      DJANGO_ALLOWED_HOSTS: "${DOGE_DOMAIN:-commerce.dog},localhost,127.0.0.1,web"
+      DJANGO_ALLOWED_HOSTS: "${DOGE_DOMAIN:-commerce.dog},www.commerce.dog,doge-commerce-kit.com,www.doge-commerce-kit.com,localhost,127.0.0.1,web"
       DJANGO_HSTS_SECONDS: "${DJANGO_HSTS_SECONDS:-31536000}"
       DOGE_SITE_URL: "${DOGE_SITE_URL:-}"
       DOGE_API_RATE_LIMIT: "${DOGE_API_RATE_LIMIT:-60}"
@@ -28,6 +28,7 @@ services:
       - "443:443/udp"
     environment:
       DOGE_DOMAIN: "${DOGE_DOMAIN:-commerce.dog}"
+      DOGE_REDIRECT_DOMAINS: "${DOGE_REDIRECT_DOMAINS:-www.commerce.dog doge-commerce-kit.com www.doge-commerce-kit.com}"
       LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL:-internal@localhost.invalid}"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

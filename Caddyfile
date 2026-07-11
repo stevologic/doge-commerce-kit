@@ -1,5 +1,9 @@
-# Caddy terminates TLS with automatic Let's Encrypt certificates for
-# commerce.dog and proxies everything to the Django/gunicorn container.
+# Caddy terminates TLS with automatic Let's Encrypt certificates and proxies
+# to the Django/gunicorn container.
+#
+# Multi-domain: the canonical host serves the app; the alternate hosts each get
+# their own certificate and 308-redirect to the canonical one (one source of
+# truth, no duplicate content). All four are HTTPS-protected.
 #
 # Override DOGE_DOMAIN=localhost in .env to try compose locally — Caddy then
 # issues a local self-signed certificate instead of contacting Let's Encrypt.
@@ -7,6 +11,7 @@
 	email {$LETSENCRYPT_EMAIL}
 }
 
+# Canonical site — serves the application.
 {$DOGE_DOMAIN:commerce.dog} {
 	encode zstd gzip
 
@@ -17,4 +22,10 @@
 		# just make sure the server identity stays quiet.
 		-Server
 	}
+}
+
+# Alternate hostnames — Caddy still provisions a Let's Encrypt certificate for
+# each, then redirects to the canonical domain (preserving the path + query).
+{$DOGE_REDIRECT_DOMAINS:www.commerce.dog doge-commerce-kit.com www.doge-commerce-kit.com} {
+	redir https://{$DOGE_DOMAIN:commerce.dog}{uri} permanent
 }
