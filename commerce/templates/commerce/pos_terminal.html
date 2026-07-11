@@ -57,7 +57,11 @@
             </label>
             <label>
               <span>Extra DOGE fee</span>
-              <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="Optional DOGE fee buffer included in the payment request amount.">
+              <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="DOGE fee buffer included in the payment request amount. Auto mode covers a typical network transaction fee.">
+            </label>
+            <label class="pos-fee-auto full-row">
+              <input type="checkbox" id="posFeeAuto" checked>
+              <span>Auto fee — covers a typical Dogecoin network fee so the sale nets the full amount</span>
             </label>
           </div>
           <div class="inline-actions pos-profile-actions">

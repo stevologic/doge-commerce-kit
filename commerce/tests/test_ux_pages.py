@@ -39,6 +39,7 @@ class HumanCentricPageTests(SimpleTestCase):
                 "Verify before fulfillment",
                 "posConfirmTransaction",
                 "posMarkPaid",
+                "posFeeAuto",
                 "dogePosTerminal",
             ],
         )

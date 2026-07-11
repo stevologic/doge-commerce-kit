@@ -1400,6 +1400,30 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return "";
   }
 
+  // Auto fee buffer: one typical 1-input/2-output Dogecoin transaction
+  // (~226 bytes) at the same 1000 atoms/byte rate the Wallet send form uses.
+  const POS_AUTO_FEE_TX_BYTES = 226;
+  const POS_AUTO_FEE_ATOMS_PER_BYTE = 1000;
+
+  function posAutoFeeDoge() {
+    return (POS_AUTO_FEE_TX_BYTES * POS_AUTO_FEE_ATOMS_PER_BYTE) / 1e8;
+  }
+
+  function posFeeAutoEnabled() {
+    return localStorage.getItem("doge-pos:fee-auto") !== "false";
+  }
+
+  function applyPosFeeMode() {
+    const checkbox = $id("posFeeAuto");
+    const feeInput = $id("posFeeDoge");
+    if (!checkbox || !feeInput) return;
+    const auto = checkbox.checked;
+    localStorage.setItem("doge-pos:fee-auto", String(auto));
+    feeInput.readOnly = auto;
+    feeInput.classList.toggle("is-auto", auto);
+    if (auto) feeInput.value = posAutoFeeDoge().toFixed(8);
+  }
+
   function posState() {
     limitDecimalInput($id("posUsd"), 2);
     return {
@@ -2169,6 +2193,14 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posMerchant")) $id("posMerchant").value = localStorage.getItem("doge-pos:merchant") || $id("posMerchant").value;
     if ($id("posWallet")) $id("posWallet").value = browserSavedPosWallet();
     if ($id("posProfileDetails")) $id("posProfileDetails").open = !browserSavedPosWallet();
+    if ($id("posFeeAuto")) {
+      $id("posFeeAuto").checked = posFeeAutoEnabled();
+      applyPosFeeMode();
+      $id("posFeeAuto").addEventListener("change", () => {
+        applyPosFeeMode();
+        updatePos();
+      });
+    }
     initPosMemoTypeahead();
     await fetchDogePrice();
     $id("posUsd")?.addEventListener("input", () => limitDecimalInput($id("posUsd"), 2));
