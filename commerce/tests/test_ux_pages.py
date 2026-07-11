@@ -40,6 +40,8 @@ class HumanCentricPageTests(SimpleTestCase):
                 "posConfirmTransaction",
                 "posMarkPaid",
                 "posFeeAuto",
+                "posAutoVerify",
+                "posAutoVerifyYes",
                 "dogePosTerminal",
             ],
         )

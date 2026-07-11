@@ -2011,6 +2011,94 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     downloadText(`doge-pos-orders-${scopeLabel}-${stamp}.csv`, rows.join("\n"), "text/csv");
   }
 
+  const POS_AUTO_VERIFY_WINDOW_MS = 60 * 60 * 1000;
+  const POS_AUTO_VERIFY_TOLERANCE_DOGE = 10;
+  let posAutoVerifyCandidates = [];
+  let posAutoVerifyIndex = 0;
+  let posAutoVerifyExpected = 0;
+
+  function hidePosAutoVerify() {
+    posAutoVerifyCandidates = [];
+    posAutoVerifyIndex = 0;
+    if ($id("posAutoVerifyCard")) $id("posAutoVerifyCard").hidden = true;
+  }
+
+  function showPosAutoVerifyCandidate() {
+    const candidate = posAutoVerifyCandidates[posAutoVerifyIndex];
+    if (!candidate) {
+      hidePosAutoVerify();
+      return;
+    }
+    const doge = Number(candidate.doge || 0);
+    const diff = doge - posAutoVerifyExpected;
+    const diffText = Math.abs(diff) < 0.00000001 ? "exact match" : `${diff > 0 ? "+" : ""}${diff.toFixed(4)} vs sale`;
+    if ($id("posAutoVerifyTitle")) {
+      $id("posAutoVerifyTitle").textContent = posAutoVerifyCandidates.length > 1
+        ? `Is this the buyer's payment? (match ${posAutoVerifyIndex + 1} of ${posAutoVerifyCandidates.length})`
+        : "Is this the buyer's payment?";
+    }
+    if ($id("posAutoVerifyAmount")) $id("posAutoVerifyAmount").textContent = `${doge.toFixed(4)} DOGE (${diffText})`;
+    if ($id("posAutoVerifyTime")) $id("posAutoVerifyTime").textContent = candidate.time ? formatPosTxTime(candidate.time) : "in mempool";
+    if ($id("posAutoVerifyConf")) {
+      const confirmations = Number(candidate.confirmations || 0);
+      $id("posAutoVerifyConf").textContent = confirmations > 0 ? `confirmed ×${confirmations}` : "pending (0 conf)";
+    }
+    if ($id("posAutoVerifyTxid")) $id("posAutoVerifyTxid").textContent = candidate.txid;
+    if ($id("posAutoVerifyCard")) $id("posAutoVerifyCard").hidden = false;
+  }
+
+  async function runPosAutoVerify() {
+    const order = selectedPosOrder();
+    const state = buildPosPayment();
+    const wallet = order?.wallet || state.wallet;
+    posAutoVerifyExpected = Number(order?.doge || state.doge || 0);
+    if (!wallet) {
+      setPosConfirmNote("Set a receiving wallet in Step 0 before using auto verify.");
+      return;
+    }
+    if (!(posAutoVerifyExpected > 0)) {
+      setPosConfirmNote("Enter the sale amount (or load an order) so auto verify knows what to look for.");
+      return;
+    }
+    const button = $id("posAutoVerify");
+    const originalText = button?.textContent || "Auto verify";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Searching chain…";
+    }
+    hidePosAutoVerify();
+    try {
+      const response = await walletChainFetch(`/api/wallet/transactions/?address=${encodeURIComponent(wallet)}&limit=25`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Could not load recent blockchain activity.");
+      const now = Date.now();
+      posAutoVerifyCandidates = (payload.transactions || [])
+        .filter((tx) => {
+          const doge = Number(tx.doge || 0);
+          if (Math.abs(doge - posAutoVerifyExpected) > POS_AUTO_VERIFY_TOLERANCE_DOGE) return false;
+          const seenAt = Date.parse(tx.time || "");
+          // Unconfirmed mempool entries may not carry a timestamp yet — treat them as fresh.
+          return Number.isFinite(seenAt) ? now - seenAt <= POS_AUTO_VERIFY_WINDOW_MS : true;
+        })
+        .sort((a, b) => Math.abs(Number(a.doge || 0) - posAutoVerifyExpected) - Math.abs(Number(b.doge || 0) - posAutoVerifyExpected));
+      posAutoVerifyIndex = 0;
+      if (!posAutoVerifyCandidates.length) {
+        setPosConfirmNote(`No incoming payment within ${POS_AUTO_VERIFY_TOLERANCE_DOGE} DOGE of ${posAutoVerifyExpected.toFixed(4)} DOGE found in the last hour. Paste the transaction ID from the buyer's wallet manually.`);
+        $id("posTxId")?.focus();
+        return;
+      }
+      showPosAutoVerifyCandidate();
+      setPosConfirmNote("Blockchain match found. Confirm it belongs to this sale before fulfilling.");
+    } catch (error) {
+      setPosConfirmNote(error.message || "Auto verify failed. Paste the transaction ID manually.");
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+  }
+
   async function confirmPosTransaction() {
     const txid = $id("posTxId")?.value.trim() || "";
     const requestedConfirmations = Number($id("posMinConfirmations")?.value || 0);
@@ -2316,6 +2404,29 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     });
     $id("posConfirmTransaction")?.addEventListener("click", () => {
       confirmPosTransaction().catch((error) => setPosConfirmNote(error.message));
+    });
+    $id("posAutoVerify")?.addEventListener("click", () => {
+      runPosAutoVerify().catch((error) => setPosConfirmNote(error.message));
+    });
+    $id("posAutoVerifyYes")?.addEventListener("click", () => {
+      const candidate = posAutoVerifyCandidates[posAutoVerifyIndex];
+      if (!candidate) {
+        hidePosAutoVerify();
+        return;
+      }
+      hidePosAutoVerify();
+      loadPosTransaction(candidate.txid, Number(candidate.confirmations || 0));
+      confirmPosTransaction().catch((error) => setPosConfirmNote(error.message));
+    });
+    $id("posAutoVerifyNo")?.addEventListener("click", () => {
+      posAutoVerifyIndex += 1;
+      if (posAutoVerifyIndex < posAutoVerifyCandidates.length) {
+        showPosAutoVerifyCandidate();
+        return;
+      }
+      hidePosAutoVerify();
+      setPosConfirmNote("No other recent matches on chain. Paste the transaction ID from the buyer's wallet manually.");
+      $id("posTxId")?.focus();
     });
     $id("posMarkPaid")?.addEventListener("click", markSelectedPosOrderPaid);
     $id("posTxId")?.addEventListener("input", () => {

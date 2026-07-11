@@ -160,11 +160,25 @@
           </label>
         </form>
         <div class="inline-actions">
-          <button class="button primary small" id="posConfirmTransaction" type="button">Confirm tx</button>
+          <button class="button primary small" id="posAutoVerify" type="button" title="Search the blockchain for a recent payment matching this sale amount.">Auto verify</button>
+          <button class="button small" id="posConfirmTransaction" type="button">Confirm tx</button>
           <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
             <button class="button small" id="posMarkPaid" type="button" disabled>Mark paid</button>
           </span>
           <a class="button small verify-link" id="posExplorerLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Explorer</a>
+        </div>
+        <div class="pos-auto-verify" id="posAutoVerifyCard" hidden aria-live="polite">
+          <strong id="posAutoVerifyTitle">Is this the buyer's payment?</strong>
+          <div class="pos-auto-verify-facts">
+            <span><b>Amount</b><i id="posAutoVerifyAmount">—</i></span>
+            <span><b>Seen</b><i id="posAutoVerifyTime">—</i></span>
+            <span><b>Status</b><i id="posAutoVerifyConf">—</i></span>
+          </div>
+          <code id="posAutoVerifyTxid"></code>
+          <div class="inline-actions">
+            <button class="button primary small" id="posAutoVerifyYes" type="button">Yes — use this transaction</button>
+            <button class="button small" id="posAutoVerifyNo" type="button">No, not this one</button>
+          </div>
         </div>
         <div class="pos-transaction-toggle-card">
           <div>

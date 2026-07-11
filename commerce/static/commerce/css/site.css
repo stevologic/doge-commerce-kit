@@ -3874,6 +3874,62 @@ label.pos-fee-auto {
   }
 }
 
+.pos-auto-verify {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(244, 189, 42, 0.55);
+  border-radius: 8px;
+  background: rgba(244, 189, 42, 0.1);
+}
+
+.pos-auto-verify > strong {
+  color: var(--gold-deep);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.pos-auto-verify-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pos-auto-verify-facts span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pos-auto-verify-facts b {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pos-auto-verify-facts i {
+  font-size: 0.86rem;
+  font-style: normal;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.pos-auto-verify code {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .pos-auto-verify-facts {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pos-new-wallet {
   display: grid;
   gap: 7px;
