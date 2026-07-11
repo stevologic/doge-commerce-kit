@@ -17,6 +17,12 @@
   box-sizing: border-box;
 }
 
+/* The hidden attribute must always win, even over author display rules
+   (display: grid/flex on a class would otherwise override the UA default). */
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
 }
