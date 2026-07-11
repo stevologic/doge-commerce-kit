@@ -45,6 +45,21 @@
   </div>
 </section>
 
+<section class="panel mission-panel" aria-labelledby="missionTitle">
+  <div class="mission-copy">
+    <p class="eyebrow">Why this exists</p>
+    <h2 id="missionTitle">Promote Dogecoin by making it genuinely easy to accept.</h2>
+    <p>The best promotion for Dogecoin is not hype — it is a small business taking a DOGE payment at the counter without friction. This kit exists to make that moment easy: free, MIT-licensed, non-custodial tools that let any shop, creator, or individual accept Dogecoin in minutes while keeping full control of their keys and funds. Every real sale makes DOGE more useful for everyone.</p>
+    <div class="inline-actions">
+      <a class="button primary small" href="{% url 'commerce:pos_terminal' %}">Take your first payment</a>
+      <a class="button small" href="{% url 'commerce:playbook' %}">Read the playbook</a>
+    </div>
+  </div>
+  <div class="mission-art" aria-hidden="true">
+    <img src="{% static 'commerce/img/shiba-doge.svg' %}" alt="">
+  </div>
+</section>
+
 <section class="panel wallet-share-section" id="share-doge-card">
   <div class="wallet-share-copy">
     <div class="section-heading">

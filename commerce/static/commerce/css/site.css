@@ -1183,6 +1183,44 @@ body[data-page="technical_details"] main {
   margin-top: 14px;
 }
 
+.mission-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 24px;
+  align-items: center;
+  border-color: rgba(244, 189, 42, 0.5);
+  background:
+    linear-gradient(120deg, rgba(244, 189, 42, 0.12), rgba(15, 143, 120, 0.07)),
+    var(--surface);
+}
+
+.mission-copy h2 {
+  margin: 6px 0 10px;
+}
+
+.mission-copy p:not(.eyebrow) {
+  max-width: 760px;
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.mission-art img {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 700px) {
+  .mission-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-art {
+    justify-self: center;
+    width: 150px;
+  }
+}
+
 @media (max-width: 900px) {
   .home-capability-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
