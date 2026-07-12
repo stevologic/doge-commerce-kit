@@ -1763,6 +1763,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const start = orders.length ? (posOrderPage - 1) * posOrderPageSize() + 1 : 0;
     const end = Math.min(orders.length, posOrderPage * posOrderPageSize());
     if ($id("posOrderPageStatus")) $id("posOrderPageStatus").textContent = orders.length ? `Showing ${start}-${end} of ${orders.length} local orders.` : "No local POS orders yet.";
+    if ($id("posHistoryHint")) $id("posHistoryHint").textContent = orders.length ? `${orders.length} order${orders.length === 1 ? "" : "s"} on this device` : "saved on this device";
     if ($id("posOrderPageInfo")) $id("posOrderPageInfo").textContent = `Page ${posOrderPage} of ${totalPages}`;
     if ($id("posOrderPrev")) $id("posOrderPrev").disabled = posOrderPage <= 1;
     if ($id("posOrderNext")) $id("posOrderNext").disabled = posOrderPage >= totalPages;
@@ -2330,7 +2331,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     updatePosProfileStatus(state);
     const preview = document.querySelector(".pos-preview");
     if (preview) preview.classList.toggle("missing-wallet", !state.wallet);
-    if ($id("posDogeOut")) $id("posDogeOut").textContent = state.wallet ? `${state.doge.toFixed(8)} DOGE` : "Set wallet first";
+    if ($id("posDogeOut")) $id("posDogeOut").textContent = state.wallet ? `${state.doge.toFixed(4)} DOGE` : "Set wallet first";
     if ($id("posBaseDogeOut")) $id("posBaseDogeOut").textContent = `${state.base_doge.toFixed(8)} DOGE`;
     if ($id("posFeeDogeOut")) $id("posFeeDogeOut").textContent = `${state.fee_doge.toFixed(8)} DOGE`;
     if ($id("posTotalDogeOut")) $id("posTotalDogeOut").textContent = `${state.doge.toFixed(8)} DOGE`;
@@ -2502,6 +2503,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
       hidePosAutoVerify();
       setPosConfirmNote("No other recent matches on chain. Paste the transaction ID from the buyer's wallet manually.");
+      const manual = $id("posManualDetails");
+      if (manual) manual.open = true;
       $id("posTxId")?.focus();
     });
     $id("posMarkPaid")?.addEventListener("click", markSelectedPosOrderPaid);

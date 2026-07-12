@@ -92,7 +92,9 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => document.getElementById('posWallet')?.value?.startsWith('D')",
                 timeout=20000,
             )
-            page.wait_for_selector("#posSaveOrder", timeout=20000)
+            # Save order sits behind the payment-details disclosure now, so it
+            # is attached but not visible until the operator opens it.
+            page.wait_for_selector("#posSaveOrder", state="attached", timeout=20000)
             page.wait_for_function(
                 """
                   () => {
@@ -103,6 +105,9 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 timeout=45000,
             )
             page.fill("#posUsd", "5.00")
+            # Save order and the manual txid tools live behind disclosures now;
+            # open them the way a probing operator would.
+            page.click(".pos-payment-panel .pos-more-details summary")
             page.wait_for_function(
                 "() => !document.getElementById('posSaveOrder').disabled",
                 timeout=20000,
@@ -112,6 +117,7 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => document.getElementById('posSelectedOrder')?.textContent?.includes('DOGE')",
                 timeout=20000,
             )
+            page.click("#posManualDetails summary")
             page.fill("#posTxId", sample_tx)
             page.wait_for_timeout(800)
             status_before = page.locator("#posStatus").inner_text().strip().lower()

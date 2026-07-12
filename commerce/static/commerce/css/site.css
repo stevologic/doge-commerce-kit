@@ -8267,3 +8267,179 @@ body[data-page="wallet"] main {
     gap: 16px;
   }
 }
+
+/* === Simplified POS: price -> QR -> verify; everything else behind details === */
+
+.pos-simple .pos-hero-slim {
+  grid-template-columns: 1fr;
+  padding: 14px 18px;
+}
+
+.pos-simple .pos-hero-slim h1 {
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.05;
+}
+
+.pos-step-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pos-step-chip b {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.82rem;
+}
+
+.pos-step-chip h2 {
+  margin: 0;
+  font-size: 1.06rem;
+  letter-spacing: 0;
+}
+
+.pos-simple .pos-amount-field input {
+  min-height: 64px;
+  font-size: clamp(1.7rem, 6vw, 2.3rem);
+}
+
+.pos-more-details summary {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.pos-more-details summary:hover {
+  color: var(--teal);
+}
+
+.pos-more-details[open] {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 91, 99, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pos-payment-panel .pos-preview.pos-preview-simple {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 10px;
+  margin-top: 0;
+  text-align: center;
+}
+
+.pos-preview-simple .pos-qr-button img,
+.pos-payment-panel .pos-preview-simple img {
+  width: min(232px, 62vw);
+  height: min(232px, 62vw);
+}
+
+.pos-doge-total {
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.pos-preview-simple .pos-scan-actions {
+  justify-content: center;
+}
+
+.pos-preview-simple .pos-more-details {
+  width: 100%;
+  text-align: left;
+}
+
+.pos-preview-simple.missing-wallet .pos-doge-total {
+  color: var(--teal);
+}
+
+.pos-verify-hero {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pos-verify-hero .pos-status-pill {
+  justify-self: start;
+  font-size: 1rem;
+  padding: 10px 16px;
+}
+
+.pos-verify-actions .button,
+.pos-verify-actions .disabled-button-hint {
+  flex: 1 1 130px;
+}
+
+.pos-verify-actions #posAutoVerify {
+  min-height: 52px;
+  font-size: 1.02rem;
+}
+
+.pos-verify-actions #posMarkPaid {
+  width: 100%;
+  min-height: 52px;
+}
+
+.pos-rate-note strong {
+  color: var(--ink);
+}
+
+/* Order history: whole ledger collapses to one line until probed */
+.pos-history-details {
+  padding: 0;
+}
+
+.pos-history-details summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.pos-history-details .pos-history-title {
+  font-family: var(--font-display, inherit);
+  font-size: 1.06rem;
+  font-weight: 900;
+}
+
+.pos-history-details .pos-history-hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.pos-history-details[open] {
+  padding: 0 16px 16px;
+}
+
+.pos-history-details[open] summary {
+  padding: 14px 0 12px;
+}
+
+@media (max-width: 700px) {
+  .pos-simple .pos-hero-slim {
+    padding: 12px 14px;
+  }
+
+  .pos-verify-hero .pos-status-pill {
+    justify-self: stretch;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .pos-verify-actions .button,
+  .pos-verify-actions .disabled-button-hint {
+    flex: 1 1 100%;
+  }
+}

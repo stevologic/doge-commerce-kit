@@ -25,7 +25,7 @@ class HumanCentricPageTests(SimpleTestCase):
                 "posNewWallet",
                 "posNewWalletWif",
                 "posDownloadWallet",
-                "Merchant profile and options",
+                "Sale options",
             ],
         )
 
@@ -33,10 +33,10 @@ class HumanCentricPageTests(SimpleTestCase):
         self._assert_contains_all(
             "/pos/",
             [
-                "Accept Dogecoin for goods priced in dollars",
-                "USD they know",
-                "They scan and pay",
-                "Verify before fulfillment",
+                "Charge in dollars. Get paid in DOGE.",
+                "Set the price",
+                "Customer scans",
+                "Verify payment",
                 "posConfirmTransaction",
                 "posMarkPaid",
                 "posFeeAuto",
@@ -45,6 +45,17 @@ class HumanCentricPageTests(SimpleTestCase):
                 "dogePosTerminal",
             ],
         )
+
+    def test_pos_page_hides_secondary_tools_behind_disclosures(self):
+        response = self.client.get("/pos/")
+        html = response.content.decode("utf-8")
+        # Advanced tools stay in the page (JS depends on the ids) but live
+        # inside collapsed <details> so the core flow is price -> QR -> verify.
+        for marker in ("posManualDetails", "pos-history-details", "posUriOut", "posTxId"):
+            self.assertIn(marker, html)
+        # The old always-visible clutter is gone.
+        for marker in ("pos-step-rail", "pos-transaction-toggle-card", "next-steps-strip"):
+            self.assertNotIn(marker, html)
 
     def test_tools_page_relays_snippet_marketplace(self):
         self._assert_contains_all(
