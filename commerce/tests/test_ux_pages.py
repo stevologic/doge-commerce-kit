@@ -41,6 +41,10 @@ class HumanCentricPageTests(SimpleTestCase):
                 "Verify payment",
                 "posStartPayment",
                 "posCancelPayment",
+                "data-pos-go=\"1\"",
+                "posBackToAmount",
+                "posGoToVerify",
+                "posBackToScan",
                 "posConfirmTransaction",
                 "posMarkPaid",
                 # Memo is a primary step-1 field; the auto network fee estimate
@@ -53,12 +57,12 @@ class HumanCentricPageTests(SimpleTestCase):
             ],
         )
 
-    def test_pos_page_drops_sale_options_collapsible(self):
+    def test_pos_page_keeps_only_safe_secondary_options(self):
         response = self.client.get("/pos/")
         html = response.content.decode("utf-8")
-        # The Sale options disclosure and its manual fee controls were removed
-        # so the flow is price -> QR -> verify with an automatic network fee.
-        for marker in ("Sale options", "posFeeAuto", "posProfileDetails", "posSaveMerchant"):
+        self.assertIn("Sale options", html)
+        # Manual fee and legacy merchant controls remain removed.
+        for marker in ("posFeeAuto", "posProfileDetails", "posSaveMerchant"):
             self.assertNotIn(marker, html)
 
     def test_pos_page_offers_receipt_after_verify(self):

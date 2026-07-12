@@ -12,9 +12,15 @@
   </div>
 
   <ol class="pos-progress" id="posProgress" aria-label="Payment progress">
-    <li class="is-active" data-pos-progress="1" aria-current="step"><b>1</b><span><strong>Amount</strong><small>Build the sale</small></span></li>
-    <li data-pos-progress="2"><b>2</b><span><strong>Scan</strong><small>Customer pays</small></span></li>
-    <li data-pos-progress="3"><b>3</b><span><strong>Verify</strong><small>Confirm on-chain</small></span></li>
+    <li class="is-active" data-pos-progress="1">
+      <button type="button" data-pos-go="1" aria-controls="dogePosTerminal" aria-current="step"><b>1</b><span><strong>Sale</strong><small>Set amount</small></span></button>
+    </li>
+    <li data-pos-progress="2">
+      <button type="button" data-pos-go="2" aria-controls="posStage2" disabled><b>2</b><span><strong>Pay</strong><small>Customer scans</small></span></button>
+    </li>
+    <li data-pos-progress="3">
+      <button type="button" data-pos-go="3" aria-controls="posStage3" disabled><b>3</b><span><strong>Verify</strong><small>Check payment</small></span></button>
+    </li>
   </ol>
 
   <section class="panel pos-wallet-setup" id="posWalletSetup" aria-labelledby="posWalletSetupTitle">
@@ -63,9 +69,13 @@
   </section>
 
   <section class="pos-operator-grid" id="posWorkflow" data-pos-stage="1">
-    <article class="panel pos-sale-panel pos-checkout-stage" id="dogePosTerminal" data-pos-panel="1">
-      <div class="pos-step-chip"><b>1</b><h2>Set the price</h2></div>
-      <form class="form-grid compact">
+    <article class="panel pos-sale-panel pos-checkout-stage" id="dogePosTerminal" data-pos-panel="1" role="region" aria-labelledby="posStage1Title">
+      <div class="pos-step-chip"><b>1</b><h2 id="posStage1Title" tabindex="-1">Set the price</h2></div>
+      <div class="pos-sale-lock-note" id="posSaleLockNote" hidden>
+        <strong>Sale in progress · quote locked</strong>
+        <span>Review the frozen sale here. Payment monitoring keeps running in the background.</span>
+      </div>
+      <form class="form-grid compact" id="posSaleForm">
         <label class="full-row pos-amount-field">
           <span>USD amount</span>
           <input id="posUsd" type="number" min="0" step="0.01" inputmode="decimal" enterkeyhint="done" value="10.00" title="Enter dollars and cents, up to two decimal places.">
@@ -89,11 +99,11 @@
         <strong id="posStartDoge">Loading DOGE quote...</strong>
         <small id="posStartHint">Choose an amount, then start the payment.</small>
       </div>
-      <button class="button primary pos-start-payment" id="posStartPayment" type="button">Start payment</button>
+      <button class="button primary pos-start-payment" id="posStartPayment" type="submit" form="posSaleForm" disabled>Start payment</button>
     </article>
 
-    <article class="panel pos-payment-panel pos-checkout-stage" data-pos-panel="2" hidden>
-      <div class="pos-step-chip"><b>2</b><h2>Customer scans</h2></div>
+    <article class="panel pos-payment-panel pos-checkout-stage" id="posStage2" data-pos-panel="2" role="region" aria-labelledby="posStage2Title" hidden>
+      <div class="pos-step-chip"><b>2</b><h2 id="posStage2Title" tabindex="-1">Customer scans</h2></div>
       <div class="pos-waiting-card" id="posWaitingCard" role="status" aria-live="polite">
         <span class="pos-live-dot" aria-hidden="true"></span>
         <div>
@@ -102,6 +112,10 @@
         </div>
       </div>
       <div class="checkout-preview pos-preview pos-preview-simple">
+        <div class="pos-payment-closed" id="posPaymentClosedMessage" hidden>
+          <strong>Payment detected — do not pay again</strong>
+          <span>This QR is closed for this sale. Continue to verification.</span>
+        </div>
         <button class="pos-qr-button" id="posQrButton" type="button" title="Show the customer a full-screen QR" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">
           <img id="posQr" alt="Dogecoin POS QR code">
           <span class="pos-qr-zoom-hint" aria-hidden="true">Tap to enlarge</span>
@@ -109,8 +123,6 @@
         <strong class="pos-doge-total" id="posDogeOut">0 DOGE</strong>
         <div class="inline-actions pos-scan-actions">
           <button class="button primary small" id="openPosCustomerDisplay" type="button" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">Customer display</button>
-          <button class="button small" id="posStep2ManualVerify" type="button">Enter txid</button>
-          <button class="button small quiet" id="posCancelPayment" type="button">Cancel sale</button>
         </div>
         <details class="tool-details pos-more-details">
           <summary>Payment details</summary>
@@ -127,36 +139,45 @@
             <button class="button small quiet" id="openPosConversionModal" type="button">Conversion chart</button>
           </div>
         </details>
+        <details class="tool-details pos-more-details pos-trouble-details" id="posTroubleDetails">
+          <summary>Payment not detected?</summary>
+          <p class="note compact-note">Automatic monitoring keeps running. Use a transaction ID only when you need the fallback.</p>
+          <button class="button small" id="posStep2ManualVerify" type="button">Enter transaction ID</button>
+        </details>
+        <details class="tool-details pos-more-details pos-sale-options" id="posSaleOptions">
+          <summary>Sale options</summary>
+          <p class="note compact-note">Cancel only if the customer has not sent the payment.</p>
+          <button class="button small quiet" id="posCancelPayment" type="button">Cancel this sale</button>
+        </details>
+        <div class="pos-stage-navigation">
+          <button class="button small quiet" id="posBackToAmount" type="button">Review amount</button>
+          <button class="button small" id="posGoToVerify" type="button">View verification</button>
+        </div>
       </div>
     </article>
 
-    <article class="panel accent-panel pos-confirm-panel pos-checkout-stage" data-pos-panel="3" hidden>
-      <div class="pos-step-chip"><b>3</b><h2>Verify payment</h2></div>
+    <article class="panel accent-panel pos-confirm-panel pos-checkout-stage" id="posStage3" data-pos-panel="3" role="region" aria-labelledby="posStage3Title" hidden>
+      <div class="pos-step-chip"><b>3</b><h2 id="posStage3Title" tabindex="-1">Verify payment</h2></div>
       <div class="pos-verify-hero">
         <strong class="pos-status-pill" id="posStatus" data-state="pending">Verification pending</strong>
         <div class="pos-verification-copy">
           <strong id="posVerifyTitle">Payment detected</strong>
           <span id="posVerifySubtitle">Checking the receiving address, amount, and blockchain confirmations.</span>
         </div>
-        <div class="inline-actions pos-verify-actions">
-          <button class="button primary" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Check now</button>
-          <button class="button" id="posOpenManualVerify" type="button">Manual verify</button>
-          <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
-            <button class="button" id="posMarkPaid" type="button" disabled>Mark paid</button>
-          </span>
-        </div>
       </div>
       <p class="note" id="posConfirmNote" aria-live="polite"></p>
+      <button class="button small" id="posReviewPayment" type="button" hidden>Review payment</button>
       <div class="pos-paid-receipt" id="posPaidReceipt" hidden aria-live="polite"></div>
       <div class="inline-actions pos-receipt-actions" id="posReceiptActions" hidden>
+        <button class="button primary small" id="posNewSale" type="button">New sale</button>
         <button class="button primary small" id="posEmailReceipt" type="button" aria-haspopup="dialog" aria-controls="posReceiptModal">Share rich receipt</button>
         <button class="button small" id="posPrintReceipt" type="button">Print / Save PDF</button>
-        <button class="button small quiet" id="posNewSale" type="button">New sale</button>
       </div>
-      <details class="tool-details pos-more-details" id="posManualDetails">
-        <summary>Manual check &amp; details</summary>
+      <details class="tool-details pos-more-details pos-manual-fallback" id="posManualDetails">
+        <summary>Verification options</summary>
+        <p class="note compact-note">Automatic verification keeps running unless you confirm a transaction manually.</p>
         <p class="note" id="posSelectedOrder">No local order loaded. Save an order or load one from the table below.</p>
-        <form class="form-grid compact">
+        <form class="form-grid compact" id="posManualForm">
           <label>
             <span>Transaction ID</span>
             <input id="posTxId" spellcheck="false" placeholder="Paste txid or leave blank for manual check" title="Paste a 64-character Dogecoin transaction ID, or leave this blank for a manual register check." aria-label="Transaction ID. Paste a 64-character Dogecoin transaction ID, or leave this blank for a manual register check.">
@@ -167,10 +188,14 @@
           </label>
         </form>
         <div class="inline-actions">
+          <button class="button small" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Check blockchain now</button>
           <button class="button small" id="posConfirmTransaction" type="button">Confirm tx</button>
           <button class="button small" id="posShowTransactions" type="button" aria-controls="posTransactionDrawer" aria-expanded="false">Show recent activity</button>
           <a class="button small verify-link" id="posExplorerLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Explorer</a>
         </div>
+        <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
+          <button class="button small" id="posMarkPaid" type="button" disabled>Mark paid manually</button>
+        </span>
         <div class="wallet-activity-card pos-transaction-picker" id="posTransactionDrawer" hidden>
           <div class="wallet-activity-header">
             <div>
@@ -191,6 +216,9 @@
           <div class="rate-limit-status" id="rateLimitStatus" role="status" aria-live="polite" aria-label="API rate status loading"></div>
         </div>
       </details>
+      <div class="pos-stage-navigation">
+        <button class="button small quiet" id="posBackToScan" type="button">Back to customer QR</button>
+      </div>
     </article>
   </section>
 

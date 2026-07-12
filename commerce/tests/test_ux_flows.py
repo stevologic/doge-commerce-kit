@@ -121,14 +121,25 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 timeout=20000,
             )
             page.click("#closePosCustomerDisplay")
+            page.click("#posSaleOptions summary")
             page.click("#posCancelPayment")
-            page.click("#posStartPayment")
+            self.assertIsNone(page.locator("#posSaleOptions").get_attribute("open"))
+            page.press("#posUsd", "Enter")
             page.wait_for_function(
                 "() => document.getElementById('posWorkflow')?.dataset.posStage === '2'",
                 timeout=20000,
             )
             page.click("#closePosCustomerDisplay")
-            page.click("#posOpenManualVerify")
+            page.click('[data-pos-go="1"]')
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
+            self.assertTrue(page.is_disabled("#posUsd"))
+            page.click('[data-pos-go="3"]')
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "3")
+            self.assertFalse(page.locator("#posManualDetails").get_attribute("open") is not None)
+            page.click("#posBackToScan")
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "2")
+            page.click("#posTroubleDetails summary")
+            page.click("#posStep2ManualVerify")
             page.fill("#posTxId", sample_tx)
             page.wait_for_timeout(800)
             status_before = page.locator("#posStatus").inner_text().strip().lower()
@@ -158,6 +169,9 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             log_lines.append(f"rich_receipt_visible={rich_receipt_visible}")
             self.assertEqual(final_status, "paid")
             self.assertTrue(rich_receipt_visible)
+            page.click("#posNewSale")
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
+            self.assertIsNone(page.locator("#posManualDetails").get_attribute("open"))
             browser.close()
 
         log_lines.append("pos_sequential_verify_then_mark_paid=ok")

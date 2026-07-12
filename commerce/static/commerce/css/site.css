@@ -8485,18 +8485,25 @@ body[data-page="wallet"] main {
 }
 
 .pos-progress li {
+  min-width: 0;
+}
+
+.pos-progress button {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
-  padding: 11px 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 9px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.66);
   color: var(--muted);
+  cursor: pointer;
+  text-align: left;
 }
 
-.pos-progress li > b {
+.pos-progress button > b {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -8508,7 +8515,7 @@ body[data-page="wallet"] main {
   font-size: 0.8rem;
 }
 
-.pos-progress li > span {
+.pos-progress button > span {
   display: grid;
   min-width: 0;
   line-height: 1.2;
@@ -8524,25 +8531,35 @@ body[data-page="wallet"] main {
   font-size: 0.7rem;
 }
 
-.pos-progress li.is-active {
+.pos-progress li.is-active button {
   border-color: rgba(150, 105, 14, 0.45);
   background: rgba(244, 189, 42, 0.13);
   color: var(--ink);
 }
 
-.pos-progress li.is-active > b {
+.pos-progress li.is-active button > b {
   background: var(--gold);
   color: #241c05;
 }
 
-.pos-progress li.is-complete {
+.pos-progress li.is-complete button {
   border-color: rgba(15, 143, 120, 0.26);
   color: var(--teal);
 }
 
-.pos-progress li.is-complete > b {
+.pos-progress li.is-complete button > b {
   background: var(--mint);
   color: #fff;
+}
+
+.pos-progress button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.pos-progress button:focus-visible {
+  outline: 3px solid rgba(15, 143, 120, 0.38);
+  outline-offset: 2px;
 }
 
 .pos-simple .pos-operator-grid {
@@ -8553,6 +8570,47 @@ body[data-page="wallet"] main {
 .pos-checkout-stage {
   width: 100%;
   box-shadow: var(--shadow);
+}
+
+.pos-sale-lock-note,
+.pos-payment-closed {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(14, 91, 99, 0.2);
+  border-radius: 10px;
+  background: rgba(14, 91, 99, 0.08);
+}
+
+.pos-sale-lock-note span,
+.pos-payment-closed span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.pos-payment-closed {
+  width: 100%;
+  border-color: rgba(15, 143, 120, 0.28);
+  background: rgba(15, 143, 120, 0.09);
+  text-align: left;
+}
+
+.pos-stage-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.pos-manual-fallback,
+.pos-trouble-details,
+.pos-sale-options {
+  width: 100%;
 }
 
 .pos-start-summary {
@@ -8811,13 +8869,22 @@ body[data-page="wallet"] main {
 }
 
 @media (max-width: 700px) {
-  .pos-progress li {
+  .pos-progress button {
     justify-content: center;
-    padding: 9px 6px;
+    gap: 6px;
+    padding: 8px 6px;
   }
 
-  .pos-progress li > span {
+  .pos-progress button > span {
+    display: grid;
+  }
+
+  .pos-progress small {
     display: none;
+  }
+
+  .pos-stage-navigation .button {
+    flex: 1 1 140px;
   }
 
   .pos-simple .pos-hero-slim {

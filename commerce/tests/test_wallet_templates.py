@@ -67,6 +67,20 @@ class WalletTemplateStructureTests(SimpleTestCase):
         ):
             self.assertIn(marker, doge_tools)
 
+    def test_pos_steps_are_navigable_without_unlocking_active_sale(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        for stage in (1, 2, 3):
+            self.assertIn(f'data-pos-go="{stage}"', pos_html)
+        for panel_id in ("dogePosTerminal", "posStage2", "posStage3"):
+            self.assertIn(f'id="{panel_id}"', pos_html)
+        self.assertIn('id="posStartPayment" type="submit" form="posSaleForm"', pos_html)
+        self.assertIn("navigatePosStage", doge_tools)
+        self.assertIn("setPosSaleLocked(Boolean(activeOrder) || posPaymentStarting)", doge_tools)
+        self.assertIn("if (posPaymentStarting)", doge_tools)
+        self.assertNotIn("setPosSaleLocked(safeStage !== 1)", doge_tools)
+        self.assertIn("Verification options", pos_html)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)

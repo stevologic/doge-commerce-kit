@@ -12,7 +12,9 @@ Use this gate before public launch and after significant releases at
 - POS: quick amounts feed Start payment; starting freezes/saves the quote,
   opens the customer QR, and watches for a new exact incoming payment. A
   detected payment advances to pending verification, auto-completes after the
-  required confirmations, and still supports manual txid verification.
+  required confirmations, and still supports manual txid verification. All
+  three step buttons remain navigable without unlocking the frozen sale or
+  interrupting background monitoring.
 - POS receipt: paid sales render the formatted receipt in Step 3; rich copy,
   subject-only email handoff, HTML download, and print/PDF preserve the design.
 - POS wallet setup: generating a new wallet fills the address, shows the
