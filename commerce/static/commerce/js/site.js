@@ -368,6 +368,26 @@ function initToolFilters() {
   applyFilter("all");
 }
 
+// Deep links from other pages (e.g. #counter-sign-builder) should open the
+// matching app-store tile and scroll it into view.
+function openToolAppFromHash() {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (!hash) return;
+  const target = document.getElementById(hash);
+  if (!target) return;
+  const app = target.closest(".tool-app") || (target.classList.contains("tool-app") ? target : null);
+  if (app && app.tagName === "DETAILS") {
+    app.open = true;
+    window.requestAnimationFrame(() => app.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+}
+
+function initToolAppDeepLinks() {
+  if (!document.querySelector(".tool-app")) return;
+  openToolAppFromHash();
+  window.addEventListener("hashchange", openToolAppFromHash);
+}
+
 function downloadFile(name, content, type = "application/json") {
   const blob = new Blob([content], { type });
   downloadBlob(name, blob);
@@ -1960,6 +1980,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   $("applySavedWalletTools")?.addEventListener("click", applySavedWalletToTools);
   initToolFilters();
+  initToolAppDeepLinks();
   initDemandModel();
   initMerchantFit();
   initCheckout();

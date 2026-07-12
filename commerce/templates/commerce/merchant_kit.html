@@ -8,8 +8,8 @@
   <div class="tools-hero-panel">
     <div>
       <p class="eyebrow">Tools — Snippet marketplace</p>
-      <h1>Pick a Dogecoin tool for the job you have right now.</h1>
-      <p>Browse QR codes, website buttons, receipts, and validation checks like a small marketplace. Preview live, then copy a self-contained snippet into your site, counter, or receipt — your saved wallet fills in automatically.</p>
+      <h1>Pick a Dogecoin tool like choosing an app.</h1>
+      <p>Browse the tools below like an app store. Tap one to open it, fill in a couple of fields, and copy a self-contained snippet into your site, counter, or receipt — your saved wallet fills in automatically.</p>
     </div>
     <div class="tools-wallet-strip">
       <span>Saved wallet</span>
@@ -19,7 +19,7 @@
     </div>
   </div>
 
-  <p class="note compact-note" id="toolsMarketplaceHint">Filter by what you are trying to do. Each card previews the real output and includes a one-click copy when you are ready.</p>
+  <p class="note compact-note" id="toolsMarketplaceHint">Filter by what you are trying to do, then tap a tool to open it. Each one previews the real output and includes a one-click copy when you are ready.</p>
 
   <div class="data-source-status" aria-label="Live data source status">
     <span>Live price sources</span>
@@ -39,157 +39,173 @@
       <h2>QR requests, wallet cards, and printable signs</h2>
     </div>
     <div class="tool-card-grid">
-      <article class="panel tool-card qr-tool-card" id="checkout-builder" data-tool-category="getpaid">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Generate a transaction QR</p>
-          <h2>Create a payment request</h2>
-          <p>Amount, memo, route, QR, and JSON payload stay in one compact builder.</p>
-        </div>
-        <form class="form-grid compact" id="checkoutBuilder">
-          <label>
-            <span>Merchant</span>
-            <input id="checkoutMerchantName" value="DOGE Merchant">
-          </label>
-          <label>
-            <span>Dogecoin address</span>
-            <input id="walletAddress" value="{{ donation_address }}" spellcheck="false">
-          </label>
-          <label>
-            <span>USD amount</span>
-            <input id="usdAmount" type="number" min="0.01" step="0.01" value="10.00">
-          </label>
-          <label>
-            <span>Payment route</span>
-            <select id="paymentRail">
-              <option value="wallet">Merchant wallet QR</option>
-              <option value="hosted">Hosted checkout or invoice</option>
-              <option value="native">DOGE-native backend</option>
-            </select>
-          </label>
-          <label>
-            <span>Memo</span>
-            <input id="invoiceMemo" value="DOGE sale" maxlength="80">
-          </label>
-          <label>
-            <span>Hosted checkout URL</span>
-            <input id="hostedCheckoutUrl" type="url" value="https://example.com/pay-with-doge" spellcheck="false">
-          </label>
-        </form>
-        <div class="checkout-preview tool-checkout-preview">
-          <img id="qrImage" alt="DOGE payment QR code">
-          <div>
-            <span class="preview-label" id="checkoutReferenceLabel">DOGE amount</span>
-            <strong id="dogeAmountOut">0 DOGE</strong>
-            <code id="paymentUriOut">dogecoin:{{ donation_address }}</code>
-            <p class="quote-meta" id="checkoutQuoteMeta">Quote timestamp appears after the DOGE price loads.</p>
-            <div class="inline-actions">
-              <button class="button primary small" id="copyUri" type="button">Copy payment route</button>
-              <button class="button small" id="copyManifest" type="button">Copy JSON</button>
-            </div>
-          </div>
-        </div>
-        <details class="tool-details">
-          <summary>Conversion chart and JSON</summary>
-          <div class="conversion-card" id="checkoutConversionChart" aria-live="polite">
-            <div class="conversion-card-header">
-              <div>
-                <p class="eyebrow">DOGE/USD conversion</p>
-                <h3>Builder conversion chart</h3>
-              </div>
-              <span class="conversion-rate" id="checkoutConversionRate">Loading DOGE/USD</span>
-            </div>
-            <div class="conversion-grid">
-              <div>
-                <span class="preview-label">USD to DOGE</span>
-                <div class="conversion-list" id="checkoutUsdToDogeRows"></div>
-              </div>
-              <div>
-                <span class="preview-label">DOGE to USD</span>
-                <div class="conversion-list" id="checkoutDogeToUsdRows"></div>
+      <details class="panel tool-card qr-tool-card tool-app" id="checkout-builder" data-tool-category="getpaid">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">💳</span>
+          <span class="tool-app-info">
+            <strong>Payment request QR</strong>
+            <small>Turn a USD price into a scannable DOGE QR and JSON payload.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="checkoutBuilder">
+            <label>
+              <span>Merchant</span>
+              <input id="checkoutMerchantName" value="DOGE Merchant">
+            </label>
+            <label>
+              <span>Dogecoin address</span>
+              <input id="walletAddress" value="{{ donation_address }}" spellcheck="false">
+            </label>
+            <label>
+              <span>USD amount</span>
+              <input id="usdAmount" type="number" min="0.01" step="0.01" value="10.00">
+            </label>
+            <label>
+              <span>Payment route</span>
+              <select id="paymentRail">
+                <option value="wallet">Merchant wallet QR</option>
+                <option value="hosted">Hosted checkout or invoice</option>
+                <option value="native">DOGE-native backend</option>
+              </select>
+            </label>
+            <label>
+              <span>Memo</span>
+              <input id="invoiceMemo" value="DOGE sale" maxlength="80">
+            </label>
+            <label>
+              <span>Hosted checkout URL</span>
+              <input id="hostedCheckoutUrl" type="url" value="https://example.com/pay-with-doge" spellcheck="false">
+            </label>
+          </form>
+          <div class="checkout-preview tool-checkout-preview">
+            <img id="qrImage" alt="DOGE payment QR code">
+            <div>
+              <span class="preview-label" id="checkoutReferenceLabel">DOGE amount</span>
+              <strong id="dogeAmountOut">0 DOGE</strong>
+              <code id="paymentUriOut">dogecoin:{{ donation_address }}</code>
+              <p class="quote-meta" id="checkoutQuoteMeta">Quote timestamp appears after the DOGE price loads.</p>
+              <div class="inline-actions">
+                <button class="button primary small" id="copyUri" type="button">Copy payment route</button>
+                <button class="button small" id="copyManifest" type="button">Copy JSON</button>
               </div>
             </div>
           </div>
-          <textarea class="code-box compact-code-box" id="manifestOutput" aria-label="Merchant payment JSON"></textarea>
-        </details>
-      </article>
+          <details class="tool-details">
+            <summary>Conversion chart and JSON</summary>
+            <div class="conversion-card" id="checkoutConversionChart" aria-live="polite">
+              <div class="conversion-card-header">
+                <div>
+                  <p class="eyebrow">DOGE/USD conversion</p>
+                  <h3>Builder conversion chart</h3>
+                </div>
+                <span class="conversion-rate" id="checkoutConversionRate">Loading DOGE/USD</span>
+              </div>
+              <div class="conversion-grid">
+                <div>
+                  <span class="preview-label">USD to DOGE</span>
+                  <div class="conversion-list" id="checkoutUsdToDogeRows"></div>
+                </div>
+                <div>
+                  <span class="preview-label">DOGE to USD</span>
+                  <div class="conversion-list" id="checkoutDogeToUsdRows"></div>
+                </div>
+              </div>
+            </div>
+            <textarea class="code-box compact-code-box" id="manifestOutput" aria-label="Merchant payment JSON"></textarea>
+          </details>
+        </div>
+      </details>
 
-      <article class="panel snippet-panel wallet-share-builder-panel tool-card" id="wallet-share-card" data-tool-category="getpaid">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">QR snippets</p>
-          <h2>Postable wallet QR card</h2>
-          <p>Uses the saved wallet address when available.</p>
-        </div>
-        <form class="form-grid compact wallet-share-form" id="walletShareBuilder">
-          <label>
-            <span>Name shown on card</span>
-            <input id="walletShareName" type="text" value="DOGE Commerce Kit">
-          </label>
-          <label>
-            <span>Dogecoin address</span>
-            <input id="walletShareAddress" type="text" value="{{ donation_address }}" spellcheck="false">
-          </label>
-          <label>
-            <span>QR memo</span>
-            <input id="walletShareMessage" type="text" value="Proudly share a wallet address and help more people discover commerce.dog." maxlength="110">
-          </label>
-          <label>
-            <span>Campaign link</span>
-            <input id="walletShareDomain" type="url" value="https://commerce.dog" spellcheck="false">
-          </label>
-          <label class="full-row">
-            <span>Credit line</span>
-            <input id="walletShareCredit" type="text" value="Made with &lt;3 by DOGE Commerce Kit">
-          </label>
-        </form>
-        <div class="wallet-share-card wallet-share-card-preview" id="walletSharePreview" aria-live="polite"></div>
-        <div class="wallet-share-social" role="group" aria-label="Share your DOGE wallet">
-          <span class="preview-label">Share your DOGE</span>
-          <div class="inline-actions wallet-share-social-actions">
-            <button class="button small primary share-native" id="walletShareNative" type="button" hidden>Share&hellip;</button>
-            <button class="button small share-x" id="walletShareX" type="button">Post on X</button>
-            <button class="button small share-ig" id="walletShareInstagram" type="button">Instagram</button>
-            <button class="button small share-tt" id="walletShareTikTok" type="button">TikTok</button>
+      <details class="panel snippet-panel wallet-share-builder-panel tool-app" id="wallet-share-card" data-tool-category="getpaid">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">📇</span>
+          <span class="tool-app-info">
+            <strong>Postable wallet QR card</strong>
+            <small>A branded card with your address to post or hand out.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact wallet-share-form" id="walletShareBuilder">
+            <label>
+              <span>Name shown on card</span>
+              <input id="walletShareName" type="text" value="DOGE Commerce Kit">
+            </label>
+            <label>
+              <span>Dogecoin address</span>
+              <input id="walletShareAddress" type="text" value="{{ donation_address }}" spellcheck="false">
+            </label>
+            <label>
+              <span>QR memo</span>
+              <input id="walletShareMessage" type="text" value="Proudly share a wallet address and help more people discover commerce.dog." maxlength="110">
+            </label>
+            <label>
+              <span>Campaign link</span>
+              <input id="walletShareDomain" type="url" value="https://commerce.dog" spellcheck="false">
+            </label>
+            <label class="full-row">
+              <span>Credit line</span>
+              <input id="walletShareCredit" type="text" value="Made with &lt;3 by DOGE Commerce Kit">
+            </label>
+          </form>
+          <div class="wallet-share-card wallet-share-card-preview" id="walletSharePreview" aria-live="polite"></div>
+          <div class="wallet-share-social" role="group" aria-label="Share your DOGE wallet">
+            <span class="preview-label">Share your DOGE</span>
+            <div class="inline-actions wallet-share-social-actions">
+              <button class="button small primary share-native" id="walletShareNative" type="button" hidden>Share&hellip;</button>
+              <button class="button small share-x" id="walletShareX" type="button">Post on X</button>
+              <button class="button small share-ig" id="walletShareInstagram" type="button">Instagram</button>
+              <button class="button small share-tt" id="walletShareTikTok" type="button">TikTok</button>
+            </div>
           </div>
+          <div class="inline-actions">
+            <button class="button small" id="copyWalletShareSnippet" type="button">Copy wallet card snippet</button>
+          </div>
+          <details class="tool-details tool-code-details">
+            <summary>View snippet code</summary>
+            <textarea class="code-box compact-code-box" id="walletShareSnippetCode" readonly aria-label="Generated wallet share card HTML"></textarea>
+          </details>
         </div>
-        <div class="inline-actions">
-          <button class="button small" id="copyWalletShareSnippet" type="button">Copy wallet card snippet</button>
-        </div>
-        <details class="tool-details tool-code-details">
-          <summary>View snippet code</summary>
-          <textarea class="code-box compact-code-box" id="walletShareSnippetCode" readonly aria-label="Generated wallet share card HTML"></textarea>
-        </details>
-      </article>
+      </details>
 
-      <article class="panel snippet-panel tool-card tool-card-wide" id="counter-sign-builder" data-tool-category="getpaid">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Printable counter sign</p>
-          <h2>Print a "Dogecoin accepted here" sign</h2>
-          <p>A letter-sized sign with your payment QR — tape it by the register, in the window, or on the booth table. The single highest-impact way to tell customers they can pay in DOGE.</p>
+      <details class="panel snippet-panel tool-app" id="counter-sign-builder" data-tool-category="getpaid">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">🪧</span>
+          <span class="tool-app-info">
+            <strong>Counter sign</strong>
+            <small>Print a "Dogecoin accepted here" sign with your payment QR.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <p class="note compact-note">A letter-sized sign with your payment QR — tape it by the register, in the window, or on the booth table. The single highest-impact way to tell customers they can pay in DOGE.</p>
+          <form class="form-grid compact" id="counterSignBuilder">
+            <label>
+              <span>Business name</span>
+              <input id="signBusinessName" value="DOGE Merchant">
+            </label>
+            <label>
+              <span>Dogecoin address</span>
+              <input id="signAddress" value="{{ donation_address }}" spellcheck="false">
+            </label>
+            <label class="full-row">
+              <span>Tagline</span>
+              <input id="signTagline" value="Scan with any Dogecoin wallet — fast, low fees, no card needed." maxlength="90">
+            </label>
+          </form>
+          <div class="counter-sign-preview" id="counterSignPreview" aria-live="polite"></div>
+          <div class="inline-actions">
+            <button class="button primary small" id="printCounterSign" type="button">Print sign</button>
+            <button class="button small" id="copyCounterSign" type="button">Copy sign HTML</button>
+          </div>
+          <details class="tool-details tool-code-details">
+            <summary>View sign code</summary>
+            <textarea class="code-box compact-code-box" id="counterSignCode" readonly aria-label="Generated printable Dogecoin sign HTML"></textarea>
+          </details>
         </div>
-        <form class="form-grid compact" id="counterSignBuilder">
-          <label>
-            <span>Business name</span>
-            <input id="signBusinessName" value="DOGE Merchant">
-          </label>
-          <label>
-            <span>Dogecoin address</span>
-            <input id="signAddress" value="{{ donation_address }}" spellcheck="false">
-          </label>
-          <label class="full-row">
-            <span>Tagline</span>
-            <input id="signTagline" value="Scan with any Dogecoin wallet — fast, low fees, no card needed." maxlength="90">
-          </label>
-        </form>
-        <div class="counter-sign-preview" id="counterSignPreview" aria-live="polite"></div>
-        <div class="inline-actions">
-          <button class="button primary small" id="printCounterSign" type="button">Print sign</button>
-          <button class="button small" id="copyCounterSign" type="button">Copy sign HTML</button>
-        </div>
-        <details class="tool-details tool-code-details">
-          <summary>View sign code</summary>
-          <textarea class="code-box compact-code-box" id="counterSignCode" readonly aria-label="Generated printable Dogecoin sign HTML"></textarea>
-        </details>
-      </article>
+      </details>
     </div>
   </section>
 
@@ -199,193 +215,223 @@
       <h2>Copy buttons, badges, prices, and charts</h2>
     </div>
     <div class="tool-card-grid">
-      <article class="panel snippet-panel accepted-snippet-panel tool-card" id="badge-builder" data-tool-category="website">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Dogecoin accepted buttons</p>
-          <h2>Add DOGE accepted to your site</h2>
-        </div>
-        <form class="form-grid compact" id="badgeBuilder">
-          <label>
-            <span>Merchant</span>
-            <input id="badgeMerchantName" value="DOGE Merchant">
-          </label>
-          <label>
-            <span>Offer</span>
-            <input id="badgeOffer" value="DOGE accepted here">
-          </label>
-          <label>
-            <span>Checkout URL</span>
-            <input id="badgeLink" value="dogecoin:{{ donation_address }}" spellcheck="false">
-          </label>
-        </form>
-        <div class="badge-preview" id="badgePreview" data-logo="{{ doge_logo_data_uri }}">
-          <div class="badge-mark">
-            <img src="{{ doge_logo_data_uri }}" alt="">
-            <span>Dogecoin Accepted</span>
-          </div>
-          <div class="badge-copy">
-            <strong>DOGE Merchant</strong>
-            <small>DOGE accepted here</small>
-          </div>
-        </div>
-        <button class="button primary small" id="copyBadge" type="button">Copy accepted snippet</button>
-        <details class="tool-details tool-code-details">
-          <summary>View snippet code</summary>
-          <textarea class="code-box compact-code-box" id="badgeCode" readonly aria-label="Generated badge HTML"></textarea>
-        </details>
-      </article>
-
-      <article class="panel snippet-panel donate-snippet-panel tool-card" data-tool-category="website">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Donate buttons</p>
-          <h2>Add a Donate DOGE button</h2>
-        </div>
-        <form class="form-grid compact donate-builder" id="donateSnippetBuilder">
-          <label>
-            <span>Button label</span>
-            <input id="donateSnippetLabel" value="Donate DOGE">
-          </label>
-          <label>
-            <span>Donation title</span>
-            <input id="donateSnippetTitle" value="Support DOGE Commerce Kit">
-          </label>
-          <label>
-            <span>Dogecoin address</span>
-            <input id="donateSnippetAddress" value="{{ donation_address }}" spellcheck="false">
-          </label>
-          <label>
-            <span>Memo</span>
-            <input id="donateSnippetMemo" value="DOGE Commerce Kit donation" maxlength="80">
-          </label>
-          <label class="range-field">
-            <span>Amount <strong id="donateSnippetAmountOut">25 DOGE</strong></span>
-            <input id="donateSnippetAmount" type="range" min="0" max="1000" step="5" value="25">
-          </label>
-        </form>
-        <div class="badge-preview compact-badge-preview donate-snippet-preview" id="donateSnippetPreview" data-logo="{{ doge_logo_data_uri }}"></div>
-        <div class="inline-actions">
-          <button class="button primary small" id="previewDonateSnippet" type="button" data-doge-donate data-address="{{ donation_address }}" data-memo="DOGE Commerce Kit donation" data-amount="25">Preview donate modal</button>
-          <button class="button small" id="copyDonateSnippetInline" type="button">Copy donate snippet</button>
-        </div>
-        <details class="tool-details tool-code-details">
-          <summary>View snippet code</summary>
-          <textarea class="code-box compact-code-box" id="donateSnippetInline" readonly aria-label="Generated Donate DOGE snippet"></textarea>
-        </details>
-        <details class="tool-details tool-code-details">
-          <summary>Compact footer button variant</summary>
-          <div class="footer-donate-tool" aria-label="Compact footer Donate DOGE snippet">
-            <div>
-              <span class="preview-label">Footer button</span>
-              <p>Use the compact Donate DOGE button from the site footer.</p>
-            </div>
-            <a class="footer-button donate footer-donate-demo" id="donateFooterButtonPreview" href="dogecoin:{{ donation_address }}?amount=25.00000000&amp;message=DOGE+Commerce+Kit+donation" data-doge-donate data-address="{{ donation_address }}" data-memo="DOGE Commerce Kit donation" data-amount="25">Donate DOGE</a>
-            <button class="button small" id="copyDonateFooterSnippet" type="button">Copy footer button snippet</button>
-          </div>
-          <textarea class="code-box compact-code-box" id="donateFooterSnippet" readonly aria-label="Generated footer Donate DOGE button snippet"></textarea>
-        </details>
-      </article>
-
-      <article class="panel snippet-panel tool-card" id="doge-price-snippet" data-tool-category="website">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Dogecoin price snippet</p>
-          <h2>Live DOGE price badge</h2>
-        </div>
-        <form class="form-grid compact" id="priceSnippetBuilder">
-          <label>
-            <span>Label</span>
-            <input id="priceSnippetLabel" value="DOGE/USD">
-          </label>
-          <label>
-            <span>Button link</span>
-            <input id="priceSnippetLink" type="url" value="https://commerce.dog/statistics/" spellcheck="false">
-          </label>
-        </form>
-        <div class="tool-snippet-preview" id="priceSnippetPreview" aria-live="polite"></div>
-        <div class="inline-actions">
-          <button class="button primary small" id="copyPriceSnippet" type="button">Copy price snippet</button>
-        </div>
-        <details class="tool-details tool-code-details">
-          <summary>View snippet code</summary>
-          <textarea class="code-box compact-code-box" id="priceSnippetCode" readonly aria-label="Generated Dogecoin price snippet"></textarea>
-        </details>
-      </article>
-
-      <article class="panel snippet-panel tool-card" id="doge-spark-snippet" data-tool-category="website">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Dogecoin spark chart</p>
-          <h2>Mini DOGE chart snippet</h2>
-        </div>
-        <form class="form-grid compact" id="sparkSnippetBuilder">
-          <label>
-            <span>Title</span>
-            <input id="sparkSnippetTitle" value="DOGE 7-day spark">
-          </label>
-          <label>
-            <span>CTA link</span>
-            <input id="sparkSnippetLink" type="url" value="https://commerce.dog/statistics/" spellcheck="false">
-          </label>
-        </form>
-        <div class="tool-snippet-preview" id="sparkSnippetPreview" aria-live="polite"></div>
-        <div class="inline-actions">
-          <button class="button primary small" id="copySparkSnippet" type="button">Copy spark snippet</button>
-        </div>
-        <details class="tool-details tool-code-details">
-          <summary>View snippet code</summary>
-          <textarea class="code-box compact-code-box" id="sparkSnippetCode" readonly aria-label="Generated Dogecoin spark chart snippet"></textarea>
-        </details>
-      </article>
-
-      <article class="panel integration-helper-panel tool-card tool-card-wide" id="website-integration-kit" data-tool-category="website">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Checkout snippets</p>
-          <h2>Website integration pieces</h2>
-        </div>
-        <div class="integration-helper-layout">
-          <form class="form-grid compact integration-helper-form" id="integrationHelperBuilder">
+      <details class="panel snippet-panel accepted-snippet-panel tool-app" id="badge-builder" data-tool-category="website">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">🏷️</span>
+          <span class="tool-app-info">
+            <strong>DOGE accepted badge</strong>
+            <small>Show visitors you take Dogecoin.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="badgeBuilder">
             <label>
-              <span>Site or merchant</span>
-              <input id="integrationSiteName" value="DOGE Merchant">
+              <span>Merchant</span>
+              <input id="badgeMerchantName" value="DOGE Merchant">
+            </label>
+            <label>
+              <span>Offer</span>
+              <input id="badgeOffer" value="DOGE accepted here">
+            </label>
+            <label>
+              <span>Checkout URL</span>
+              <input id="badgeLink" value="dogecoin:{{ donation_address }}" spellcheck="false">
+            </label>
+          </form>
+          <div class="badge-preview" id="badgePreview" data-logo="{{ doge_logo_data_uri }}">
+            <div class="badge-mark">
+              <img src="{{ doge_logo_data_uri }}" alt="">
+              <span>Dogecoin Accepted</span>
+            </div>
+            <div class="badge-copy">
+              <strong>DOGE Merchant</strong>
+              <small>DOGE accepted here</small>
+            </div>
+          </div>
+          <button class="button primary small" id="copyBadge" type="button">Copy accepted snippet</button>
+          <details class="tool-details tool-code-details">
+            <summary>View snippet code</summary>
+            <textarea class="code-box compact-code-box" id="badgeCode" readonly aria-label="Generated badge HTML"></textarea>
+          </details>
+        </div>
+      </details>
+
+      <details class="panel snippet-panel donate-snippet-panel tool-app" id="donate-button-builder" data-tool-category="website">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">💛</span>
+          <span class="tool-app-info">
+            <strong>Donate DOGE button</strong>
+            <small>Drop a tip or donation button on any page.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact donate-builder" id="donateSnippetBuilder">
+            <label>
+              <span>Button label</span>
+              <input id="donateSnippetLabel" value="Donate DOGE">
+            </label>
+            <label>
+              <span>Donation title</span>
+              <input id="donateSnippetTitle" value="Support DOGE Commerce Kit">
             </label>
             <label>
               <span>Dogecoin address</span>
-              <input id="integrationAddress" value="{{ donation_address }}" spellcheck="false">
-            </label>
-            <label>
-              <span>Product or offer</span>
-              <input id="integrationOffer" value="DOGE checkout">
-            </label>
-            <label>
-              <span>USD amount</span>
-              <input id="integrationUsd" type="number" min="0" step="0.01" value="10.00">
+              <input id="donateSnippetAddress" value="{{ donation_address }}" spellcheck="false">
             </label>
             <label>
               <span>Memo</span>
-              <input id="integrationMemo" value="Website DOGE order" maxlength="80">
+              <input id="donateSnippetMemo" value="DOGE Commerce Kit donation" maxlength="80">
             </label>
-            <label>
-              <span>Button text</span>
-              <input id="integrationButtonText" value="Pay with DOGE">
+            <label class="range-field">
+              <span>Amount <strong id="donateSnippetAmountOut">25 DOGE</strong></span>
+              <input id="donateSnippetAmount" type="range" min="0" max="1000" step="5" value="25">
             </label>
           </form>
-          <div class="integration-helper-output">
-            <div class="integration-tabs" role="tablist" aria-label="Website integration snippet type">
-              <button class="integration-tab is-active" type="button" data-integration-snippet="checkout">Checkout button</button>
-              <button class="integration-tab" type="button" data-integration-snippet="status">Payment status</button>
-              <button class="integration-tab" type="button" data-integration-snippet="manifest">Store manifest</button>
-              <button class="integration-tab" type="button" data-integration-snippet="meta">SEO metadata</button>
+          <div class="badge-preview compact-badge-preview donate-snippet-preview" id="donateSnippetPreview" data-logo="{{ doge_logo_data_uri }}"></div>
+          <div class="inline-actions">
+            <button class="button primary small" id="previewDonateSnippet" type="button" data-doge-donate data-address="{{ donation_address }}" data-memo="DOGE Commerce Kit donation" data-amount="25">Preview donate modal</button>
+            <button class="button small" id="copyDonateSnippetInline" type="button">Copy donate snippet</button>
+          </div>
+          <details class="tool-details tool-code-details">
+            <summary>View snippet code</summary>
+            <textarea class="code-box compact-code-box" id="donateSnippetInline" readonly aria-label="Generated Donate DOGE snippet"></textarea>
+          </details>
+          <details class="tool-details tool-code-details">
+            <summary>Compact footer button variant</summary>
+            <div class="footer-donate-tool" aria-label="Compact footer Donate DOGE snippet">
+              <div>
+                <span class="preview-label">Footer button</span>
+                <p>Use the compact Donate DOGE button from the site footer.</p>
+              </div>
+              <a class="footer-button donate footer-donate-demo" id="donateFooterButtonPreview" href="dogecoin:{{ donation_address }}?amount=25.00000000&amp;message=DOGE+Commerce+Kit+donation" data-doge-donate data-address="{{ donation_address }}" data-memo="DOGE Commerce Kit donation" data-amount="25">Donate DOGE</a>
+              <button class="button small" id="copyDonateFooterSnippet" type="button">Copy footer button snippet</button>
             </div>
-            <div class="integration-preview" id="integrationPreview" aria-live="polite"></div>
-            <div class="inline-actions">
-              <button class="button primary small" id="copyIntegrationSnippet" type="button">Copy snippet</button>
-              <button class="button small" id="copyIntegrationJson" type="button">Copy JSON</button>
+            <textarea class="code-box compact-code-box" id="donateFooterSnippet" readonly aria-label="Generated footer Donate DOGE button snippet"></textarea>
+          </details>
+        </div>
+      </details>
+
+      <details class="panel snippet-panel tool-app" id="doge-price-snippet" data-tool-category="website">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">📈</span>
+          <span class="tool-app-info">
+            <strong>Live DOGE price badge</strong>
+            <small>Show the current DOGE/USD price on your site.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="priceSnippetBuilder">
+            <label>
+              <span>Label</span>
+              <input id="priceSnippetLabel" value="DOGE/USD">
+            </label>
+            <label>
+              <span>Button link</span>
+              <input id="priceSnippetLink" type="url" value="https://commerce.dog/statistics/" spellcheck="false">
+            </label>
+          </form>
+          <div class="tool-snippet-preview" id="priceSnippetPreview" aria-live="polite"></div>
+          <div class="inline-actions">
+            <button class="button primary small" id="copyPriceSnippet" type="button">Copy price snippet</button>
+          </div>
+          <details class="tool-details tool-code-details">
+            <summary>View snippet code</summary>
+            <textarea class="code-box compact-code-box" id="priceSnippetCode" readonly aria-label="Generated Dogecoin price snippet"></textarea>
+          </details>
+        </div>
+      </details>
+
+      <details class="panel snippet-panel tool-app" id="doge-spark-snippet" data-tool-category="website">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">✨</span>
+          <span class="tool-app-info">
+            <strong>Mini DOGE price chart</strong>
+            <small>A compact 7-day DOGE spark chart snippet.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="sparkSnippetBuilder">
+            <label>
+              <span>Title</span>
+              <input id="sparkSnippetTitle" value="DOGE 7-day spark">
+            </label>
+            <label>
+              <span>CTA link</span>
+              <input id="sparkSnippetLink" type="url" value="https://commerce.dog/statistics/" spellcheck="false">
+            </label>
+          </form>
+          <div class="tool-snippet-preview" id="sparkSnippetPreview" aria-live="polite"></div>
+          <div class="inline-actions">
+            <button class="button primary small" id="copySparkSnippet" type="button">Copy spark snippet</button>
+          </div>
+          <details class="tool-details tool-code-details">
+            <summary>View snippet code</summary>
+            <textarea class="code-box compact-code-box" id="sparkSnippetCode" readonly aria-label="Generated Dogecoin spark chart snippet"></textarea>
+          </details>
+        </div>
+      </details>
+
+      <details class="panel integration-helper-panel tool-app" id="website-integration-kit" data-tool-category="website">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">🧩</span>
+          <span class="tool-app-info">
+            <strong>Website checkout kit</strong>
+            <small>Pay-with-DOGE button, payment status, store manifest, and SEO.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <div class="integration-helper-layout">
+            <form class="form-grid compact integration-helper-form" id="integrationHelperBuilder">
+              <label>
+                <span>Site or merchant</span>
+                <input id="integrationSiteName" value="DOGE Merchant">
+              </label>
+              <label>
+                <span>Dogecoin address</span>
+                <input id="integrationAddress" value="{{ donation_address }}" spellcheck="false">
+              </label>
+              <label>
+                <span>Product or offer</span>
+                <input id="integrationOffer" value="DOGE checkout">
+              </label>
+              <label>
+                <span>USD amount</span>
+                <input id="integrationUsd" type="number" min="0" step="0.01" value="10.00">
+              </label>
+              <label>
+                <span>Memo</span>
+                <input id="integrationMemo" value="Website DOGE order" maxlength="80">
+              </label>
+              <label>
+                <span>Button text</span>
+                <input id="integrationButtonText" value="Pay with DOGE">
+              </label>
+            </form>
+            <div class="integration-helper-output">
+              <div class="integration-tabs" role="tablist" aria-label="Website integration snippet type">
+                <button class="integration-tab is-active" type="button" data-integration-snippet="checkout">Checkout button</button>
+                <button class="integration-tab" type="button" data-integration-snippet="status">Payment status</button>
+                <button class="integration-tab" type="button" data-integration-snippet="manifest">Store manifest</button>
+                <button class="integration-tab" type="button" data-integration-snippet="meta">SEO metadata</button>
+              </div>
+              <div class="integration-preview" id="integrationPreview" aria-live="polite"></div>
+              <div class="inline-actions">
+                <button class="button primary small" id="copyIntegrationSnippet" type="button">Copy snippet</button>
+                <button class="button small" id="copyIntegrationJson" type="button">Copy JSON</button>
+              </div>
+              <details class="tool-details tool-code-details">
+                <summary>View snippet code</summary>
+                <textarea class="code-box integration-code-box" id="integrationSnippetOut" readonly aria-label="Generated website integration snippet"></textarea>
+              </details>
             </div>
-            <details class="tool-details tool-code-details">
-              <summary>View snippet code</summary>
-              <textarea class="code-box integration-code-box" id="integrationSnippetOut" readonly aria-label="Generated website integration snippet"></textarea>
-            </details>
           </div>
         </div>
-      </article>
+      </details>
     </div>
   </section>
 
@@ -395,126 +441,144 @@
       <h2>Validate payments, generate proof, set the rules</h2>
     </div>
     <div class="tool-card-grid">
-      <article class="panel tool-card" id="transaction-validation" data-tool-category="backoffice">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Validate a transaction</p>
-          <h2>Build a transaction check</h2>
+      <details class="panel tool-app" id="transaction-validation" data-tool-category="backoffice">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">✅</span>
+          <span class="tool-app-info">
+            <strong>Transaction check</strong>
+            <small>Confirm a payment landed before you hand over the goods.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="validationBuilder">
+            <label>
+              <span>Transaction ID</span>
+              <input id="validationTxId" value="sample-local-test" spellcheck="false">
+            </label>
+            <label>
+              <span>Expected address</span>
+              <input id="validationAddress" value="{{ donation_address }}" spellcheck="false">
+            </label>
+            <label>
+              <span>Expected DOGE</span>
+              <input id="validationDoge" type="number" min="0" step="0.00000001" value="25">
+            </label>
+            <label>
+              <span>Confirmations</span>
+              <input id="validationConfirmations" type="number" min="0" step="1" value="1">
+            </label>
+          </form>
+          <div class="inline-actions validation-actions">
+            <button class="button primary small" id="buildValidation" type="button">Build check</button>
+            <button class="button small" id="runSampleValidation" type="button">Run sample pass</button>
+            <a class="button small verify-link" id="verifyTransactionLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Explorer</a>
+            <button class="button small" id="copyValidation" type="button">Copy check</button>
+          </div>
+          <h3 class="tool-output-title" id="validationStatusTitle">Ready to test</h3>
+          <textarea class="code-box tall" id="validationOutput" aria-label="Dogecoin transaction validation checklist"></textarea>
         </div>
-        <form class="form-grid compact" id="validationBuilder">
-          <label>
-            <span>Transaction ID</span>
-            <input id="validationTxId" value="sample-local-test" spellcheck="false">
-          </label>
-          <label>
-            <span>Expected address</span>
-            <input id="validationAddress" value="{{ donation_address }}" spellcheck="false">
-          </label>
-          <label>
-            <span>Expected DOGE</span>
-            <input id="validationDoge" type="number" min="0" step="0.00000001" value="25">
-          </label>
-          <label>
-            <span>Confirmations</span>
-            <input id="validationConfirmations" type="number" min="0" step="1" value="1">
-          </label>
-        </form>
-        <div class="inline-actions validation-actions">
-          <button class="button primary small" id="buildValidation" type="button">Build check</button>
-          <button class="button small" id="runSampleValidation" type="button">Run sample pass</button>
-          <a class="button small verify-link" id="verifyTransactionLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Explorer</a>
-          <button class="button small" id="copyValidation" type="button">Copy check</button>
-        </div>
-        <h3 class="tool-output-title" id="validationStatusTitle">Ready to test</h3>
-        <textarea class="code-box tall" id="validationOutput" aria-label="Dogecoin transaction validation checklist"></textarea>
-      </article>
+      </details>
 
-      <article class="panel snippet-panel tool-card" id="receipt-snippet-builder" data-tool-category="backoffice">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Receipt by transaction ID</p>
-          <h2>Generate a receipt snippet</h2>
+      <details class="panel snippet-panel tool-app" id="receipt-snippet-builder" data-tool-category="backoffice">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">🧾</span>
+          <span class="tool-app-info">
+            <strong>Receipt generator</strong>
+            <small>Create a shareable receipt from a transaction ID.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="receiptSnippetBuilder">
+            <label>
+              <span>Merchant</span>
+              <input id="receiptMerchantName" value="DOGE Merchant">
+            </label>
+            <label>
+              <span>Transaction ID</span>
+              <input id="receiptTxId" value="sample-local-test" spellcheck="false">
+            </label>
+            <label>
+              <span>Receiving address</span>
+              <input id="receiptAddress" value="{{ donation_address }}" spellcheck="false">
+            </label>
+            <label>
+              <span>DOGE amount</span>
+              <input id="receiptDoge" type="number" min="0" step="0.00000001" value="25">
+            </label>
+            <label>
+              <span>USD amount</span>
+              <input id="receiptUsd" type="number" min="0" step="0.01" value="10.00">
+            </label>
+            <label>
+              <span>Memo</span>
+              <input id="receiptMemo" value="DOGE sale" maxlength="80">
+            </label>
+          </form>
+          <div class="tool-snippet-preview" id="receiptSnippetPreview" aria-live="polite"></div>
+          <div class="inline-actions">
+            <button class="button primary small" id="copyReceiptSnippet" type="button">Copy receipt snippet</button>
+            <button class="button small" id="copyReceiptJson" type="button">Copy receipt JSON</button>
+          </div>
+          <details class="tool-details tool-code-details">
+            <summary>View snippet code</summary>
+            <textarea class="code-box compact-code-box" id="receiptSnippetCode" readonly aria-label="Generated Dogecoin receipt snippet"></textarea>
+          </details>
         </div>
-        <form class="form-grid compact" id="receiptSnippetBuilder">
-          <label>
-            <span>Merchant</span>
-            <input id="receiptMerchantName" value="DOGE Merchant">
-          </label>
-          <label>
-            <span>Transaction ID</span>
-            <input id="receiptTxId" value="sample-local-test" spellcheck="false">
-          </label>
-          <label>
-            <span>Receiving address</span>
-            <input id="receiptAddress" value="{{ donation_address }}" spellcheck="false">
-          </label>
-          <label>
-            <span>DOGE amount</span>
-            <input id="receiptDoge" type="number" min="0" step="0.00000001" value="25">
-          </label>
-          <label>
-            <span>USD amount</span>
-            <input id="receiptUsd" type="number" min="0" step="0.01" value="10.00">
-          </label>
-          <label>
-            <span>Memo</span>
-            <input id="receiptMemo" value="DOGE sale" maxlength="80">
-          </label>
-        </form>
-        <div class="tool-snippet-preview" id="receiptSnippetPreview" aria-live="polite"></div>
-        <div class="inline-actions">
-          <button class="button primary small" id="copyReceiptSnippet" type="button">Copy receipt snippet</button>
-          <button class="button small" id="copyReceiptJson" type="button">Copy receipt JSON</button>
-        </div>
-        <details class="tool-details tool-code-details">
-          <summary>View snippet code</summary>
-          <textarea class="code-box compact-code-box" id="receiptSnippetCode" readonly aria-label="Generated Dogecoin receipt snippet"></textarea>
-        </details>
-      </article>
+      </details>
 
-      <article class="panel tool-card tool-card-wide" id="payment-policy" data-tool-category="backoffice">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Exception policy</p>
-          <h2>Generate checkout rules</h2>
+      <details class="panel tool-app" id="payment-policy" data-tool-category="backoffice">
+        <summary class="tool-app-summary">
+          <span class="tool-app-icon" aria-hidden="true">📋</span>
+          <span class="tool-app-info">
+            <strong>Checkout rules</strong>
+            <small>Set your quote window, confirmations, and refund policy.</small>
+          </span>
+          <span class="tool-app-open" aria-hidden="true">Open</span>
+        </summary>
+        <div class="tool-app-body">
+          <form class="form-grid compact" id="policyBuilder">
+            <label>
+              <span>Merchant</span>
+              <input id="policyMerchantName" value="DOGE Merchant">
+            </label>
+            <label>
+              <span>Support contact</span>
+              <input id="policyContact" value="support@example.com">
+            </label>
+            <label>
+              <span>Quote window minutes</span>
+              <input id="policyQuoteMinutes" type="number" min="1" step="1" value="10">
+            </label>
+            <label>
+              <span>Confirmations</span>
+              <input id="policyConfirmations" type="number" min="0" step="1" value="1">
+            </label>
+            <label>
+              <span>Underpayment rule</span>
+              <select id="policyUnderpay">
+                <option value="remainder">Ask buyer to send the remainder before fulfillment</option>
+                <option value="refund">Cancel and refund under merchant policy</option>
+                <option value="manual">Escalate to manager review</option>
+              </select>
+            </label>
+            <label>
+              <span>Overpayment rule</span>
+              <select id="policyOverpay">
+                <option value="credit">Record credit or refund excess after review</option>
+                <option value="refund">Refund excess to verified return route</option>
+                <option value="manual">Escalate to manager review</option>
+              </select>
+            </label>
+          </form>
+          <div class="inline-actions">
+            <button class="button primary small" id="copyPolicy" type="button">Copy policy</button>
+            <button class="button small" id="syncPolicy" type="button">Use current checkout</button>
+          </div>
+          <textarea class="code-box tall" id="policyOutput" readonly aria-label="Generated Dogecoin checkout policy"></textarea>
         </div>
-        <form class="form-grid compact" id="policyBuilder">
-          <label>
-            <span>Merchant</span>
-            <input id="policyMerchantName" value="DOGE Merchant">
-          </label>
-          <label>
-            <span>Support contact</span>
-            <input id="policyContact" value="support@example.com">
-          </label>
-          <label>
-            <span>Quote window minutes</span>
-            <input id="policyQuoteMinutes" type="number" min="1" step="1" value="10">
-          </label>
-          <label>
-            <span>Confirmations</span>
-            <input id="policyConfirmations" type="number" min="0" step="1" value="1">
-          </label>
-          <label>
-            <span>Underpayment rule</span>
-            <select id="policyUnderpay">
-              <option value="remainder">Ask buyer to send the remainder before fulfillment</option>
-              <option value="refund">Cancel and refund under merchant policy</option>
-              <option value="manual">Escalate to manager review</option>
-            </select>
-          </label>
-          <label>
-            <span>Overpayment rule</span>
-            <select id="policyOverpay">
-              <option value="credit">Record credit or refund excess after review</option>
-              <option value="refund">Refund excess to verified return route</option>
-              <option value="manual">Escalate to manager review</option>
-            </select>
-          </label>
-        </form>
-        <div class="inline-actions">
-          <button class="button primary small" id="copyPolicy" type="button">Copy policy</button>
-          <button class="button small" id="syncPolicy" type="button">Use current checkout</button>
-        </div>
-        <textarea class="code-box tall" id="policyOutput" readonly aria-label="Generated Dogecoin checkout policy"></textarea>
-      </article>
+      </details>
     </div>
   </section>
 
@@ -522,7 +586,7 @@
     <span>Snippets placed? Next</span>
     <nav>
       <a href="{% url 'commerce:pos_terminal' %}">Run a real checkout</a>
-      <a href="{% url 'commerce:statistics' %}">Watch the market dashboard</a>
+      <a href="{% url 'commerce:playbook' %}">Read the playbook</a>
       <a href="{% url 'commerce:faq' %}">Answer customer questions</a>
     </nav>
   </div>

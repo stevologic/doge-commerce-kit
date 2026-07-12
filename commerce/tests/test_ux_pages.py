@@ -25,7 +25,9 @@ class HumanCentricPageTests(SimpleTestCase):
                 "posNewWallet",
                 "posNewWalletWif",
                 "posDownloadWallet",
-                "Sale options",
+                # Business name now lives in the wallet setup, next to the address.
+                "Business name",
+                "posMerchant",
             ],
         )
 
@@ -39,12 +41,24 @@ class HumanCentricPageTests(SimpleTestCase):
                 "Verify payment",
                 "posConfirmTransaction",
                 "posMarkPaid",
-                "posFeeAuto",
+                # Memo is a primary step-1 field; the auto network fee estimate
+                # shows in the step-2 payment details.
+                "posMemo",
+                "posFeeDogeOut",
+                "Network fee",
                 "posAutoVerify",
                 "posAutoVerifyYes",
                 "dogePosTerminal",
             ],
         )
+
+    def test_pos_page_drops_sale_options_collapsible(self):
+        response = self.client.get("/pos/")
+        html = response.content.decode("utf-8")
+        # The Sale options disclosure and its manual fee controls were removed
+        # so the flow is price -> QR -> verify with an automatic network fee.
+        for marker in ("Sale options", "posFeeAuto", "posProfileDetails", "posSaveMerchant"):
+            self.assertNotIn(marker, html)
 
     def test_pos_page_hides_secondary_tools_behind_disclosures(self):
         response = self.client.get("/pos/")

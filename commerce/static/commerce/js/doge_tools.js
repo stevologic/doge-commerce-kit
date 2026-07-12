@@ -1444,17 +1444,54 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return contexts.flatMap((context) => intents.map((intent) => `${context} - ${intent}`));
   }
 
-  function initPosMemoTypeahead() {
+  const POS_MEMO_HISTORY_KEY = "doge-pos:memos";
+  const POS_MEMO_HISTORY_LIMIT = 15;
+
+  function savedPosMemos() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(POS_MEMO_HISTORY_KEY) || "[]");
+      if (!Array.isArray(raw)) return [];
+      return raw.filter((memo) => typeof memo === "string" && memo.trim());
+    } catch {
+      return [];
+    }
+  }
+
+  // Remember a memo the operator actually used so it can be reoffered in the
+  // typeahead — no retyping the same note every sale.
+  function recordPosMemo(memo) {
+    const value = String(memo || "").trim();
+    if (!value) return;
+    const existing = savedPosMemos().filter((item) => item.toLowerCase() !== value.toLowerCase());
+    const next = [value, ...existing].slice(0, POS_MEMO_HISTORY_LIMIT);
+    localStorage.setItem(POS_MEMO_HISTORY_KEY, JSON.stringify(next));
+    rebuildPosMemoTypeahead();
+  }
+
+  function rebuildPosMemoTypeahead() {
     const list = $id("posMemoSuggestions");
-    if (!list || list.dataset.loaded === "true") return;
+    if (!list) return;
+    list.innerHTML = "";
     const fragment = document.createDocumentFragment();
-    posMemoSuggestionValues().forEach((memo) => {
+    const seen = new Set();
+    const add = (memo, label) => {
+      const value = String(memo || "").trim();
+      if (!value || seen.has(value.toLowerCase())) return;
+      seen.add(value.toLowerCase());
       const option = document.createElement("option");
-      option.value = memo;
+      option.value = value;
+      if (label) option.label = label;
       fragment.appendChild(option);
-    });
+    };
+    // Operator's own recent memos first so they surface at the top of the list.
+    savedPosMemos().forEach((memo) => add(memo, "Recently used"));
+    posMemoSuggestionValues().forEach((memo) => add(memo));
     list.appendChild(fragment);
     list.dataset.loaded = "true";
+  }
+
+  function initPosMemoTypeahead() {
+    rebuildPosMemoTypeahead();
   }
 
   function savedWalletAddress() {
@@ -1486,28 +1523,17 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return (POS_AUTO_FEE_TX_BYTES * POS_AUTO_FEE_ATOMS_PER_BYTE) / 1e8;
   }
 
-  function posFeeAutoEnabled() {
-    return localStorage.getItem("doge-pos:fee-auto") !== "false";
-  }
-
-  function applyPosFeeMode() {
-    const checkbox = $id("posFeeAuto");
-    const feeInput = $id("posFeeDoge");
-    if (!checkbox || !feeInput) return;
-    const auto = checkbox.checked;
-    localStorage.setItem("doge-pos:fee-auto", String(auto));
-    feeInput.readOnly = auto;
-    feeInput.classList.toggle("is-auto", auto);
-    if (auto) feeInput.value = posAutoFeeDoge().toFixed(8);
-  }
-
   function posState() {
     limitDecimalInput($id("posUsd"), 2);
+    // The manual fee control was removed for simplicity, so the request always
+    // includes the auto network-fee estimate. If a legacy fee input is present
+    // it is still respected.
+    const feeInput = $id("posFeeDoge");
     return {
       merchant: $id("posMerchant")?.value.trim() || "DOGE Merchant",
       wallet: $id("posWallet")?.value.trim() || "",
       usd: positiveNumber($id("posUsd")?.value || 0),
-      fee_doge: positiveNumber($id("posFeeDoge")?.value || 0),
+      fee_doge: feeInput ? positiveNumber(feeInput.value || 0) : posAutoFeeDoge(),
       memo: $id("posMemo")?.value.trim() || "DOGE sale",
     };
   }
@@ -2281,8 +2307,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function syncPosWalletSetup() {
     const wallet = ($id("posWallet")?.value || "").trim();
+    const merchant = ($id("posMerchant")?.value || "").trim();
     const collapsed = !posWalletPanelOpen && Boolean(wallet);
     if ($id("posWalletActive")) $id("posWalletActive").hidden = !collapsed;
+    if ($id("posWalletActiveMerchant")) {
+      $id("posWalletActiveMerchant").textContent = merchant || "DOGE Merchant";
+    }
     if ($id("posWalletActiveOut")) {
       $id("posWalletActiveOut").textContent = wallet ? `${wallet.slice(0, 10)}…${wallet.slice(-6)}` : "—";
     }
@@ -2291,13 +2321,6 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (setup) setup.classList.toggle("is-collapsed", collapsed);
   }
 
-  function savePosMerchant() {
-    const state = posState();
-    localStorage.setItem("doge-pos:merchant", state.merchant);
-    if (state.wallet) localStorage.setItem("doge-pos:wallet", state.wallet);
-    updatePosProfileStatus(state);
-    if (window.dogeAnnounce) window.dogeAnnounce("Merchant profile saved in this browser.");
-  }
 
   function updatePosCustomerDisplay(state = buildPosPayment()) {
     if (!$id("posCustomerDisplayModal")) return;
@@ -2347,7 +2370,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posPriceOut")) $id("posPriceOut").textContent = money.format(dogeUsd);
     renderDogeConversionChart("pos", state.usd);
     if ($id("posQuoteMeta")) {
-      const feeMeta = state.fee_doge > 0 ? ` Additional fee included in QR amount: ${state.fee_doge.toFixed(8)} DOGE.` : " No extra DOGE fee included.";
+      const feeMeta = state.fee_doge > 0 ? ` Includes a ${state.fee_doge.toFixed(8)} DOGE network-fee estimate so you receive the full sale amount.` : " No extra DOGE fee included.";
       $id("posQuoteMeta").textContent = state.wallet ? `${quoteMetaText({ issued_at: state.quote_issued_at, expires_at: state.quote_expires_at }, state.price_reference_usd)}${feeMeta}` : "Set a wallet before creating a Dogecoin payment request.";
     }
     if (!selectedPosOrderId()) {
@@ -2374,16 +2397,18 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     // the price fetch is slow or offline.
     $id("posUseWallet")?.addEventListener("click", () => {
       const wallet = ($id("posWallet")?.value || "").trim();
+      const merchant = ($id("posMerchant")?.value || "").trim() || "DOGE Merchant";
       if (!wallet) {
         updatePosProfileStatus();
         $id("posWallet")?.focus();
         return;
       }
+      localStorage.setItem("doge-pos:merchant", merchant);
       localStorage.setItem("doge-pos:wallet", wallet);
       localStorage.setItem("doge-wallet:address", wallet);
       posWalletPanelOpen = false;
       updatePos();
-      if (window.dogeAnnounce) window.dogeAnnounce("Receiving wallet saved for this browser.");
+      if (window.dogeAnnounce) window.dogeAnnounce("Business name and receiving wallet saved for this browser.");
     });
     $id("posChangeWallet")?.addEventListener("click", () => {
       posWalletPanelOpen = true;
@@ -2432,14 +2457,6 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       posWalletPanelOpen = false;
       syncPosWalletSetup();
     });
-    if ($id("posFeeAuto")) {
-      $id("posFeeAuto").checked = posFeeAutoEnabled();
-      applyPosFeeMode();
-      $id("posFeeAuto").addEventListener("change", () => {
-        applyPosFeeMode();
-        updatePos();
-      });
-    }
     initPosMemoTypeahead();
     await fetchDogePrice();
     $id("posUsd")?.addEventListener("input", () => limitDecimalInput($id("posUsd"), 2));
@@ -2453,7 +2470,6 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (isPosTransactionPickerOpen()) refreshPosTransactions().catch((error) => setPosTransactionsStatus(error.message));
     });
     $id("posCopyUri")?.addEventListener("click", () => copy($id("posUriOut")?.textContent, "POS URI copied."));
-    $id("posSaveMerchant")?.addEventListener("click", savePosMerchant);
     document.querySelectorAll("[data-pos-amount]").forEach((button) => {
       button.addEventListener("click", () => {
         if ($id("posUsd")) $id("posUsd").value = positiveNumber(button.dataset.posAmount).toFixed(2);
@@ -2476,6 +2492,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
       const order = createPosOrder();
       upsertPosOrder(order);
+      recordPosMemo(order.memo);
       setPosConfirmNote("Order saved locally. Paste a txid or run a manual confirmation before marking paid.");
       if (window.dogeAnnounce) window.dogeAnnounce("POS order saved locally.");
     });

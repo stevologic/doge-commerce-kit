@@ -8,11 +8,11 @@
   <div class="hero-copy">
     <p class="eyebrow">Free, open-source Dogecoin commerce toolkit</p>
     <h1>Make Dogecoin feel normal to use.</h1>
-    <p class="hero-lede">DOGE Commerce Kit gives any business, creator, or individual the tools to accept Dogecoin today: a point-of-sale terminal for the counter, a browser wallet, copy-paste website snippets, and a live market dashboard. No accounts, no processor fees, no custody — everything runs in your browser.</p>
+    <p class="hero-lede">DOGE Commerce Kit gives any person or small business the tools to accept Dogecoin for goods and services — at the counter and on your website. A point-of-sale terminal, a built-in wallet, and copy-paste snippets for your site or shop. No accounts, no processor fees, no custody — everything runs in your browser.</p>
     <div class="hero-actions">
       <a class="button primary" href="{% url 'commerce:pos_terminal' %}">Take a DOGE payment</a>
       <a class="button" href="{% url 'commerce:merchant_kit' %}">Browse snippet tools</a>
-      <a class="button" href="{% url 'commerce:playbook' %}">Why DOGE helps you</a>
+      <a class="button" href="{% url 'commerce:playbook' %}">How to accept DOGE</a>
     </div>
   </div>
   <div class="hero-visual doge-hero-visual" aria-hidden="true">
@@ -22,7 +22,7 @@
 
 <section class="panel passion-panel">
   <div class="section-heading">
-    <h2>One kit, four tools.</h2>
+    <h2>One kit to accept DOGE, in person and online.</h2>
     <p>Every tool shares the same saved wallet and works without a sign-up. Keys and sales records stay on your device.</p>
   </div>
   <div class="playbook-tool-strip home-capability-strip">
@@ -35,12 +35,12 @@
       <span>Generate a new Dogecoin wallet or paste your address right inside the POS — keys never leave your device.</span>
     </a>
     <a class="playbook-tool-card" href="{% url 'commerce:merchant_kit' %}">
-      <strong>Website snippets</strong>
-      <span>Copy-paste payment buttons, badges, receipts, and printable counter signs.</span>
+      <strong>Website &amp; shop snippets</strong>
+      <span>Copy-paste pay-with-DOGE buttons, accepted badges, receipts, and printable counter signs.</span>
     </a>
-    <a class="playbook-tool-card" href="{% url 'commerce:statistics' %}">
-      <strong>Live statistics</strong>
-      <span>Real-time DOGE price, order flow, and plain-English technical analysis.</span>
+    <a class="playbook-tool-card" href="{% url 'commerce:merchant_kit' %}#transaction-validation">
+      <strong>Verify &amp; record</strong>
+      <span>Validate a transaction on chain and keep a local order ledger you can export any time.</span>
     </a>
   </div>
 </section>

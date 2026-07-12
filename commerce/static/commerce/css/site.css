@@ -3936,9 +3936,28 @@ label.wallet-share-social {
   text-transform: uppercase;
 }
 
+.pos-wallet-active > strong {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.pos-wallet-active > strong:empty {
+  display: none;
+}
+
 .pos-wallet-active code {
   font-size: 0.84rem;
   font-weight: 700;
+}
+
+.pos-memo-field span small {
+  margin-left: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .pos-wallet-setup-body {
@@ -4843,6 +4862,103 @@ pre.copy-output.has-copy-button {
   scroll-margin-top: 150px;
 }
 
+/* App-store style tool tiles: closed tiles browse like an app shelf, an open
+   tile expands to the full row to reveal its builder. */
+.tool-app {
+  /* Must stay display:block — overriding a <details> to grid/flex breaks the
+     native collapse so the body would show while closed. */
+  display: block;
+  padding: 0;
+  gap: 0;
+  align-content: initial;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.tool-app > summary.tool-app-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.tool-app > summary.tool-app-summary::-webkit-details-marker,
+.tool-app > summary.tool-app-summary::marker {
+  display: none;
+  content: "";
+}
+
+.tool-app:not([open]):hover {
+  border-color: rgba(15, 143, 120, 0.42);
+  box-shadow: 0 12px 26px rgba(15, 143, 120, 0.14);
+  transform: translateY(-1px);
+}
+
+.tool-app > summary.tool-app-summary:focus-visible {
+  outline: 3px solid rgba(15, 143, 120, 0.4);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.tool-app-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(244, 189, 42, 0.16);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.tool-app-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.tool-app-info strong {
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.tool-app-info small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.tool-app-open {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+.tool-app[open] {
+  grid-column: 1 / -1;
+}
+
+.tool-app[open] .tool-app-open {
+  color: var(--muted);
+}
+
+.tool-app-body {
+  display: grid;
+  gap: 12px;
+  padding: 4px 16px 16px;
+}
+
 .tool-snippet-preview {
   min-height: 146px;
   display: grid;
@@ -5146,9 +5262,8 @@ tr:last-child td {
 
 .site-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  gap: 22px;
   width: min(1180px, calc(100% - 32px));
   margin: 36px auto 0;
   padding: 26px 0 34px;
@@ -5156,9 +5271,38 @@ tr:last-child td {
   color: var(--muted);
 }
 
+.footer-top {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .site-footer div {
   display: grid;
   gap: 4px;
+}
+
+.footer-nav {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 0.92rem;
+}
+
+.footer-nav a {
+  color: var(--muted);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.footer-nav a:hover,
+.footer-nav a:focus-visible {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .footer-brand-copy {

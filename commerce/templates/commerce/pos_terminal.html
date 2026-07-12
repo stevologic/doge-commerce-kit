@@ -14,12 +14,13 @@
   <section class="panel pos-wallet-setup" id="posWalletSetup" aria-labelledby="posWalletSetupTitle">
     <div class="pos-wallet-setup-head">
       <div class="section-heading compact-heading">
-        <p class="eyebrow">Wallet</p>
-        <h2 id="posWalletSetupTitle">Set your receiving wallet</h2>
-        <p id="posProfileStatus">Payments land at this Dogecoin address. It stays in this browser only.</p>
+        <p class="eyebrow">Your business</p>
+        <h2 id="posWalletSetupTitle">Set your business name and wallet</h2>
+        <p id="posProfileStatus">Enter your business name and the Dogecoin address where payments land. Both stay in this browser only.</p>
       </div>
       <div class="pos-wallet-active" id="posWalletActive" hidden>
         <span>Active wallet</span>
+        <strong id="posWalletActiveMerchant"></strong>
         <code id="posWalletActiveOut">—</code>
         <button class="button small" id="posChangeWallet" type="button">Change</button>
       </div>
@@ -27,12 +28,16 @@
     <div class="pos-wallet-setup-body" id="posWalletSetupBody">
       <div class="form-grid compact">
         <label class="full-row">
+          <span>Business name</span>
+          <input id="posMerchant" value="DOGE Merchant" maxlength="60" autocomplete="off" placeholder="Your shop, stand, or your name">
+        </label>
+        <label class="full-row">
           <span>Dogecoin address</span>
           <input id="posWallet" value="" placeholder="Paste your D… address, or generate a new wallet" spellcheck="false" autocomplete="off">
         </label>
       </div>
       <div class="inline-actions">
-        <button class="button primary small" id="posUseWallet" type="button">Use this address</button>
+        <button class="button primary small" id="posUseWallet" type="button">Save business &amp; wallet</button>
         <button class="button small" id="posGenerateWallet" type="button">Generate new wallet</button>
       </div>
       <div class="pos-new-wallet" id="posNewWallet" hidden>
@@ -67,32 +72,11 @@
           <button class="pos-quick-amount" type="button" data-pos-amount="20">$20</button>
           <button class="pos-quick-amount" type="button" data-pos-amount="50">$50</button>
         </div>
-        <details class="tool-details pos-profile-details pos-more-details full-row" id="posProfileDetails">
-          <summary>Sale options</summary>
-          <div class="form-grid compact pos-profile-grid">
-            <label class="full-row">
-              <span>Memo</span>
-              <input id="posMemo" value="DOGE sale" maxlength="80" list="posMemoSuggestions" autocomplete="off">
-              <datalist id="posMemoSuggestions"></datalist>
-            </label>
-            <label>
-              <span>Merchant name</span>
-              <input id="posMerchant" value="DOGE Merchant">
-            </label>
-            <label>
-              <span>Extra DOGE fee</span>
-              <input id="posFeeDoge" type="number" min="0" step="0.00000001" value="0" title="DOGE fee buffer included in the payment request amount. Auto mode covers a typical network transaction fee.">
-            </label>
-            <label class="pos-fee-auto full-row">
-              <input type="checkbox" id="posFeeAuto" checked>
-              <span>Auto fee — covers a typical Dogecoin network fee so the sale nets the full amount</span>
-            </label>
-          </div>
-          <div class="inline-actions pos-profile-actions">
-            <button class="button small" id="posSaveMerchant" type="button">Save merchant</button>
-          </div>
-          <p class="note compact-note">Wallet and merchant name are stored in this browser only. This page does not custody funds or move DOGE.</p>
-        </details>
+        <label class="full-row pos-memo-field">
+          <span>What's it for? <small>Shows on the receipt</small></span>
+          <input id="posMemo" value="DOGE sale" maxlength="80" list="posMemoSuggestions" autocomplete="off" placeholder="e.g. Coffee, Table 4, Haircut" title="A short note for this sale. Past notes appear as you type.">
+          <datalist id="posMemoSuggestions"></datalist>
+        </label>
       </form>
     </article>
 
@@ -111,10 +95,11 @@
           <summary>Payment details</summary>
           <p class="note compact-note" id="posQuoteMeta">Quote timestamp appears after the DOGE price loads.</p>
           <div class="pos-fee-breakdown" id="posFeeBreakdown" aria-live="polite">
-            <span><b>Sale</b><strong id="posBaseDogeOut">0 DOGE</strong></span>
-            <span><b>Fee</b><strong id="posFeeDogeOut">0 DOGE</strong></span>
-            <span><b>Total</b><strong id="posTotalDogeOut">0 DOGE</strong></span>
+            <span><b>Item</b><strong id="posBaseDogeOut">0 DOGE</strong></span>
+            <span><b>Network fee</b><strong id="posFeeDogeOut">0 DOGE</strong></span>
+            <span><b>Total scanned</b><strong id="posTotalDogeOut">0 DOGE</strong></span>
           </div>
+          <p class="note compact-note">A small Dogecoin network fee is added automatically so you receive the full sale amount.</p>
           <code id="posUriOut">dogecoin:{{ donation_address }}</code>
           <div class="inline-actions">
             <button class="button small" id="posCopyUri" type="button">Copy URI</button>

@@ -44,7 +44,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20260712-pos-simple-v1"
+ASSET_VERSION = "20260712-scope-tighten-v2"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -2633,16 +2633,9 @@ def technical_details(request):
 
 
 def playbook(request):
-    context = base_context("playbook", request) | {
-        "adoption_moves": ADOPTION_MOVES,
-        "roadmap": ROADMAP,
-        "metrics": METRICS,
-        "weekly_cadence": WEEKLY_CADENCE,
-        "launch_checklist": LAUNCH_CHECKLIST,
-        "playbook_market_kits": PLAYBOOK_MARKET_KITS,
-        "quick_commerce_kits": QUICK_COMMERCE_KITS,
-    }
-    return render(request, "commerce/playbook.html", context)
+    # The playbook is a focused, static how-to for accepting DOGE with the kit's
+    # tools; it no longer renders the old multi-month campaign data sets.
+    return render(request, "commerce/playbook.html", base_context("playbook", request))
 
 
 def robots_txt(request):

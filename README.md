@@ -1,18 +1,18 @@
 # doge-commerce-kit
 
-**DOGE Commerce Kit** — the free, open-source Dogecoin commerce toolkit, live at [commerce.dog](https://commerce.dog). A consolidated Django site built around direct Dogecoin acceptance.
+**DOGE Commerce Kit** — the free, open-source Dogecoin commerce toolkit, live at [commerce.dog](https://commerce.dog). A consolidated Django site with a single, focused job: let any person or small business accept Dogecoin for goods and services — at the counter and on their website or shop.
 
 ![DOGE Commerce Kit home page](docs/readme/home.png)
 
-Everything runs in the browser against a stateless Django backend — no accounts, no processor fees, no custody:
+Everything runs in the browser against a stateless Django backend — no accounts, no processor fees, no custody. The primary navigation is the acceptance workflow (`Start`, `POS Terminal`, `Tools`, `Playbook`, `FAQ`); `Statistics` and `Technical` are secondary references linked from the footer.
 
-- `Start` - what the kit is, the four tools at a glance, and role-based entry paths
-- `POS Terminal` - built-in wallet setup (generate a new Dogecoin wallet with a one-time key backup, or paste your own address), quote sales in USD with quick-amount chips, show a scannable DOGE QR or a full-screen customer display, verify payment on chain, and keep an exportable local order ledger
-- `Tools` - snippet marketplace: payment QR builder, postable wallet card, printable "Dogecoin accepted here" counter sign, accepted badge, donate button, live price and spark-chart snippets, website integration pieces, transaction validation, receipts, and checkout policy — all auto-filled from the saved wallet
-- `Statistics` - live dashboard: Coinbase DOGE-USD price with animated sparkline over a three.js starfield, KPI strip, candles with moving averages, trade tape, plain-English technical analysis (RSI, MACD, Bollinger, support/resistance, volatility), capital map, and rich-list distribution
-- `Playbook` - why-DOGE benefits, route picker, four-step checkout runbook, launch checklist, and printables (counter sign, cashier quick card)
+- `Start` - what the kit is, the core accept-in-person and accept-online tools, and role-based entry paths
+- `POS Terminal` - one screen designed to be usable by anyone: set your business name and receiving wallet up top (generate a new Dogecoin wallet with a one-time key backup, or paste your own address), type a USD price, add a memo (with a typeahead that remembers the notes you've used), and show a scannable DOGE QR or full-screen customer display. A small Dogecoin network fee is added automatically and shown in the payment details; verify payment on chain and keep an exportable local order ledger
+- `Tools` - an app-store style marketplace: browse tools as tappable app tiles (payment QR builder, postable wallet card, printable "Dogecoin accepted here" counter sign, accepted badge, donate button, live price and spark-chart snippets, website integration pieces, transaction validation, receipts, and checkout policy) — each opens in place and auto-fills from the saved wallet
+- `Playbook` - a short, practical how-to for accepting DOGE with the kit's tools: benefits, three acceptance routes, a four-step checkout runbook, launch checklist, and printables
 - `FAQ` - plain-language merchant and builder answers with primary sources
-- `Technical` - sticky section navigator, wallet key derivation, payment URI/QR reference, chain lookup config, copyable code blocks, reusable data files, webhook demo, and papers
+- `Statistics` *(footer link)* - live dashboard: Coinbase DOGE-USD price with animated sparkline over a three.js starfield, KPI strip, candles with moving averages, trade tape, plain-English technical analysis (RSI, MACD, Bollinger, support/resistance, volatility), capital map, and rich-list distribution
+- `Technical` *(footer link)* - sticky section navigator, wallet key derivation, payment URI/QR reference, chain lookup config, copyable code blocks, reusable data files, webhook demo, and papers
 
 The site stays inside a lawful adoption lane:
 
