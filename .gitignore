@@ -20,6 +20,7 @@ verify-artifacts/
 # Deploy runtime (created on the server by deploy.sh)
 deploy.log
 .deploy.lock
+.deploy.last
 
 # OS / editor
 .DS_Store

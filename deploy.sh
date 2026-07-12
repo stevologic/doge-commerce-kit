@@ -3,9 +3,10 @@
 # Continuous deploy for doge-commerce-kit.
 #
 # Operates on the directory THIS script lives in (the repo root) — no hardcoded
-# paths. Fetches the tracked branch, and only when there is a new commit does it
-# reset to it and rebuild the containers. Safe to run from cron every few minutes:
-# on an unchanged repo it does nothing but log one line.
+# paths. Fetches the tracked branch and rebuilds the containers whenever the
+# branch tip differs from the commit that was last built (tracked in
+# .deploy.last), so a manual `git pull` that never rebuilt still deploys. Safe to
+# run from cron every few minutes: with nothing new it logs one line and exits.
 #
 #   Setup on the server:
 #     chmod +x deploy.sh
@@ -31,6 +32,7 @@ cd "$SCRIPT_DIR"
 BRANCH="${DEPLOY_BRANCH:-main}"
 LOG_FILE="${DEPLOY_LOG:-$SCRIPT_DIR/deploy.log}"
 LOCK_FILE="$SCRIPT_DIR/.deploy.lock"
+STATE_FILE="$SCRIPT_DIR/.deploy.last"   # commit the running containers were built from
 FORCE=0
 [ "${1:-}" = "--force" ] && FORCE=1
 
@@ -61,29 +63,36 @@ fi
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "not a git repository: $SCRIPT_DIR"
 [ -f "$SCRIPT_DIR/.env" ] || log "WARNING: .env not found — the web container refuses to boot without DJANGO_SECRET_KEY (see .env.example)."
 
-# --- is there anything new to deploy? ----------------------------------------
+# --- is a rebuild needed? ----------------------------------------------------
+# Compare the branch tip against the commit we last BUILT (not just against the
+# local HEAD), so a manual `git pull` that never rebuilt still triggers a deploy.
 log "=== Deploy check (branch: $BRANCH) ==="
 git fetch --quiet origin "$BRANCH" || fail "git fetch failed."
-LOCAL="$(git rev-parse HEAD)"
 REMOTE="$(git rev-parse "origin/$BRANCH")"
+DEPLOYED="$(cat "$STATE_FILE" 2>/dev/null || echo none)"
 
-if [ "$LOCAL" = "$REMOTE" ] && [ "$FORCE" -eq 0 ]; then
-  log "Already up to date at ${LOCAL:0:8}. Nothing to deploy."
+if [ "$REMOTE" = "$DEPLOYED" ] && [ "$FORCE" -eq 0 ]; then
+  log "Already deployed at ${REMOTE:0:8}. Nothing to do."
   exit 0
 fi
 
 # --- deploy ------------------------------------------------------------------
 if [ "$FORCE" -eq 1 ]; then
-  log "Forced rebuild at ${LOCAL:0:8}."
+  log "Forced rebuild at ${REMOTE:0:8}."
+elif [ "$DEPLOYED" = "none" ]; then
+  log "First deploy at ${REMOTE:0:8}."
 else
-  log "New commit: ${LOCAL:0:8} -> ${REMOTE:0:8}. Deploying."
+  log "Deploying ${DEPLOYED:0:8} -> ${REMOTE:0:8}."
 fi
 
 git reset --hard "origin/$BRANCH"
-git clean -fd   # drop untracked build cruft; gitignored files (.env, logs) survive
+git clean -fd   # drop untracked build cruft; gitignored files (.env, logs, .deploy.last) survive
 
 log "Building and restarting containers..."
 "${DC[@]}" up -d --build --remove-orphans >>"$LOG_FILE" 2>&1 || fail "docker compose build/up failed — see the log above."
+
+# Record what we actually deployed, so the next run compares against it.
+git rev-parse HEAD >"$STATE_FILE"
 
 # --- best-effort health confirmation -----------------------------------------
 sleep 5
