@@ -96,6 +96,12 @@ enters through Caddy on 80/443.
 
 Production notes:
 
+- Requires Docker Compose v2 (`docker compose`). The legacy Python
+  `docker-compose` 1.29 from old apt packages crashes on modern Docker
+  Engines with `KeyError: 'ContainerConfig'` when recreating containers —
+  install `docker-compose-plugin` (or `docker-compose-v2` on Ubuntu) and
+  stop using the v1 binary. `deploy.sh` refuses the broken combination
+  automatically.
 - The container refuses to boot with a missing or default `DJANGO_SECRET_KEY`.
 - `/api/` endpoints are rate limited per client IP (`DOGE_API_RATE_LIMIT`,
   default 60/min per gunicorn worker).

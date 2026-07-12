@@ -55,6 +55,14 @@ if docker compose version >/dev/null 2>&1; then
   DC=(docker compose)
 elif command -v docker-compose >/dev/null 2>&1; then
   DC=(docker-compose)
+  # Compose v1 (EOL since 2023) crashes with "KeyError: 'ContainerConfig'"
+  # when recreating containers on modern Docker Engines. Refuse the known-bad
+  # combo instead of leaving the stack half-recreated.
+  ENGINE_MAJOR="$(docker version --format '{{.Server.Version}}' 2>/dev/null | cut -d. -f1)"
+  if [ "${ENGINE_MAJOR:-0}" -ge 25 ] 2>/dev/null; then
+    fail "legacy docker-compose v1 is incompatible with Docker Engine ${ENGINE_MAJOR}.x (KeyError: 'ContainerConfig'). Install Compose v2: sudo apt-get install docker-compose-plugin  (Ubuntu without Docker's repo: docker-compose-v2), then rerun."
+  fi
+  log "WARNING: using legacy docker-compose v1 (end of life). Install the v2 plugin: sudo apt-get install docker-compose-plugin."
 else
   fail "Docker Compose not found. Install Docker (https://get.docker.com)."
 fi
