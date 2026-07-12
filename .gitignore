@@ -17,6 +17,10 @@ staticfiles/
 # Build / verification artifacts
 verify-artifacts/
 
+# Deploy runtime (created on the server by deploy.sh)
+deploy.log
+.deploy.lock
+
 # OS / editor
 .DS_Store
 Thumbs.db

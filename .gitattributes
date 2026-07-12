@@ -1,0 +1,5 @@
+# Files that run inside Linux containers / on the server must keep LF endings,
+# even when edited on Windows, or shebangs and configs break.
+*.sh    text eol=lf
+Dockerfile text eol=lf
+Caddyfile  text eol=lf

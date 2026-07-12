@@ -103,7 +103,20 @@ Production notes:
   testing DNS if needed.
 - For real traffic, configure a Blockbook indexer (below) — the public
   BlockCypher demo fallback throttles quickly.
-- Update flow: `git pull && docker compose up -d --build`.
+- Update flow (manual): `git pull && docker compose up -d --build`.
+- Update flow (automatic): `deploy.sh` fetches the branch and rebuilds only when
+  there is a new commit. Make it executable and add it to cron:
+
+  ```bash
+  chmod +x deploy.sh
+  ./deploy.sh                 # run once to confirm it works
+  crontab -e                  # use `sudo crontab -e` if Docker requires root
+  #   */5 * * * * /full/path/to/doge-commerce-kit/deploy.sh >/dev/null 2>&1
+  ```
+
+  It logs to `deploy.log`, guards against overlapping runs, and does nothing
+  (one log line) when the repo is already up to date. `./deploy.sh --force`
+  rebuilds regardless.
 
 ## Run With Docker (local)
 
