@@ -1019,6 +1019,51 @@ function walletShareSnippet(values, qrSource) {
     code.value = walletShareSnippet(values, embeddedQr);
   }
 
+  function walletShareContent() {
+    const values = walletShareValues();
+    const url = values.url || "https://commerce.dog/";
+    const lead = `I accept Dogecoin! 🐕 Send DOGE to my wallet ${values.address}. Make your own free DOGE wallet card:`;
+    return { values, url, lead, caption: `${lead} ${url} #Dogecoin #DOGE` };
+  }
+
+  async function walletShareQrFile() {
+    try {
+      const { values } = walletShareContent();
+      const uri = dogeUri(values.address, 0, values.message);
+      const dataUri = await qrDataUri(uri);
+      const blob = await (await fetch(dataUri)).blob();
+      return new File([blob], "doge-wallet-qr.png", { type: blob.type || "image/png" });
+    } catch {
+      return null;
+    }
+  }
+
+  async function nativeShareWallet() {
+    const { lead, url } = walletShareContent();
+    const shareData = { title: "My Dogecoin wallet", text: `${lead} #Dogecoin #DOGE`, url };
+    const file = await walletShareQrFile();
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      shareData.files = [file];
+    }
+    try {
+      await navigator.share(shareData);
+    } catch {
+      /* user dismissed the share sheet */
+    }
+  }
+
+  function shareWalletToX() {
+    const { lead, url } = walletShareContent();
+    const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(lead)}&url=${encodeURIComponent(url)}&hashtags=Dogecoin,DOGE`;
+    window.open(intent, "_blank", "noopener");
+  }
+
+  function shareWalletCaption(appUrl, label) {
+    const { caption } = walletShareContent();
+    copy(caption, `Caption copied — paste it into your ${label} post.`);
+    window.open(appUrl, "_blank", "noopener");
+  }
+
   function initWalletShareBuilder() {
     const form = $id("walletShareBuilder");
     if (!form) return;
@@ -1031,6 +1076,15 @@ function walletShareSnippet(values, qrSource) {
     $id("copyWalletShareSnippet")?.addEventListener("click", () => {
       copy($id("walletShareSnippetCode")?.value, "Wallet card snippet copied.");
     });
+    if (navigator.share && $id("walletShareNative")) {
+      $id("walletShareNative").hidden = false;
+      $id("walletShareNative").addEventListener("click", () => {
+        nativeShareWallet();
+      });
+    }
+    $id("walletShareX")?.addEventListener("click", shareWalletToX);
+    $id("walletShareInstagram")?.addEventListener("click", () => shareWalletCaption("https://www.instagram.com/", "Instagram"));
+    $id("walletShareTikTok")?.addEventListener("click", () => shareWalletCaption("https://www.tiktok.com/upload", "TikTok"));
     updateWalletShareBuilder();
   }
 

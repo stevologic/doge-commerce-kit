@@ -19,12 +19,19 @@ class WalletTemplateStructureTests(SimpleTestCase):
         ):
             self.assertIn(marker, pos_html)
 
-    def test_base_header_contains_rate_limit_indicator(self):
+    def test_base_loads_rate_limit_scripts_without_header_indicator(self):
         base_html = (ROOT / "templates" / "commerce" / "base.html").read_text(encoding="utf-8")
-        self.assertIn("rateLimitStatus", base_html)
+        # Scripts load site-wide, but the visual indicator no longer lives in the header.
         self.assertIn("rate_limit_core.js", base_html)
         self.assertIn("rate_limit_bootstrap.js", base_html)
         self.assertIn("wallet_core.js", base_html)
+        self.assertNotIn("rateLimitStatus", base_html)
+
+    def test_rate_limit_indicator_renders_on_data_pages(self):
+        for template in ("statistics.html", "pos_terminal.html", "merchant_kit.html"):
+            html = (ROOT / "templates" / "commerce" / template).read_text(encoding="utf-8")
+            self.assertIn("rateLimitStatus", html, template)
+            self.assertIn("data-source-status", html, template)
 
     def test_js_declares_known_provider_urls(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")

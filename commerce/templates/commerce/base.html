@@ -57,7 +57,6 @@
         <a class="{% if active == 'technical_details' %}active{% endif %}" {% if active == 'technical_details' %}aria-current="page"{% endif %} href="{% url 'commerce:technical_details' %}">Technical</a>
       </nav>
       <div class="header-utilities">
-        <div class="rate-limit-status" id="rateLimitStatus" role="status" aria-live="polite" aria-label="API rate status loading"></div>
         <a class="button small primary nav-pos-shortcut{% if active == 'pos_terminal' %} is-current{% endif %}" href="{% url 'commerce:pos_terminal' %}">POS</a>
         <button class="nav-toggle" id="navToggle" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Open menu">
           <span class="nav-toggle-bars" aria-hidden="true"></span>

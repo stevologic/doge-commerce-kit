@@ -1945,7 +1945,10 @@ function initCodeCopyButtons() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  window.dogeRateLimit?.bootstrap?.();
+  // Only run the status indicator + background provider polling on pages that
+  // actually render it (Statistics, POS, Tools). The limiter itself works
+  // independently, so data fetches stay throttled everywhere.
+  if (document.getElementById("rateLimitStatus")) window.dogeRateLimit?.bootstrap?.();
   initMobileNav();
   initCodeCopyButtons();
   $("refreshMarket")?.addEventListener("click", refreshMarket);

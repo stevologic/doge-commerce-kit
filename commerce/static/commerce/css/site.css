@@ -106,9 +106,28 @@ body[data-page="technical_details"] main {
 .rate-limit-status {
   display: inline-flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 6px;
-  max-width: min(520px, 34vw);
+}
+
+/* Inline status strip shown on data-fetching pages (Statistics, POS, Tools). */
+.data-source-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.data-source-status > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .rate-pill {
@@ -3812,7 +3831,35 @@ textarea:focus {
 }
 
 .form-grid label.pos-fee-auto,
-label.pos-fee-auto {
+label.wallet-share-social {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.wallet-share-social-actions {
+  gap: 8px;
+}
+
+.wallet-share-social .button.share-x:hover {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.wallet-share-social .button.share-ig:hover {
+  border-color: #c13584;
+  background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);
+  color: #fff;
+}
+
+.wallet-share-social .button.share-tt:hover {
+  border-color: #010101;
+  background: #010101;
+  color: #fff;
+}
+
+.pos-fee-auto {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -6739,26 +6786,6 @@ body[data-page="wallet"] main {
 
   .brand span {
     font-size: 0.92rem;
-  }
-}
-
-/* Full-text rate pills never fit beside the 8-link nav inside the 1280px header column,
-   so desktop shows compact status dots; hover/aria keep the detail. Mobile (<=980) shows full pills. */
-@media (min-width: 981px) {
-  .rate-limit-status {
-    flex-wrap: nowrap;
-    max-width: none;
-  }
-
-  .rate-pill {
-    gap: 0;
-    min-height: 30px;
-    padding: 4px 8px;
-  }
-
-  .rate-pill .rate-pill-state,
-  .rate-pill .rate-pill-label {
-    display: none;
   }
 }
 

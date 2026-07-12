@@ -21,6 +21,11 @@
 
   <p class="note compact-note" id="toolsMarketplaceHint">Filter by what you are trying to do. Each card previews the real output and includes a one-click copy when you are ready.</p>
 
+  <div class="data-source-status" aria-label="Live data source status">
+    <span>Live price sources</span>
+    <div class="rate-limit-status" id="rateLimitStatus" role="status" aria-live="polite" aria-label="API rate status loading"></div>
+  </div>
+
   <nav class="tool-filter-bar" aria-label="Snippet marketplace categories">
     <button class="tool-filter is-active" type="button" data-tool-filter="all">Browse all</button>
     <button class="tool-filter" type="button" data-tool-filter="getpaid">Get paid in person</button>
@@ -137,8 +142,17 @@
           </label>
         </form>
         <div class="wallet-share-card wallet-share-card-preview" id="walletSharePreview" aria-live="polite"></div>
+        <div class="wallet-share-social" role="group" aria-label="Share your DOGE wallet">
+          <span class="preview-label">Share your DOGE</span>
+          <div class="inline-actions wallet-share-social-actions">
+            <button class="button small primary share-native" id="walletShareNative" type="button" hidden>Share&hellip;</button>
+            <button class="button small share-x" id="walletShareX" type="button">Post on X</button>
+            <button class="button small share-ig" id="walletShareInstagram" type="button">Instagram</button>
+            <button class="button small share-tt" id="walletShareTikTok" type="button">TikTok</button>
+          </div>
+        </div>
         <div class="inline-actions">
-          <button class="button primary small" id="copyWalletShareSnippet" type="button">Copy wallet card snippet</button>
+          <button class="button small" id="copyWalletShareSnippet" type="button">Copy wallet card snippet</button>
         </div>
         <details class="tool-details tool-code-details">
           <summary>View snippet code</summary>
