@@ -4170,6 +4170,11 @@ label.wallet-share-social {
   color: var(--rose);
 }
 
+.pos-status-pill[data-state="pending"] {
+  background: rgba(244, 189, 42, 0.18);
+  color: var(--gold-deep);
+}
+
 .pos-status-pill[data-state="confirmed"] {
   background: rgba(14, 91, 99, 0.12);
   color: var(--teal);
@@ -4266,6 +4271,11 @@ label.wallet-share-social {
 .customer-display-status[data-state="unpaid"] {
   background: rgba(244, 189, 42, 0.18);
   color: var(--gold-deep);
+}
+
+.customer-display-status[data-state="pending"] {
+  background: rgba(14, 91, 99, 0.14);
+  color: var(--teal);
 }
 
 .customer-display-status[data-state="confirmed"] {
@@ -8465,6 +8475,184 @@ body[data-page="wallet"] main {
 
 /* === Simplified POS: price -> QR -> verify; everything else behind details === */
 
+.pos-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pos-progress li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--muted);
+}
+
+.pos-progress li > b {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e8ebe5;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.pos-progress li > span {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.pos-progress strong {
+  color: inherit;
+  font-size: 0.86rem;
+}
+
+.pos-progress small {
+  margin-top: 2px;
+  font-size: 0.7rem;
+}
+
+.pos-progress li.is-active {
+  border-color: rgba(150, 105, 14, 0.45);
+  background: rgba(244, 189, 42, 0.13);
+  color: var(--ink);
+}
+
+.pos-progress li.is-active > b {
+  background: var(--gold);
+  color: #241c05;
+}
+
+.pos-progress li.is-complete {
+  border-color: rgba(15, 143, 120, 0.26);
+  color: var(--teal);
+}
+
+.pos-progress li.is-complete > b {
+  background: var(--mint);
+  color: #fff;
+}
+
+.pos-simple .pos-operator-grid {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
+.pos-checkout-stage {
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+.pos-start-summary {
+  display: grid;
+  gap: 2px;
+  margin: 14px 0 12px;
+  padding: 13px 15px;
+  border: 1px solid rgba(14, 91, 99, 0.16);
+  border-radius: 10px;
+  background: rgba(14, 91, 99, 0.06);
+}
+
+.pos-start-summary span,
+.pos-start-summary small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.pos-start-summary strong {
+  color: var(--teal);
+  font-size: clamp(1.15rem, 4vw, 1.45rem);
+}
+
+.pos-start-payment {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1.06rem;
+}
+
+.pos-waiting-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(244, 189, 42, 0.38);
+  border-radius: 10px;
+  background: rgba(244, 189, 42, 0.12);
+}
+
+.pos-waiting-card > div,
+.pos-verification-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.pos-waiting-card small,
+.pos-verification-copy span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.pos-live-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--gold-deep);
+  box-shadow: 0 0 0 0 rgba(150, 105, 14, 0.4);
+  animation: pos-live-pulse 1.8s infinite;
+}
+
+@keyframes pos-live-pulse {
+  70% { box-shadow: 0 0 0 10px rgba(150, 105, 14, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(150, 105, 14, 0); }
+}
+
+.pos-verification-copy {
+  padding: 12px 14px;
+  border: 1px solid rgba(14, 91, 99, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.pos-verification-copy > strong {
+  font-size: 1.05rem;
+}
+
+.pos-paid-receipt {
+  margin: 16px 0;
+}
+
+.pos-paid-receipt > [data-pos-receipt-card] {
+  margin: 0 auto !important;
+}
+
+.customer-display-detection-note {
+  max-width: 440px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pos-live-dot {
+    animation: none;
+  }
+}
+
 .pos-simple .pos-hero-slim {
   grid-template-columns: 1fr;
   padding: 14px 18px;
@@ -8623,6 +8811,15 @@ body[data-page="wallet"] main {
 }
 
 @media (max-width: 700px) {
+  .pos-progress li {
+    justify-content: center;
+    padding: 9px 6px;
+  }
+
+  .pos-progress li > span {
+    display: none;
+  }
+
   .pos-simple .pos-hero-slim {
     padding: 12px 14px;
   }

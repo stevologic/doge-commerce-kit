@@ -9,8 +9,12 @@ Use this gate before public launch and after significant releases at
   `/playbook/`, `/faq/`, `/technical-details/`; `/wallet/` 301-redirects
   to `/pos/`.
 - DOGE price loads on POS/Tools/Statistics, or clearly falls back.
-- POS: quick-amount chips update the QR, customer display opens full screen,
-  txid confirmation works, orders save/export/delete locally.
+- POS: quick amounts feed Start payment; starting freezes/saves the quote,
+  opens the customer QR, and watches for a new exact incoming payment. A
+  detected payment advances to pending verification, auto-completes after the
+  required confirmations, and still supports manual txid verification.
+- POS receipt: paid sales render the formatted receipt in Step 3; rich copy,
+  subject-only email handoff, HTML download, and print/PDF preserve the design.
 - POS wallet setup: generating a new wallet fills the address, shows the
   one-time WIF backup panel, and offers the backup download; pasted
   addresses persist after Save merchant.

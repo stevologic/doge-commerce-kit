@@ -11,6 +11,12 @@
     </div>
   </div>
 
+  <ol class="pos-progress" id="posProgress" aria-label="Payment progress">
+    <li class="is-active" data-pos-progress="1" aria-current="step"><b>1</b><span><strong>Amount</strong><small>Build the sale</small></span></li>
+    <li data-pos-progress="2"><b>2</b><span><strong>Scan</strong><small>Customer pays</small></span></li>
+    <li data-pos-progress="3"><b>3</b><span><strong>Verify</strong><small>Confirm on-chain</small></span></li>
+  </ol>
+
   <section class="panel pos-wallet-setup" id="posWalletSetup" aria-labelledby="posWalletSetupTitle">
     <div class="pos-wallet-setup-head">
       <div class="section-heading compact-heading">
@@ -56,8 +62,8 @@
     </div>
   </section>
 
-  <section class="pos-operator-grid">
-    <article class="panel pos-sale-panel" id="dogePosTerminal">
+  <section class="pos-operator-grid" id="posWorkflow" data-pos-stage="1">
+    <article class="panel pos-sale-panel pos-checkout-stage" id="dogePosTerminal" data-pos-panel="1">
       <div class="pos-step-chip"><b>1</b><h2>Set the price</h2></div>
       <form class="form-grid compact">
         <label class="full-row pos-amount-field">
@@ -78,10 +84,23 @@
           <datalist id="posMemoSuggestions"></datalist>
         </label>
       </form>
+      <div class="pos-start-summary" aria-live="polite">
+        <span>Customer will pay</span>
+        <strong id="posStartDoge">Loading DOGE quote...</strong>
+        <small id="posStartHint">Choose an amount, then start the payment.</small>
+      </div>
+      <button class="button primary pos-start-payment" id="posStartPayment" type="button">Start payment</button>
     </article>
 
-    <article class="panel pos-payment-panel">
+    <article class="panel pos-payment-panel pos-checkout-stage" data-pos-panel="2" hidden>
       <div class="pos-step-chip"><b>2</b><h2>Customer scans</h2></div>
+      <div class="pos-waiting-card" id="posWaitingCard" role="status" aria-live="polite">
+        <span class="pos-live-dot" aria-hidden="true"></span>
+        <div>
+          <strong>Waiting for the payment</strong>
+          <small id="posWaitingNote">The terminal will move to verification as soon as the payment appears on the Dogecoin network.</small>
+        </div>
+      </div>
       <div class="checkout-preview pos-preview pos-preview-simple">
         <button class="pos-qr-button" id="posQrButton" type="button" title="Show the customer a full-screen QR" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">
           <img id="posQr" alt="Dogecoin POS QR code">
@@ -90,6 +109,8 @@
         <strong class="pos-doge-total" id="posDogeOut">0 DOGE</strong>
         <div class="inline-actions pos-scan-actions">
           <button class="button primary small" id="openPosCustomerDisplay" type="button" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">Customer display</button>
+          <button class="button small" id="posStep2ManualVerify" type="button">Enter txid</button>
+          <button class="button small quiet" id="posCancelPayment" type="button">Cancel sale</button>
         </div>
         <details class="tool-details pos-more-details">
           <summary>Payment details</summary>
@@ -103,41 +124,34 @@
           <code id="posUriOut">dogecoin:{{ donation_address }}</code>
           <div class="inline-actions">
             <button class="button small" id="posCopyUri" type="button">Copy URI</button>
-            <button class="button small" id="posSaveOrder" type="button">Save order</button>
             <button class="button small quiet" id="openPosConversionModal" type="button">Conversion chart</button>
           </div>
         </details>
       </div>
     </article>
 
-    <article class="panel accent-panel pos-confirm-panel">
+    <article class="panel accent-panel pos-confirm-panel pos-checkout-stage" data-pos-panel="3" hidden>
       <div class="pos-step-chip"><b>3</b><h2>Verify payment</h2></div>
       <div class="pos-verify-hero">
-        <strong class="pos-status-pill" id="posStatus" data-state="unpaid">Unpaid</strong>
+        <strong class="pos-status-pill" id="posStatus" data-state="pending">Verification pending</strong>
+        <div class="pos-verification-copy">
+          <strong id="posVerifyTitle">Payment detected</strong>
+          <span id="posVerifySubtitle">Checking the receiving address, amount, and blockchain confirmations.</span>
+        </div>
         <div class="inline-actions pos-verify-actions">
-          <button class="button primary" id="posAutoVerify" type="button" title="Search the blockchain for a recent payment matching this sale amount.">Auto verify</button>
+          <button class="button primary" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Check now</button>
+          <button class="button" id="posOpenManualVerify" type="button">Manual verify</button>
           <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
             <button class="button" id="posMarkPaid" type="button" disabled>Mark paid</button>
           </span>
         </div>
       </div>
-      <div class="pos-auto-verify" id="posAutoVerifyCard" hidden aria-live="polite">
-        <strong id="posAutoVerifyTitle">Is this the buyer's payment?</strong>
-        <div class="pos-auto-verify-facts">
-          <span><b>Amount</b><i id="posAutoVerifyAmount">—</i></span>
-          <span><b>Seen</b><i id="posAutoVerifyTime">—</i></span>
-          <span><b>Status</b><i id="posAutoVerifyConf">—</i></span>
-        </div>
-        <code id="posAutoVerifyTxid"></code>
-        <div class="inline-actions">
-          <button class="button primary small" id="posAutoVerifyYes" type="button">Yes — use this transaction</button>
-          <button class="button small" id="posAutoVerifyNo" type="button">No, not this one</button>
-        </div>
-      </div>
       <p class="note" id="posConfirmNote" aria-live="polite"></p>
+      <div class="pos-paid-receipt" id="posPaidReceipt" hidden aria-live="polite"></div>
       <div class="inline-actions pos-receipt-actions" id="posReceiptActions" hidden>
-        <button class="button primary small" id="posEmailReceipt" type="button" aria-haspopup="dialog" aria-controls="posReceiptModal">Email receipt</button>
+        <button class="button primary small" id="posEmailReceipt" type="button" aria-haspopup="dialog" aria-controls="posReceiptModal">Share rich receipt</button>
         <button class="button small" id="posPrintReceipt" type="button">Print / Save PDF</button>
+        <button class="button small quiet" id="posNewSale" type="button">New sale</button>
       </div>
       <details class="tool-details pos-more-details" id="posManualDetails">
         <summary>Manual check &amp; details</summary>
@@ -295,6 +309,7 @@
     </div>
     <p class="customer-display-hint">Open any Dogecoin wallet and scan this code. The amount fills in automatically.</p>
     <span class="customer-display-status" id="posDisplayStatus" data-state="unpaid">Awaiting payment</span>
+    <p class="customer-display-detection-note">This screen detects the payment broadcast, not the phone camera scan.</p>
   </section>
 </div>
 
@@ -303,8 +318,8 @@
     <div class="modal-head">
       <div>
         <p class="eyebrow">Payment receipt</p>
-        <h2 id="posReceiptModalTitle">Send the customer a receipt</h2>
-        <p>Enter the customer's email to open your own mail app, or copy the formatted receipt to paste into any email.</p>
+        <h2 id="posReceiptModalTitle">Share the customer's receipt</h2>
+        <p>The receipt below is real formatted HTML. Copy it, then paste it into an email or message without losing the design.</p>
       </div>
       <button class="button small quiet" type="button" id="closePosReceiptModal">Close</button>
     </div>
@@ -314,11 +329,12 @@
     </label>
     <div class="pos-receipt-preview" id="posReceiptPreview" aria-label="Receipt preview" aria-live="polite"></div>
     <div class="inline-actions pos-receipt-modal-actions">
-      <button class="button primary small" id="posReceiptOpenEmail" type="button">Open email</button>
-      <button class="button small" id="posReceiptCopyHtml" type="button">Copy rich receipt</button>
+      <button class="button primary small" id="posReceiptCopyHtml" type="button">Copy rich receipt</button>
+      <button class="button small" id="posReceiptOpenEmail" type="button">Copy &amp; open email</button>
       <button class="button small" id="posReceiptPrint" type="button">Print / Save PDF</button>
+      <button class="button small quiet" id="posReceiptDownloadHtml" type="button">Download HTML</button>
     </div>
-    <p class="note compact-note">This opens your own email app or clipboard — nothing is sent through this site, and the customer's email is never stored.</p>
+    <p class="note compact-note">Your email app opens with the subject filled in. Paste the copied rich receipt into the message body. Nothing is sent through this site, and the customer's email is never stored.</p>
   </section>
 </div>
 
@@ -333,9 +349,10 @@
       <button class="button small quiet" type="button" id="closePosOrdersHelp">Close</button>
     </div>
     <ol class="help-steps">
-      <li><strong>Save order</strong><span>After showing the QR, save the sale so amount, memo, quote, and status are preserved.</span></li>
+      <li><strong>Start payment</strong><span>The sale is saved automatically when you start it, before the customer QR opens.</span></li>
       <li><strong>Load</strong><span>Restore an order into Sale Status before checking or marking it paid.</span></li>
-      <li><strong>Pick transaction</strong><span>Use the transaction picker in Sale Status to fill the transaction ID from recent blockchain activity.</span></li>
+      <li><strong>Automatic detection</strong><span>The terminal watches for the exact new payment amount and advances to verification when it appears on-chain.</span></li>
+      <li><strong>Pick transaction</strong><span>If needed, use the transaction picker in Manual verify to fill the transaction ID from recent blockchain activity.</span></li>
       <li><strong>Confirm then mark paid</strong><span>Confirm the transaction, amount, address, and confirmation count before fulfillment.</span></li>
       <li><strong>Export</strong><span>Download the current page or every saved local order as CSV or JSON.</span></li>
     </ol>

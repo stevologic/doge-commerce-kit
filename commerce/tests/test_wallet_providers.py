@@ -55,6 +55,139 @@ class BlockchairProviderTests(SimpleTestCase):
         body = json.loads(response.content)
         self.assertEqual(body["provider_name"], "Blockchair")
 
+    def test_blockchair_payment_activity_excludes_outgoing_transactions(self):
+        incoming_txid = "a" * 64
+        outgoing_txid = "b" * 64
+        address_data = {
+            "address": {"transaction_count": 2},
+            "transactions": [
+                {"hash": incoming_txid, "balance_change": 125000000, "block_id": 1, "time": 1},
+                {"hash": outgoing_txid, "balance_change": -50000000, "block_id": 1, "time": 2},
+            ],
+        }
+        with patch(
+            "commerce.views.blockchair_address_payload",
+            return_value=(address_data, "https://example.test/address", {}),
+        ):
+            result = views.blockchair_address_transactions("DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK", 10)
+        self.assertEqual([row["txid"] for row in result["transactions"]], [incoming_txid])
+        self.assertEqual(result["transactions"][0]["doge"], 1.25)
+
+    def test_blockchair_direct_schema_preserves_time_and_confirmation_count(self):
+        address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        txid = "f" * 64
+        address_data = {
+            "address": {"transaction_count": 1},
+            "transactions": [
+                {
+                    "hash": txid,
+                    "balance_change": 125000000,
+                    "block_id": 198,
+                    "time": "2026-07-12 12:34:56",
+                }
+            ],
+        }
+        payload = {"data": {address: address_data}, "context": {"state": 200}}
+        with patch("commerce.views.cached_provider_lookup", return_value=payload), patch(
+            "commerce.views.throttle_server_provider"
+        ):
+            parsed_address, _url, parsed_payload = views.blockchair_address_payload(
+                address,
+                transaction_details="true",
+            )
+        with patch("commerce.views.blockchair_address_payload", return_value=(parsed_address, "https://example.test", parsed_payload)):
+            result = views.blockchair_address_transactions(address, 10)
+        self.assertEqual(result["transactions"][0]["confirmations"], 3)
+        self.assertEqual(result["transactions"][0]["time"], "2026-07-12T12:34:56Z")
+
+    def test_blockchair_transaction_parses_direct_schema_and_chain_height(self):
+        txid = "1" * 64
+        address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        payload = {
+            "data": {
+                txid: {
+                    "transaction": {"hash": txid, "block_id": 198},
+                    "outputs": [{"value": 200000000, "type": "pubkeyhash", "recipient": address}],
+                }
+            },
+            "context": {"state": 200},
+        }
+        with patch("commerce.views.cached_provider_lookup", return_value=payload), patch(
+            "commerce.views.throttle_server_provider"
+        ):
+            result, _url, _provider = views.blockchair_transaction(txid)
+        self.assertEqual(result["confirmations"], 3)
+        self.assertEqual(result["outputs"][0]["scriptPubKey"]["addresses"], [address])
+
+    def test_blockcypher_payment_activity_excludes_address_inputs(self):
+        incoming_txid = "d" * 64
+        outgoing_txid = "e" * 64
+        payload = {
+            "n_tx": 2,
+            "txrefs": [
+                {"tx_hash": incoming_txid, "value": 125000000, "tx_input_n": -1, "confirmations": 1},
+                {"tx_hash": outgoing_txid, "value": 50000000, "tx_input_n": 0, "confirmations": 1},
+            ],
+        }
+        with patch("commerce.views.cached_provider_lookup", return_value=payload):
+            result = views.blockcypher_address_transactions("DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK", 10)
+        self.assertEqual([row["txid"] for row in result["transactions"]], [incoming_txid])
+
+    def test_fresh_wallet_activity_uses_short_payment_cache(self):
+        client = Client()
+        sample = {
+            "address": "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK",
+            "transactions": [],
+            "provider_name": "test",
+        }
+        with patch("commerce.views.latest_transactions", return_value=sample) as lookup:
+            response = client.get(
+                "/api/wallet/transactions/?address=DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK&limit=25&fresh=1"
+            )
+        self.assertEqual(response.status_code, 200)
+        lookup.assert_called_once_with(
+            "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK",
+            25,
+            cache_ttl=views.DOGE_PAYMENT_POLL_CACHE_TTL,
+        )
+
+    def test_transaction_validation_reports_confirmation_pending(self):
+        client = Client()
+        address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        txid = "c" * 64
+        chain_tx = {
+            "hash": txid,
+            "confirmations": 0,
+            "outputs": [
+                {
+                    "value": 200000000,
+                    "scriptPubKey": {"addresses": [address]},
+                }
+            ],
+        }
+        with patch(
+            "commerce.views.latest_transaction",
+            return_value=(chain_tx, "https://example.test/tx", "test chain"),
+        ) as lookup:
+            response = client.post(
+                "/api/transaction/validate/",
+                data=json.dumps(
+                    {
+                        "txid": txid,
+                        "address": address,
+                        "doge": 2,
+                        "min_confirmations": 1,
+                        "fresh": True,
+                    }
+                ),
+                content_type="application/json",
+            )
+        payload = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(payload["passed"])
+        self.assertEqual(payload["status"], "pending")
+        lookup.assert_called_once_with(txid, cache_ttl=views.DOGE_PAYMENT_POLL_CACHE_TTL)
+
     def test_known_provider_urls_are_declared(self):
         source = open(views.__file__, encoding="utf-8").read()
         self.assertIn("https://api.blockchair.com/dogecoin", source)

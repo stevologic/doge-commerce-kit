@@ -39,6 +39,8 @@ class HumanCentricPageTests(SimpleTestCase):
                 "Set the price",
                 "Customer scans",
                 "Verify payment",
+                "posStartPayment",
+                "posCancelPayment",
                 "posConfirmTransaction",
                 "posMarkPaid",
                 # Memo is a primary step-1 field; the auto network fee estimate
@@ -47,7 +49,6 @@ class HumanCentricPageTests(SimpleTestCase):
                 "posFeeDogeOut",
                 "Network fee",
                 "posAutoVerify",
-                "posAutoVerifyYes",
                 "dogePosTerminal",
             ],
         )
@@ -67,11 +68,12 @@ class HumanCentricPageTests(SimpleTestCase):
             "/pos/",
             [
                 "posReceiptActions",
-                "Email receipt",
+                "Share rich receipt",
                 "posEmailReceipt",
                 "posReceiptModal",
                 "posReceiptOpenEmail",
                 "posReceiptCopyHtml",
+                "posReceiptDownloadHtml",
             ],
         )
 

@@ -78,13 +78,21 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
         log_lines.append("handoff_wallet_to_tools=ok")
         self._write_flow_log("ux-handoff-flow.log", log_lines)
 
-    def test_pos_verify_then_record_requires_human_clicks(self):
+    def test_pos_initiate_then_manual_verify_requires_human_confirmation(self):
         log_lines = []
         base = self.live_server_url
         sample_tx = "sample-local-test"
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
+            page.route(
+                "**/api/wallet/transactions/**",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({"transactions": [], "provider_name": "test chain"}),
+                ),
+            )
             page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
             page.wait_for_selector("#posGenerateWallet", timeout=20000)
             page.click("#posGenerateWallet")
@@ -92,9 +100,7 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => document.getElementById('posWallet')?.value?.startsWith('D')",
                 timeout=20000,
             )
-            # Save order sits behind the payment-details disclosure now, so it
-            # is attached but not visible until the operator opens it.
-            page.wait_for_selector("#posSaveOrder", state="attached", timeout=20000)
+            page.wait_for_selector("#posStartPayment", state="visible", timeout=20000)
             page.wait_for_function(
                 """
                   () => {
@@ -105,19 +111,24 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 timeout=45000,
             )
             page.fill("#posUsd", "5.00")
-            # Save order and the manual txid tools live behind disclosures now;
-            # open them the way a probing operator would.
-            page.click(".pos-payment-panel .pos-more-details summary")
             page.wait_for_function(
-                "() => !document.getElementById('posSaveOrder').disabled",
+                "() => !document.getElementById('posStartPayment').disabled",
                 timeout=20000,
             )
-            page.click("#posSaveOrder")
+            page.click("#posStartPayment")
             page.wait_for_function(
-                "() => document.getElementById('posSelectedOrder')?.textContent?.includes('DOGE')",
+                "() => document.getElementById('posWorkflow')?.dataset.posStage === '2'",
                 timeout=20000,
             )
-            page.click("#posManualDetails summary")
+            page.click("#closePosCustomerDisplay")
+            page.click("#posCancelPayment")
+            page.click("#posStartPayment")
+            page.wait_for_function(
+                "() => document.getElementById('posWorkflow')?.dataset.posStage === '2'",
+                timeout=20000,
+            )
+            page.click("#closePosCustomerDisplay")
+            page.click("#posOpenManualVerify")
             page.fill("#posTxId", sample_tx)
             page.wait_for_timeout(800)
             status_before = page.locator("#posStatus").inner_text().strip().lower()
@@ -142,8 +153,11 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 timeout=20000,
             )
             final_status = page.locator("#posStatus").inner_text().strip().lower()
+            rich_receipt_visible = page.locator("#posPaidReceipt [data-pos-receipt-card]").is_visible()
             log_lines.append(f"final_status={final_status}")
+            log_lines.append(f"rich_receipt_visible={rich_receipt_visible}")
             self.assertEqual(final_status, "paid")
+            self.assertTrue(rich_receipt_visible)
             browser.close()
 
         log_lines.append("pos_sequential_verify_then_mark_paid=ok")

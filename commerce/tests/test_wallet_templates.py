@@ -52,3 +52,26 @@ class WalletTemplateStructureTests(SimpleTestCase):
     def test_site_bootstraps_rate_limiter_explicitly(self):
         site_js = (ROOT / "static" / "commerce" / "js" / "site.js").read_text(encoding="utf-8")
         self.assertIn("dogeRateLimit?.bootstrap", site_js)
+
+    def test_pos_uses_staged_payment_monitoring(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        for marker in (
+            "startPosPaymentPolling",
+            "payment_started_at",
+            "baseline_txids",
+            "baseline_ready",
+            "fresh=1",
+            "Verification pending",
+            "activePosPaymentState()",
+            "min_confirmations",
+        ):
+            self.assertIn(marker, doge_tools)
+
+    def test_pos_receipt_keeps_html_as_the_primary_format(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        self.assertIn("data-pos-receipt-card", doge_tools)
+        self.assertIn('"text/html": new Blob([receipt.html]', doge_tools)
+        self.assertIn("posReceiptDocument(receipt)", doge_tools)
+        self.assertIn("!emailField.checkValidity()", doge_tools)
+        self.assertIn("mailto:${encodeURIComponent(email)}", doge_tools)
+        self.assertNotIn("subject=${encodeURIComponent(receipt.subject)}&body=", doge_tools)

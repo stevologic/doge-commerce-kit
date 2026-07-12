@@ -317,8 +317,9 @@ class BrowserLaunchScript:
                     "#rateLimitStatus .rate-pill-state",
                     "nodes => nodes.map(node => node.textContent.trim())",
                 )
+                limited_fetch = "yes" if page.evaluate('typeof window.dogeLimitedFetch === "function"') else "no"
                 (SCRATCH / f"launch-{run_id}.log").write_text(
-                    f"statistics_pills={','.join(states)}\nlimited_fetch={'yes' if page.evaluate('typeof window.dogeLimitedFetch === \"function\"') else 'no'}\n",
+                    f"statistics_pills={','.join(states)}\nlimited_fetch={limited_fetch}\n",
                     encoding="utf-8",
                 )
                 page.screenshot(path=str(SCRATCH / "screenshots" / f"wallet-run-{run_id}.png"))
