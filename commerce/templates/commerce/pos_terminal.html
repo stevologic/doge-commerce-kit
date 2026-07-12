@@ -135,6 +135,10 @@
         </div>
       </div>
       <p class="note" id="posConfirmNote" aria-live="polite"></p>
+      <div class="inline-actions pos-receipt-actions" id="posReceiptActions" hidden>
+        <button class="button primary small" id="posEmailReceipt" type="button" aria-haspopup="dialog" aria-controls="posReceiptModal">Email receipt</button>
+        <button class="button small" id="posPrintReceipt" type="button">Print / Save PDF</button>
+      </div>
       <details class="tool-details pos-more-details" id="posManualDetails">
         <summary>Manual check &amp; details</summary>
         <p class="note" id="posSelectedOrder">No local order loaded. Save an order or load one from the table below.</p>
@@ -291,6 +295,30 @@
     </div>
     <p class="customer-display-hint">Open any Dogecoin wallet and scan this code. The amount fills in automatically.</p>
     <span class="customer-display-status" id="posDisplayStatus" data-state="unpaid">Awaiting payment</span>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="posReceiptModal" hidden>
+  <section class="pos-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="posReceiptModalTitle">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Payment receipt</p>
+        <h2 id="posReceiptModalTitle">Send the customer a receipt</h2>
+        <p>Enter the customer's email to open your own mail app, or copy the formatted receipt to paste into any email.</p>
+      </div>
+      <button class="button small quiet" type="button" id="closePosReceiptModal">Close</button>
+    </div>
+    <label class="pos-receipt-email-field">
+      <span>Customer email <small>optional</small></span>
+      <input id="posReceiptEmail" type="email" inputmode="email" autocomplete="off" spellcheck="false" placeholder="customer@example.com">
+    </label>
+    <div class="pos-receipt-preview" id="posReceiptPreview" aria-label="Receipt preview" aria-live="polite"></div>
+    <div class="inline-actions pos-receipt-modal-actions">
+      <button class="button primary small" id="posReceiptOpenEmail" type="button">Open email</button>
+      <button class="button small" id="posReceiptCopyHtml" type="button">Copy rich receipt</button>
+      <button class="button small" id="posReceiptPrint" type="button">Print / Save PDF</button>
+    </div>
+    <p class="note compact-note">This opens your own email app or clipboard — nothing is sent through this site, and the customer's email is never stored.</p>
   </section>
 </div>
 

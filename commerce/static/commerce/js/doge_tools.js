@@ -44,6 +44,8 @@
   let donateModalRenderId = 0;
   let donateBuilderRenderId = 0;
   let walletShareRenderId = 0;
+  let walletCardFileCache = null;
+  let walletCardRefreshTimer = null;
   let integrationRenderId = 0;
   let integrationSnippetType = "checkout";
   let posOrderPage = 1;
@@ -1017,6 +1019,7 @@ function walletShareSnippet(values, qrSource) {
     if (renderId !== walletShareRenderId) return;
     preview.innerHTML = walletShareCardMarkup(values, embeddedQr);
     code.value = walletShareSnippet(values, embeddedQr);
+    scheduleWalletCardRefresh();
   }
 
   function walletShareContent() {
@@ -1038,30 +1041,268 @@ function walletShareSnippet(values, qrSource) {
     }
   }
 
+  function loadImage(src, timeoutMs = 6000) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const timer = setTimeout(() => reject(new Error("image load timeout")), timeoutMs);
+      img.decoding = "async";
+      img.onload = () => {
+        clearTimeout(timer);
+        resolve(img);
+      };
+      img.onerror = () => {
+        clearTimeout(timer);
+        reject(new Error("image load error"));
+      };
+      img.src = src;
+    });
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth, byChar = false) {
+    const tokens = byChar ? String(text).split("") : String(text).split(/\s+/).filter(Boolean);
+    const joiner = byChar ? "" : " ";
+    const lines = [];
+    let line = "";
+    for (const token of tokens) {
+      const test = line ? line + joiner + token : token;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = token;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function truncateCanvasText(ctx, text, maxWidth) {
+    let str = String(text);
+    if (ctx.measureText(str).width <= maxWidth) return str;
+    while (str.length > 1 && ctx.measureText(`${str}…`).width > maxWidth) str = str.slice(0, -1);
+    return `${str}…`;
+  }
+
+  // Compose the branded wallet card directly on a canvas. DOM-to-image
+  // (foreignObject) rasterization is unreliable across browsers for a card this
+  // rich, so the shareable card is painted deterministically instead.
+  async function walletCardPngBlob() {
+    const values = walletShareValues();
+    const uri = dogeUri(values.address, 0, values.message);
+    let qrImg = null;
+    try {
+      qrImg = await loadImage(await qrDataUri(uri));
+    } catch {
+      qrImg = null;
+    }
+    const W = 1080;
+    const H = 1350;
+    const pad = 84;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    const font = (weight, size) => `${weight} ${size}px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`;
+
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, "#10283a");
+    bg.addColorStop(0.55, "#183545");
+    bg.addColorStop(1, "#49380e");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    const glow = ctx.createRadialGradient(W * 0.86, H * 0.12, 0, W * 0.86, H * 0.12, 520);
+    glow.addColorStop(0, "rgba(244,189,42,0.30)");
+    glow.addColorStop(1, "rgba(244,189,42,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // Header: Đ badge + business name
+    const badgeR = 52;
+    const badgeX = pad + badgeR;
+    const badgeY = pad + badgeR;
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+    ctx.fillStyle = "#f4bd2a";
+    ctx.fill();
+    ctx.fillStyle = "#141414";
+    ctx.font = font(900, 60);
+    ctx.textAlign = "center";
+    ctx.fillText("Đ", badgeX, badgeY + 21);
+    ctx.textAlign = "left";
+    const nameX = badgeX + badgeR + 26;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = font(800, 44);
+    ctx.fillText(truncateCanvasText(ctx, values.name, W - pad - nameX), nameX, badgeY - 2);
+    ctx.fillStyle = "#cfe8f7";
+    ctx.font = font(600, 24);
+    ctx.fillText("Shareable DOGE wallet QR", nameX, badgeY + 32);
+
+    // DOGE READY pill
+    let y = pad + 150;
+    ctx.font = font(900, 22);
+    const pillText = "DOGE READY";
+    const pillW = ctx.measureText(pillText).width + 44;
+    roundRectPath(ctx, pad, y, pillW, 48, 24);
+    ctx.fillStyle = "rgba(244,189,42,0.18)";
+    ctx.fill();
+    ctx.fillStyle = "#ffd65c";
+    ctx.fillText(pillText, pad + 22, y + 32);
+
+    // Headline
+    y += 48 + 66;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = font(900, 76);
+    ctx.fillText("Send DOGE here", pad, y);
+
+    // Message (up to 2 lines)
+    ctx.fillStyle = "#d7e9f3";
+    ctx.font = font(500, 30);
+    const msgLines = wrapCanvasText(ctx, values.message, W - pad * 2).slice(0, 2);
+    y += 16;
+    for (const line of msgLines) {
+      y += 42;
+      ctx.fillText(line, pad, y);
+    }
+
+    // QR in a light rounded card
+    const qrBox = 470;
+    const qrX = (W - qrBox) / 2;
+    const qrY = y + 44;
+    roundRectPath(ctx, qrX, qrY, qrBox, qrBox, 28);
+    ctx.fillStyle = "#eaf7ff";
+    ctx.fill();
+    if (qrImg) {
+      const inner = qrBox - 56;
+      ctx.drawImage(qrImg, qrX + 28, qrY + 28, inner, inner);
+    }
+
+    // Public address
+    let ay = qrY + qrBox + 58;
+    ctx.fillStyle = "#ffd65c";
+    ctx.font = font(900, 22);
+    ctx.fillText("PUBLIC ADDRESS", pad, ay);
+    ctx.font = "600 27px ui-monospace, 'SFMono-Regular', Consolas, monospace";
+    const addrLines = wrapCanvasText(ctx, values.address, W - pad * 2 - 40, true);
+    const boxH = 20 + addrLines.length * 34 + 8;
+    ay += 16;
+    roundRectPath(ctx, pad, ay, W - pad * 2, boxH, 14);
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fill();
+    ctx.fillStyle = "#eaf7ff";
+    let ty = ay + 40;
+    for (const line of addrLines) {
+      ctx.fillText(line, pad + 20, ty);
+      ty += 34;
+    }
+
+    // Footer: domain + credit
+    ctx.fillStyle = "#cfe8f7";
+    ctx.font = font(800, 26);
+    ctx.fillText(truncateCanvasText(ctx, campaignHost(values.url), (W - pad * 2) * 0.5), pad, H - pad + 6);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(207,232,243,0.85)";
+    ctx.font = font(700, 22);
+    ctx.fillText(truncateCanvasText(ctx, values.credit, (W - pad * 2) * 0.5), W - pad, H - pad + 6);
+    ctx.textAlign = "left";
+
+    return await new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
+  }
+
+  async function buildWalletCardFile() {
+    try {
+      const blob = await walletCardPngBlob();
+      if (blob && blob.size > 0) return new File([blob], "doge-wallet-card.png", { type: "image/png" });
+    } catch {
+      /* fall back to the plain QR image below */
+    }
+    return await walletShareQrFile();
+  }
+
+  // The card image is regenerated (debounced) whenever the builder changes, so a
+  // later share click can attach it while still inside the user gesture.
+  function scheduleWalletCardRefresh() {
+    walletCardFileCache = null;
+    clearTimeout(walletCardRefreshTimer);
+    walletCardRefreshTimer = setTimeout(() => {
+      buildWalletCardFile()
+        .then((file) => {
+          walletCardFileCache = file;
+        })
+        .catch(() => {});
+    }, 450);
+  }
+
+  function downloadShareFile(file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name || "doge-wallet-card.png";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 800);
+  }
+
+  const WALLET_SHARE_TARGETS = {
+    x: {
+      label: "X",
+      composer: (content) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(content.lead)}&url=${encodeURIComponent(content.url)}&hashtags=Dogecoin,DOGE`,
+    },
+    instagram: { label: "Instagram", composer: () => "https://www.instagram.com/" },
+    tiktok: { label: "TikTok", composer: () => "https://www.tiktok.com/upload" },
+  };
+
+  async function shareWalletCard(platform) {
+    const target = WALLET_SHARE_TARGETS[platform];
+    if (!target) return;
+    const content = walletShareContent();
+    const cachedFile = walletCardFileCache;
+    // Best path: hand the OS share sheet the image so it attaches to the post.
+    // Only attempt with a cached file so we stay inside the click's activation.
+    if (cachedFile && navigator.canShare && navigator.canShare({ files: [cachedFile] })) {
+      try {
+        await navigator.share({ files: [cachedFile], text: content.caption });
+        return;
+      } catch (error) {
+        if (error && error.name === "AbortError") return;
+      }
+    }
+    // Desktop fallback: open the composer inside the gesture, then save the card
+    // image and copy the caption so the operator can attach it.
+    window.open(target.composer(content), "_blank", "noopener");
+    const file = cachedFile || (await buildWalletCardFile());
+    walletCardFileCache = file;
+    downloadShareFile(file);
+    copy(content.caption, `Caption copied and your DOGE card image was saved — attach it to your ${target.label} post.`);
+  }
+
   async function nativeShareWallet() {
-    const { lead, url } = walletShareContent();
-    const shareData = { title: "My Dogecoin wallet", text: `${lead} #Dogecoin #DOGE`, url };
-    const file = await walletShareQrFile();
+    const content = walletShareContent();
+    const file = walletCardFileCache || (await buildWalletCardFile());
+    walletCardFileCache = file;
+    const shareData = { title: "My Dogecoin wallet", text: content.caption };
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
       shareData.files = [file];
+    } else {
+      shareData.url = content.url;
     }
     try {
       await navigator.share(shareData);
     } catch {
       /* user dismissed the share sheet */
     }
-  }
-
-  function shareWalletToX() {
-    const { lead, url } = walletShareContent();
-    const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(lead)}&url=${encodeURIComponent(url)}&hashtags=Dogecoin,DOGE`;
-    window.open(intent, "_blank", "noopener");
-  }
-
-  function shareWalletCaption(appUrl, label) {
-    const { caption } = walletShareContent();
-    copy(caption, `Caption copied — paste it into your ${label} post.`);
-    window.open(appUrl, "_blank", "noopener");
   }
 
   function initWalletShareBuilder() {
@@ -1082,9 +1323,9 @@ function walletShareSnippet(values, qrSource) {
         nativeShareWallet();
       });
     }
-    $id("walletShareX")?.addEventListener("click", shareWalletToX);
-    $id("walletShareInstagram")?.addEventListener("click", () => shareWalletCaption("https://www.instagram.com/", "Instagram"));
-    $id("walletShareTikTok")?.addEventListener("click", () => shareWalletCaption("https://www.tiktok.com/upload", "TikTok"));
+    $id("walletShareX")?.addEventListener("click", () => shareWalletCard("x"));
+    $id("walletShareInstagram")?.addEventListener("click", () => shareWalletCard("instagram"));
+    $id("walletShareTikTok")?.addEventListener("click", () => shareWalletCard("tiktok"));
     updateWalletShareBuilder();
   }
 
@@ -1747,6 +1988,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         $id("posExplorerLink").textContent = hasChainTx ? "Open transaction" : "Open address";
       }
       updatePosBlockchainAddressLink(order.wallet);
+      updatePosReceiptButton(order);
       return;
     }
     localStorage.removeItem("doge-pos:selected-order");
@@ -1760,6 +2002,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       $id("posExplorerLink").textContent = "Open address";
     }
     updatePosBlockchainAddressLink(posState().wallet);
+    updatePosReceiptButton(null);
   }
 
   function renderPosOrders() {
@@ -2292,6 +2535,186 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     markPosOrderPaid(order);
   }
 
+  // --- Payment receipt (client-side, no backend email) -------------------
+  // Once a payment is verified, the operator can hand the customer a receipt:
+  // a self-contained rich HTML card they can email (via their own mail app),
+  // copy to paste into any email, or print / save as PDF. Nothing is sent
+  // through this site and the customer's email is never stored.
+  function posReceiptData(order) {
+    const usd = positiveNumber(order?.usd);
+    const doge = positiveNumber(order?.doge);
+    const feeDoge = positiveNumber(order?.fee_doge);
+    const baseDoge = positiveNumber(order?.base_doge) || Math.max(0, doge - feeDoge);
+    const txid = String(order?.txid || "").trim();
+    const address = String(order?.wallet || "").trim();
+    return {
+      merchant: (order?.merchant || "").trim() || "DOGE Merchant",
+      memo: (order?.memo || "").trim() || "DOGE sale",
+      usd,
+      doge,
+      baseDoge,
+      feeDoge,
+      txid,
+      realTx: isRealDogeTxid(txid),
+      address,
+      paidAt: order?.paid_at || order?.confirmed_at || order?.time || new Date().toLocaleString(),
+      status: order?.status === "paid" ? "Paid" : "Confirmed",
+      explorer: explorerUrl(txid, address),
+    };
+  }
+
+  function posReceiptRow(label, value, mono = false) {
+    const valueStyle = mono
+      ? "font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow-wrap:anywhere;"
+      : "";
+    return `<tr>
+      <td style="padding:7px 0;color:#5d625f;font-size:13px;vertical-align:top;white-space:nowrap">${escapeHtml(label)}</td>
+      <td style="padding:7px 0 7px 14px;color:#171715;font-size:13px;font-weight:700;text-align:right;${valueStyle}">${value}</td>
+    </tr>`;
+  }
+
+  function posReceiptHtml(data) {
+    const logoImg = logo()
+      ? `<img src="${escapeHtml(logo())}" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:50%;background:#f4bd2a;display:block">`
+      : "";
+    const txRow = data.realTx
+      ? posReceiptRow("Transaction", `<a href="${escapeHtml(data.explorer)}" style="color:#0f8f78;text-decoration:none;overflow-wrap:anywhere">${escapeHtml(`${data.txid.slice(0, 10)}…${data.txid.slice(-8)}`)}</a>`)
+      : "";
+    const feeRow = data.feeDoge > 0 ? posReceiptRow("Network fee", `${escapeHtml(data.feeDoge.toFixed(8))} DOGE`) : "";
+    const addrRow = data.address ? posReceiptRow("Receiving address", escapeHtml(data.address), true) : "";
+    const explorerButton = data.realTx
+      ? `<a href="${escapeHtml(data.explorer)}" style="display:inline-block;margin-top:4px;padding:10px 16px;border-radius:8px;background:#f4bd2a;color:#221900;font-weight:800;font-size:13px;text-decoration:none">View on the Dogecoin blockchain</a>`
+      : "";
+    return `<div style="box-sizing:border-box;max-width:480px;margin:0 auto;padding:22px;border:1px solid #e2e6dd;border-radius:14px;background:#ffffff;color:#171715;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-shadow:0 14px 34px rgba(23,23,21,.10)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      ${logoImg}
+      <div style="min-width:0">
+        <div style="font-size:11px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;color:#96690e">Dogecoin receipt</div>
+        <div style="font-size:19px;font-weight:900;line-height:1.15;overflow-wrap:anywhere">${escapeHtml(data.merchant)}</div>
+      </div>
+    </div>
+    <span style="flex:0 0 auto;padding:6px 12px;border-radius:999px;background:#e7f7ef;color:#0f8f78;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(data.status)}</span>
+  </div>
+  <div style="padding:16px;border-radius:12px;background:linear-gradient(135deg,#fbfcf7,#f2f7f2);border:1px solid #e2e6dd;margin-bottom:14px">
+    <div style="font-size:13px;color:#5d625f;margin-bottom:4px">${escapeHtml(data.memo)}</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <strong style="font-size:30px;line-height:1">${escapeHtml(moneyCents.format(data.usd))}</strong>
+      <span style="font-size:15px;font-weight:800;color:#0f8f78">${escapeHtml(data.doge.toFixed(4))} DOGE</span>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    ${posReceiptRow("Date", escapeHtml(data.paidAt))}
+    ${posReceiptRow("Item total", `${escapeHtml(data.baseDoge.toFixed(8))} DOGE`)}
+    ${feeRow}
+    ${posReceiptRow("Total paid", `${escapeHtml(data.doge.toFixed(8))} DOGE`)}
+    ${txRow}
+    ${addrRow}
+  </table>
+  ${explorerButton}
+  <div style="margin-top:16px;padding-top:12px;border-top:1px solid #eceee7;font-size:12px;color:#8a8f88;text-align:center">
+    Paid with Dogecoin · <a href="https://commerce.dog" style="color:#8a8f88;text-decoration:none">commerce.dog</a>
+  </div>
+</div>`;
+  }
+
+  function posReceiptText(data) {
+    const lines = [
+      `Receipt from ${data.merchant}`,
+      `Status: ${data.status}`,
+      `Date: ${data.paidAt}`,
+      "",
+      `Item: ${data.memo}`,
+      `Amount: ${moneyCents.format(data.usd)} (${data.doge.toFixed(8)} DOGE)`,
+    ];
+    if (data.feeDoge > 0) lines.push(`Includes network fee: ${data.feeDoge.toFixed(8)} DOGE`);
+    if (data.realTx) lines.push("", `Transaction: ${data.txid}`, `View: ${data.explorer}`);
+    if (data.address) lines.push("", `Receiving address: ${data.address}`);
+    lines.push("", "Paid with Dogecoin · https://commerce.dog");
+    return lines.join("\n");
+  }
+
+  function posReceiptSubject(data) {
+    return `Receipt from ${data.merchant} — ${moneyCents.format(data.usd)} paid in DOGE`;
+  }
+
+  function currentPosReceipt() {
+    const order = selectedPosOrder();
+    if (!order) return null;
+    const data = posReceiptData(order);
+    return { data, html: posReceiptHtml(data), text: posReceiptText(data), subject: posReceiptSubject(data) };
+  }
+
+  function updatePosReceiptButton(order) {
+    const actions = $id("posReceiptActions");
+    if (!actions) return;
+    actions.hidden = !(order && (order.status === "confirmed" || order.status === "paid"));
+  }
+
+  function openPosReceiptModal() {
+    const receipt = currentPosReceipt();
+    if (!receipt) {
+      setPosConfirmNote("Verify a payment before sending a receipt.");
+      return;
+    }
+    if ($id("posReceiptPreview")) $id("posReceiptPreview").innerHTML = receipt.html;
+    if ($id("posReceiptModal")) $id("posReceiptModal").hidden = false;
+    $id("posReceiptEmail")?.focus();
+  }
+
+  function closePosReceiptModal() {
+    if ($id("posReceiptModal")) $id("posReceiptModal").hidden = true;
+  }
+
+  function openPosReceiptEmail() {
+    const receipt = currentPosReceipt();
+    if (!receipt) {
+      setPosConfirmNote("Verify a payment before sending a receipt.");
+      return;
+    }
+    const email = ($id("posReceiptEmail")?.value || "").trim();
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(receipt.subject)}&body=${encodeURIComponent(receipt.text)}`;
+    if (window.dogeAnnounce) window.dogeAnnounce("Opening your email app with the receipt.");
+  }
+
+  async function copyPosReceiptRich() {
+    const receipt = currentPosReceipt();
+    if (!receipt) return;
+    const message = "Receipt copied — paste it into your email.";
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([receipt.html], { type: "text/html" }),
+            "text/plain": new Blob([receipt.text], { type: "text/plain" }),
+          }),
+        ]);
+        if (window.dogeAnnounce) window.dogeAnnounce(message);
+        return;
+      }
+    } catch {
+      /* fall through to plain-text copy */
+    }
+    await copy(receipt.text, message);
+  }
+
+  function printPosReceipt() {
+    const receipt = currentPosReceipt();
+    if (!receipt) {
+      setPosConfirmNote("Verify a payment before printing a receipt.");
+      return;
+    }
+    const win = window.open("", "_blank", "width=480,height=760");
+    if (!win) {
+      setPosConfirmNote("Allow pop-ups to print the receipt, or use Copy rich receipt instead.");
+      return;
+    }
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>DOGE receipt — ${escapeHtml(receipt.data.merchant)}</title></head><body style="margin:0;padding:24px;background:#eef0ea">${receipt.html}</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 350);
+  }
+
   function updatePosProfileStatus(state = posState()) {
     const status = $id("posProfileStatus");
     const source = browserSavedPosWalletSource();
@@ -2525,6 +2948,15 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       $id("posTxId")?.focus();
     });
     $id("posMarkPaid")?.addEventListener("click", markSelectedPosOrderPaid);
+    $id("posEmailReceipt")?.addEventListener("click", openPosReceiptModal);
+    $id("posPrintReceipt")?.addEventListener("click", printPosReceipt);
+    $id("posReceiptOpenEmail")?.addEventListener("click", openPosReceiptEmail);
+    $id("posReceiptCopyHtml")?.addEventListener("click", copyPosReceiptRich);
+    $id("posReceiptPrint")?.addEventListener("click", printPosReceipt);
+    $id("closePosReceiptModal")?.addEventListener("click", closePosReceiptModal);
+    $id("posReceiptModal")?.addEventListener("click", (event) => {
+      if (event.target === $id("posReceiptModal")) closePosReceiptModal();
+    });
     $id("posTxId")?.addEventListener("input", () => {
       const order = selectedPosOrder();
       const txid = $id("posTxId").value.trim();

@@ -60,6 +60,21 @@ class HumanCentricPageTests(SimpleTestCase):
         for marker in ("Sale options", "posFeeAuto", "posProfileDetails", "posSaveMerchant"):
             self.assertNotIn(marker, html)
 
+    def test_pos_page_offers_receipt_after_verify(self):
+        # Stage 3 exposes a receipt handoff (email / copy / print) that JS
+        # reveals once a payment is verified.
+        self._assert_contains_all(
+            "/pos/",
+            [
+                "posReceiptActions",
+                "Email receipt",
+                "posEmailReceipt",
+                "posReceiptModal",
+                "posReceiptOpenEmail",
+                "posReceiptCopyHtml",
+            ],
+        )
+
     def test_pos_page_hides_secondary_tools_behind_disclosures(self):
         response = self.client.get("/pos/")
         html = response.content.decode("utf-8")
