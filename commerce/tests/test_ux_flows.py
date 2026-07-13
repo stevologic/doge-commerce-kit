@@ -82,6 +82,7 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
         log_lines = []
         base = self.live_server_url
         sample_tx = "sample-local-test"
+        mismatch_tx = "f" * 64
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
@@ -93,6 +94,19 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                     body=json.dumps({"transactions": [], "provider_name": "test chain"}),
                 ),
             )
+            page.route(
+                "**/api/transaction/validate/",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({
+                        "passed": False,
+                        "txid": mismatch_tx,
+                        "confirmations": 8,
+                        "errors": ["Transaction amount did not match this sale."],
+                    }),
+                ),
+            )
             page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
             page.wait_for_selector("#posGenerateWallet", timeout=20000)
             page.click("#posGenerateWallet")
@@ -100,6 +114,14 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => document.getElementById('posWallet')?.value?.startsWith('D')",
                 timeout=20000,
             )
+            page.wait_for_function(
+                "() => !document.getElementById('posStartPayment').disabled",
+                timeout=20000,
+            )
+            page.click("#posStartPayment")
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
+            self.assertIn("Back up the new wallet key", page.locator("#posFlowNotice").inner_text())
+            page.click("#posDismissNewWallet")
             page.wait_for_selector("#posStartPayment", state="visible", timeout=20000)
             page.wait_for_function(
                 """
@@ -115,15 +137,31 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => !document.getElementById('posStartPayment').disabled",
                 timeout=20000,
             )
+            self.assertFalse(page.is_disabled('[data-pos-go="2"]'))
+            self.assertFalse(page.is_disabled('[data-pos-go="3"]'))
+            page.click('[data-pos-go="2"]')
+            self.assertTrue(page.is_visible("#posStep2Empty"))
+            self.assertTrue(page.is_hidden("#posPaymentDetails"))
+            page.click('[data-pos-go="3"]')
+            self.assertTrue(page.is_visible("#posStep3Empty"))
+            self.assertTrue(page.is_hidden("#posManualDetails"))
+            page.click("#posStep3StartSale")
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
             page.click("#posStartPayment")
             page.wait_for_function(
                 "() => document.getElementById('posWorkflow')?.dataset.posStage === '2'",
                 timeout=20000,
             )
             page.click("#closePosCustomerDisplay")
-            page.click("#posSaleOptions summary")
-            page.click("#posCancelPayment")
-            self.assertIsNone(page.locator("#posSaleOptions").get_attribute("open"))
+            page.click('[data-pos-go="1"]')
+            for selector in ("#posUsd", "#posMemo", "#posMerchant", "#posWallet", "#posUseWallet", "#posGenerateWallet"):
+                self.assertTrue(page.is_disabled(selector), selector)
+            self.assertFalse(page.is_disabled("#posChangeWallet"))
+            page.click("#posChangeWallet")
+            self.assertIn("locked to this payment request", page.locator("#posFlowNotice").inner_text())
+            page.click("#posEditSale")
+            for selector in ("#posUsd", "#posMemo", "#posMerchant", "#posWallet", "#posUseWallet", "#posGenerateWallet"):
+                self.assertFalse(page.is_disabled(selector), selector)
             page.press("#posUsd", "Enter")
             page.wait_for_function(
                 "() => document.getElementById('posWorkflow')?.dataset.posStage === '2'",
@@ -133,6 +171,13 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             page.click('[data-pos-go="1"]')
             self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
             self.assertTrue(page.is_disabled("#posUsd"))
+            active_order_id = page.evaluate("localStorage.getItem('doge-pos:selected-order')")
+            page.click(".pos-history-details > summary")
+            cancelled_load = page.locator("#posOrderRows tr", has_text="cancelled").locator("[data-pos-load]")
+            self.assertEqual(cancelled_load.count(), 1)
+            cancelled_load.click()
+            self.assertEqual(page.evaluate("localStorage.getItem('doge-pos:selected-order')"), active_order_id)
+            self.assertIn("still being monitored", page.locator("#posHistoryNotice").inner_text())
             page.click('[data-pos-go="3"]')
             self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "3")
             self.assertFalse(page.locator("#posManualDetails").get_attribute("open") is not None)
@@ -140,13 +185,29 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "2")
             page.click("#posTroubleDetails summary")
             page.click("#posStep2ManualVerify")
+            page.fill("#posTxId", mismatch_tx)
+            page.click("#posConfirmTransaction")
+            page.wait_for_function(
+                "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase() === 'needs review'",
+                timeout=20000,
+            )
+            selected_after_mismatch = page.evaluate(
+                """() => {
+                  const id = localStorage.getItem('doge-pos:selected-order');
+                  const orders = JSON.parse(localStorage.getItem('doge-pos:orders') || '[]');
+                  return orders.find((order) => order.id === id) || null;
+                }"""
+            )
+            self.assertEqual(selected_after_mismatch.get("txid"), "")
+            self.assertFalse(page.locator("#posSaleOptions").get_attribute("hidden") is not None)
+            self.assertTrue(page.is_visible("#posAbandonPayment"))
             page.fill("#posTxId", sample_tx)
             page.wait_for_timeout(800)
             status_before = page.locator("#posStatus").inner_text().strip().lower()
             mark_paid_disabled = page.is_disabled("#posMarkPaid")
             log_lines.append(f"status_after_paste={status_before}")
             log_lines.append(f"mark_paid_disabled_after_paste={mark_paid_disabled}")
-            self.assertEqual(status_before, "unpaid")
+            self.assertEqual(status_before, "needs review")
             self.assertTrue(mark_paid_disabled)
 
             page.click("#posConfirmTransaction")
@@ -169,10 +230,157 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             log_lines.append(f"rich_receipt_visible={rich_receipt_visible}")
             self.assertEqual(final_status, "paid")
             self.assertTrue(rich_receipt_visible)
-            page.click("#posNewSale")
+            page.click('[data-pos-go="1"]')
+            self.assertFalse(page.is_disabled("#posUsd"))
+            self.assertFalse(page.is_disabled("#posMemo"))
+            self.assertEqual(page.locator("#posStartPayment").inner_text(), "Start payment")
             self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
             self.assertIsNone(page.locator("#posManualDetails").get_attribute("open"))
             browser.close()
 
         log_lines.append("pos_sequential_verify_then_mark_paid=ok")
         self._write_flow_log("ux-pos-flow.log", log_lines)
+
+    def test_pos_automatic_detection_closes_qr_and_finishes_receipt(self):
+        base = self.live_server_url
+        txid = "a" * 64
+        wallet_calls = {"count": 0}
+        expected = {"doge": 0.0}
+
+        def wallet_transactions(route):
+            wallet_calls["count"] += 1
+            transactions = []
+            if wallet_calls["count"] >= 2:
+                transactions = [{
+                    "txid": txid,
+                    "doge": expected["doge"],
+                    "time": "2099-01-01T00:00:00Z",
+                    "confirmations": 1,
+                    "status": "confirmed",
+                    "source": "browser test",
+                }]
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"transactions": transactions, "provider_name": "test chain"}),
+            )
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.route("**/api/wallet/transactions/**", wallet_transactions)
+            page.route(
+                "**/api/transaction/validate/",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({
+                        "passed": True,
+                        "txid": txid,
+                        "matched_doge": expected["doge"],
+                        "confirmations": 1,
+                        "errors": [],
+                        "source": "browser test",
+                    }),
+                ),
+            )
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.click("#posGenerateWallet")
+            page.wait_for_function(
+                "() => document.getElementById('posWallet')?.value?.startsWith('D')",
+                timeout=20000,
+            )
+            page.click("#posDismissNewWallet")
+            page.fill("#posUsd", "2.00")
+            page.wait_for_function(
+                "() => Number.parseFloat(document.getElementById('posTotalDogeOut')?.textContent || '0') > 0",
+                timeout=20000,
+            )
+            expected["doge"] = page.evaluate(
+                "Number.parseFloat(document.getElementById('posTotalDogeOut').textContent)"
+            )
+            page.click("#posStartPayment")
+            page.wait_for_function(
+                "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase() === 'paid'",
+                timeout=20000,
+            )
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "3")
+            self.assertTrue(page.is_hidden("#posQrButton"))
+            self.assertIsNone(page.locator("#posPaymentClosedMessage").get_attribute("hidden"))
+            self.assertTrue(page.locator("#posPaidReceipt [data-pos-receipt-card]").is_visible())
+            page.click('[data-pos-go="1"]')
+            self.assertFalse(page.is_disabled("#posUsd"))
+            self.assertEqual(page.locator("#posStartPayment").inner_text(), "Start payment")
+            browser.close()
+
+    def test_pos_detected_payment_requires_confirmed_abandon(self):
+        base = self.live_server_url
+        txid = "b" * 64
+        wallet_calls = {"count": 0}
+        expected = {"doge": 0.0}
+
+        def wallet_transactions(route):
+            wallet_calls["count"] += 1
+            transactions = [] if wallet_calls["count"] < 2 else [{
+                "txid": txid,
+                "doge": expected["doge"],
+                "time": "2099-01-01T00:00:00Z",
+                "confirmations": 0,
+                "status": "pending",
+                "source": "browser test",
+            }]
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"transactions": transactions, "provider_name": "test chain"}),
+            )
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.route("**/api/wallet/transactions/**", wallet_transactions)
+            page.route(
+                "**/api/transaction/validate/",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({
+                        "passed": False,
+                        "status": "pending",
+                        "txid": txid,
+                        "confirmations": 0,
+                        "errors": ["Fewer confirmations than required."],
+                        "source": "browser test",
+                    }),
+                ),
+            )
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.click("#posGenerateWallet")
+            page.wait_for_function(
+                "() => document.getElementById('posWallet')?.value?.startsWith('D')",
+                timeout=20000,
+            )
+            page.click("#posDismissNewWallet")
+            page.fill("#posUsd", "3.00")
+            page.wait_for_function(
+                "() => Number.parseFloat(document.getElementById('posTotalDogeOut')?.textContent || '0') > 0",
+                timeout=20000,
+            )
+            expected["doge"] = page.evaluate(
+                "Number.parseFloat(document.getElementById('posTotalDogeOut').textContent)"
+            )
+            page.click("#posStartPayment")
+            page.wait_for_function(
+                "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase().includes('pending')",
+                timeout=20000,
+            )
+            page.click("#posManualDetails summary")
+            page.click("#posAbandonPayment")
+            self.assertIn("pending", page.locator("#posStatus").inner_text().strip().lower())
+            self.assertTrue(page.is_disabled("#posUsd"))
+            self.assertEqual(page.locator("#posAbandonPayment").inner_text(), "Confirm abandon payment")
+            page.click("#posAbandonPayment")
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
+            self.assertFalse(page.is_disabled("#posUsd"))
+            self.assertEqual(page.locator("#posStartPayment").inner_text(), "Start payment")
+            browser.close()

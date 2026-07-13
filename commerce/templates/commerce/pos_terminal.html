@@ -16,12 +16,13 @@
       <button type="button" data-pos-go="1" aria-controls="dogePosTerminal" aria-current="step"><b>1</b><span><strong>Sale</strong><small>Set amount</small></span></button>
     </li>
     <li data-pos-progress="2">
-      <button type="button" data-pos-go="2" aria-controls="posStage2" disabled><b>2</b><span><strong>Pay</strong><small>Customer scans</small></span></button>
+      <button type="button" data-pos-go="2" aria-controls="posStage2"><b>2</b><span><strong>Pay</strong><small>Customer scans</small></span></button>
     </li>
     <li data-pos-progress="3">
-      <button type="button" data-pos-go="3" aria-controls="posStage3" disabled><b>3</b><span><strong>Verify</strong><small>Check payment</small></span></button>
+      <button type="button" data-pos-go="3" aria-controls="posStage3"><b>3</b><span><strong>Verify</strong><small>Check payment</small></span></button>
     </li>
   </ol>
+  <p class="pos-flow-notice" id="posFlowNotice" role="status" aria-live="polite" hidden></p>
 
   <section class="panel pos-wallet-setup" id="posWalletSetup" aria-labelledby="posWalletSetupTitle">
     <div class="pos-wallet-setup-head">
@@ -74,6 +75,7 @@
       <div class="pos-sale-lock-note" id="posSaleLockNote" hidden>
         <strong>Sale in progress · quote locked</strong>
         <span>Review the frozen sale here. Payment monitoring keeps running in the background.</span>
+        <button class="button small" id="posEditSale" type="button">Edit / restart sale</button>
       </div>
       <form class="form-grid compact" id="posSaleForm">
         <label class="full-row pos-amount-field">
@@ -104,10 +106,15 @@
 
     <article class="panel pos-payment-panel pos-checkout-stage" id="posStage2" data-pos-panel="2" role="region" aria-labelledby="posStage2Title" hidden>
       <div class="pos-step-chip"><b>2</b><h2 id="posStage2Title" tabindex="-1">Customer scans</h2></div>
+      <div class="pos-stage-empty" id="posStep2Empty">
+        <strong>Payment not started yet</strong>
+        <span>Set the sale amount first, then start payment to create the customer QR.</span>
+        <button class="button primary small" id="posStep2StartSale" type="button">Set amount and start</button>
+      </div>
       <div class="pos-waiting-card" id="posWaitingCard" role="status" aria-live="polite">
         <span class="pos-live-dot" aria-hidden="true"></span>
         <div>
-          <strong>Waiting for the payment</strong>
+          <strong id="posWaitingTitle">Waiting for the payment</strong>
           <small id="posWaitingNote">The terminal will move to verification as soon as the payment appears on the Dogecoin network.</small>
         </div>
       </div>
@@ -124,7 +131,7 @@
         <div class="inline-actions pos-scan-actions">
           <button class="button primary small" id="openPosCustomerDisplay" type="button" aria-haspopup="dialog" aria-controls="posCustomerDisplayModal">Customer display</button>
         </div>
-        <details class="tool-details pos-more-details">
+        <details class="tool-details pos-more-details" id="posPaymentDetails">
           <summary>Payment details</summary>
           <p class="note compact-note" id="posQuoteMeta">Quote timestamp appears after the DOGE price loads.</p>
           <div class="pos-fee-breakdown" id="posFeeBreakdown" aria-live="polite">
@@ -146,8 +153,8 @@
         </details>
         <details class="tool-details pos-more-details pos-sale-options" id="posSaleOptions">
           <summary>Sale options</summary>
-          <p class="note compact-note">Cancel only if the customer has not sent the payment.</p>
-          <button class="button small quiet" id="posCancelPayment" type="button">Cancel this sale</button>
+          <p class="note compact-note">Close this payment request and return to editable sale fields.</p>
+          <button class="button small quiet" id="posCancelPayment" type="button">Abandon and start over</button>
         </details>
         <div class="pos-stage-navigation">
           <button class="button small quiet" id="posBackToAmount" type="button">Review amount</button>
@@ -165,7 +172,12 @@
           <span id="posVerifySubtitle">Checking the receiving address, amount, and blockchain confirmations.</span>
         </div>
       </div>
-      <p class="note" id="posConfirmNote" aria-live="polite"></p>
+      <p class="note" id="posConfirmNote"></p>
+      <div class="pos-stage-empty" id="posStep3Empty">
+        <strong>Nothing to verify yet</strong>
+        <span>Start the payment in Step 1. Verification begins automatically when the payment appears.</span>
+        <button class="button primary small" id="posStep3StartSale" type="button">Set amount and start</button>
+      </div>
       <button class="button small" id="posReviewPayment" type="button" hidden>Review payment</button>
       <div class="pos-paid-receipt" id="posPaidReceipt" hidden aria-live="polite"></div>
       <div class="inline-actions pos-receipt-actions" id="posReceiptActions" hidden>
@@ -196,6 +208,7 @@
         <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
           <button class="button small" id="posMarkPaid" type="button" disabled>Mark paid manually</button>
         </span>
+        <button class="button small quiet" id="posAbandonPayment" type="button">Abandon and start over</button>
         <div class="wallet-activity-card pos-transaction-picker" id="posTransactionDrawer" hidden>
           <div class="wallet-activity-header">
             <div>
@@ -245,6 +258,7 @@
       <button class="button small quiet" id="posClearOrders" type="button">Clear local orders</button>
     </div>
   </div>
+  <p class="note compact-note" id="posHistoryNotice" hidden></p>
   <div class="table-wrap">
     <table class="responsive-card-table">
       <thead>

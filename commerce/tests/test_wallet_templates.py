@@ -79,6 +79,16 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("setPosSaleLocked(Boolean(activeOrder) || posPaymentStarting)", doge_tools)
         self.assertIn("if (posPaymentStarting)", doge_tools)
         self.assertNotIn("setPosSaleLocked(safeStage !== 1)", doge_tools)
+        self.assertNotIn('data-pos-go="2" aria-controls="posStage2" disabled', pos_html)
+        self.assertNotIn('data-pos-go="3" aria-controls="posStage3" disabled', pos_html)
+        for marker in ("posFlowNotice", "posEditSale", "posStep2StartSale", "posStep3StartSale", "posAbandonPayment"):
+            self.assertIn(marker, pos_html)
+        self.assertIn("startedPosOrder", doge_tools)
+        self.assertIn("posPaymentWasDetected", doge_tools)
+        self.assertNotIn('|| order.txid) return 3', doge_tools)
+        self.assertNotIn('if (!automatic) stopPosPaymentPolling()', doge_tools)
+        self.assertIn("const posPricePromise = fetchDogePrice()", doge_tools)
+        self.assertNotIn("await fetchDogePrice();", doge_tools)
         self.assertIn("Verification options", pos_html)
 
     def test_pos_receipt_keeps_html_as_the_primary_format(self):

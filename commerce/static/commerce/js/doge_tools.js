@@ -63,7 +63,12 @@
   const posPaymentPollInFlight = new Set();
   let posCustomerDisplayOpener = null;
   let posPaymentStarting = false;
+  let posStartingPaymentState = null;
   let posInitialized = false;
+  let posClearOrdersArmed = false;
+  let posClearOrdersTimer = null;
+  let posRestartArmed = false;
+  let posRestartTimer = null;
 
   function logo() {
     return document.body.dataset.dogeLogo || "";
@@ -1918,6 +1923,14 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function setPosConfirmNote(message) {
     if ($id("posConfirmNote")) $id("posConfirmNote").textContent = message;
+    if ($id("posFlowNotice")) {
+      $id("posFlowNotice").textContent = message;
+      $id("posFlowNotice").hidden = !String(message || "").trim();
+    }
+    if ($id("posHistoryNotice")) {
+      $id("posHistoryNotice").textContent = message;
+      $id("posHistoryNotice").hidden = !String(message || "").trim();
+    }
   }
 
   function posMarkPaidReason(order) {
@@ -1995,17 +2008,29 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   function posWorkflowStageForOrder(order) {
     if (!order) return 1;
     if (order.status === "cancelled") return 1;
-    if (["paid", "confirmed", "pending", "needs review"].includes(order.status) || order.txid) return 3;
+    if (["paid", "confirmed", "pending", "needs review"].includes(order.status)) return 3;
     if (order.status === "unpaid" && order.payment_started_at) return 2;
     return 1;
   }
 
-  function activePosOrder(order = selectedPosOrder()) {
+  function startedPosOrder(order = selectedPosOrder()) {
     return order?.payment_started_at && order.status !== "cancelled" ? order : null;
   }
 
+  function activePosOrder(order = selectedPosOrder()) {
+    return startedPosOrder(order) && order.status !== "paid" ? order : null;
+  }
+
+  function posPaymentWasDetected(order = selectedPosOrder()) {
+    return Boolean(order && (
+      order.payment_detected_at
+      || order.status === "confirmed"
+      || order.status === "paid"
+    ));
+  }
+
   function setPosSaleLocked(locked) {
-    ["posUsd", "posMemo", "posMerchant", "posWallet", "posUseWallet", "posGenerateWallet", "posChangeWallet"].forEach((id) => {
+    ["posUsd", "posMemo", "posMerchant", "posWallet", "posUseWallet", "posGenerateWallet"].forEach((id) => {
       const field = $id(id);
       if (field) field.disabled = Boolean(locked);
     });
@@ -2035,7 +2060,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
     if (order?.status === "needs review") {
       title.textContent = "Payment needs review";
-      subtitle.textContent = "Use Check now or Manual verify to resolve the mismatch.";
+      subtitle.textContent = "Review the verification options, or abandon this request and start over.";
       return;
     }
     if (!activePosOrder(order) || order.status === "unpaid") {
@@ -2053,34 +2078,43 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   function syncPosStageControls(order = selectedPosOrder(), viewedStage = Number($id("posWorkflow")?.dataset.posStage || 1)) {
+    const startedOrder = startedPosOrder(order);
     const activeOrder = activePosOrder(order);
     const lifecycleStage = posWorkflowStageForOrder(order);
-    const paymentDetected = Boolean(activeOrder && lifecycleStage >= 3);
+    const paymentDetected = posPaymentWasDetected(order);
     const paid = order?.status === "paid";
     const progressCopy = {
       1: activeOrder ? "Quote locked" : "Set amount",
-      2: paid ? "Complete" : paymentDetected ? "Payment detected" : activeOrder ? "Waiting" : "Not started",
-      3: paid ? "Paid" : order?.status === "needs review" ? "Needs review" : paymentDetected ? "Checking" : activeOrder ? "Waiting for payment" : "Not started",
+      2: paid ? "Complete" : paymentDetected ? "Payment detected" : startedOrder ? "Waiting" : "Preview",
+      3: paid ? "Paid" : order?.status === "needs review" ? "Needs review" : paymentDetected ? "Checking" : startedOrder ? "Waiting for payment" : "Preview",
     };
     document.querySelectorAll("[data-pos-progress]").forEach((item) => {
       const itemStage = Number(item.dataset.posProgress);
       const button = item.querySelector("[data-pos-go]");
       const small = button?.querySelector("small");
       if (small) small.textContent = progressCopy[itemStage];
-      if (button) button.disabled = posPaymentStarting || (itemStage > 1 && !activeOrder);
+      if (button) button.disabled = false;
       const complete = itemStage === 1
-        ? Boolean(activeOrder)
+        ? Boolean(startedOrder)
         : itemStage === 2
           ? paymentDetected
           : paid;
       item.classList.toggle("is-complete", complete && itemStage !== viewedStage);
     });
     setPosSaleLocked(Boolean(activeOrder) || posPaymentStarting);
+    if ($id("posChangeWallet")) {
+      $id("posChangeWallet").disabled = false;
+      $id("posChangeWallet").textContent = posPaymentStarting ? "Preparing sale" : activeOrder ? "Review locked sale" : "Change";
+    }
     if ($id("posSaleLockNote")) $id("posSaleLockNote").hidden = !activeOrder;
-    if (activeOrder && $id("posStartPayment")?.textContent !== "Preparing payment...") {
-      $id("posStartPayment").textContent = lifecycleStage >= 3 ? "View verification" : "Return to customer scan";
+    if (startedOrder && $id("posStartPayment")?.textContent !== "Preparing payment...") {
+      $id("posStartPayment").textContent = paid ? "Start new payment" : lifecycleStage >= 3 ? "View verification" : "Return to customer scan";
       $id("posStartPayment").disabled = false;
     }
+    if ($id("posStep2Empty")) $id("posStep2Empty").hidden = Boolean(startedOrder);
+    if ($id("posStep3Empty")) $id("posStep3Empty").hidden = Boolean(startedOrder);
+    if ($id("posManualDetails")) $id("posManualDetails").hidden = !startedOrder;
+    if ($id("posWaitingTitle")) $id("posWaitingTitle").textContent = startedOrder ? "Waiting for the payment" : "Payment not started";
     if ($id("posPaymentClosedMessage")) {
       $id("posPaymentClosedMessage").hidden = !paymentDetected;
       const title = $id("posPaymentClosedMessage").querySelector("strong");
@@ -2088,15 +2122,18 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (title) title.textContent = paid ? "Payment complete — this QR is closed" : "Payment detected — do not pay again";
       if (copy) copy.textContent = paid ? "The verified receipt is available in Step 3." : "Continue to verification while confirmations are checked.";
     }
-    if ($id("posWaitingCard")) $id("posWaitingCard").hidden = paymentDetected;
-    if ($id("posQrButton")) $id("posQrButton").hidden = paymentDetected || !activeOrder;
+    if ($id("posWaitingCard")) $id("posWaitingCard").hidden = paymentDetected || !startedOrder;
+    if ($id("posQrButton")) $id("posQrButton").hidden = paymentDetected || !startedOrder;
+    if ($id("posDogeOut")) $id("posDogeOut").hidden = !startedOrder;
+    if ($id("posPaymentDetails")) $id("posPaymentDetails").hidden = !startedOrder;
     if ($id("openPosCustomerDisplay")) {
-      $id("openPosCustomerDisplay").hidden = paymentDetected;
-      $id("openPosCustomerDisplay").disabled = paymentDetected || !activeOrder;
+      $id("openPosCustomerDisplay").hidden = paymentDetected || !startedOrder;
+      $id("openPosCustomerDisplay").disabled = paymentDetected || !startedOrder;
     }
-    if ($id("posSaleOptions")) $id("posSaleOptions").hidden = paymentDetected;
-    if ($id("posTroubleDetails")) $id("posTroubleDetails").hidden = paymentDetected;
-    if ($id("posCancelPayment")) $id("posCancelPayment").disabled = paymentDetected;
+    if ($id("posSaleOptions")) $id("posSaleOptions").hidden = !activeOrder;
+    if ($id("posTroubleDetails")) $id("posTroubleDetails").hidden = !activeOrder || paymentDetected;
+    if ($id("posCancelPayment")) $id("posCancelPayment").disabled = !activeOrder;
+    if ($id("posAbandonPayment")) $id("posAbandonPayment").hidden = !activeOrder;
     if ($id("posReviewPayment")) $id("posReviewPayment").hidden = order?.status !== "needs review";
     if ($id("posWorkflow")) $id("posWorkflow").dataset.posLifecycleStage = String(lifecycleStage);
   }
@@ -2131,13 +2168,15 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
     const order = selectedPosOrder();
     const target = Math.min(3, Math.max(1, Number(stage) || 1));
-    if (target > 1 && !activePosOrder(order)) {
-      setPosWorkflowStage(1, null, { focus });
-      setPosConfirmNote("Start the payment to unlock the Pay and Verify steps.");
+    if (target === 1 && order?.status === "paid") {
+      beginNewPosSale("Paid sale moved to order history. The terminal is ready for the next customer.");
       return;
     }
     closePosCustomerDisplay();
     setPosWorkflowStage(target, order, { focus });
+    if (target > 1 && !startedPosOrder(order)) {
+      setPosConfirmNote("Previewing this step. Set the amount in Step 1 and start payment when you are ready.");
+    }
   }
 
   function setSelectedPosOrder(order) {
@@ -2232,6 +2271,11 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   function loadPosOrder(id) {
     const order = posOrders().find((item) => item.id === id);
     if (!order) return;
+    const liveOrder = activePosOrder();
+    if (liveOrder && liveOrder.id !== id) {
+      setPosConfirmNote("A payment is still being monitored. Finish it or use Edit / restart sale before loading another order.");
+      return;
+    }
     stopPosPaymentPolling();
     if ($id("posMerchant")) $id("posMerchant").value = order.merchant;
     if ($id("posWallet")) $id("posWallet").value = order.wallet;
@@ -2296,6 +2340,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const orders = posOrders();
     const order = orders.find((item) => item.id === id);
     if (!order) return;
+    if (activePosOrder()?.id === id) {
+      setPosConfirmNote("This payment is still being monitored. Finish it or use Edit / restart sale before deleting its local row.");
+      return;
+    }
     if (posDeleteArmed.has(id)) {
       posDeleteArmed.delete(id);
       const nextOrders = orders.filter((item) => item.id !== id);
@@ -2443,19 +2491,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function loadPosTransaction(txid, confirmations = 0) {
     if (!txid) return;
-    let order = selectedPosOrder();
+    const order = selectedPosOrder();
     if (!activePosOrder(order)) {
       setPosConfirmNote("Start a payment before loading a transaction.");
       return;
     }
-    order = normalizePosOrder({
-      ...order,
-      txid,
-      confirmations: Number(confirmations || 0),
-      status: "needs review",
-      validation: "blockchain candidate",
-    });
-    upsertPosOrder(order);
+    if ($id("posTxId")) $id("posTxId").value = txid;
     setPosConfirmNote(`Loaded transaction ${txid.slice(0, 8)}...${txid.slice(-8)}. Validating it against this sale now.`);
     if (window.dogeAnnounce) window.dogeAnnounce("Blockchain transaction loaded into Sale Status.");
     if (isRealDogeTxid(txid)) {
@@ -2561,16 +2602,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       setPosConfirmNote("Start a payment before verifying a transaction.");
       return;
     }
-    const resumeAfterManualFailure = !automatic
-      && Boolean(order.payment_started_at)
-      && isRealDogeTxid(order.txid)
-      && !["paid", "confirmed", "cancelled"].includes(order.status);
-    if (!automatic) stopPosPaymentPolling();
     const txid = automatic ? String(order.txid || "").trim() : $id("posTxId")?.value.trim() || "";
     const requestedConfirmations = Number(automatic ? order.min_confirmations : $id("posMinConfirmations")?.value || 0);
     const minConfirmations = Number.isFinite(requestedConfirmations) ? Math.max(0, requestedConfirmations) : 0;
     const now = new Date().toLocaleString();
     if (!txid || txid === "sample-local-test") {
+      stopPosPaymentPolling();
       order = {
         ...order,
         txid,
@@ -2613,54 +2650,62 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         || (validationErrors.length > 0
           && validationErrors.every((error) => String(error).toLowerCase().includes("fewer confirmations")))
       );
-      order = {
-        ...order,
-        txid: payload.txid || txid,
-        confirmations: Number(payload.confirmations || 0),
-        min_confirmations: minConfirmations,
-        status: !response.ok && (automatic || resumeAfterManualFailure)
-          ? automatic ? "pending" : order.status
-          : payload.passed ? "confirmed" : confirmationPending ? "pending" : "needs review",
-        confirmed_at: payload.passed ? now : order.confirmed_at,
-        validation: "blockchain",
-        validation_source: payload.source || "",
-        validation_errors: validationErrors,
-      };
       if (!response.ok) {
-        upsertPosOrder(order);
-        setPosConfirmNote(`${payload.error || "Transaction lookup failed."}${automatic || resumeAfterManualFailure ? " Retrying automatically." : ""}`);
-        if (resumeAfterManualFailure) startPosPaymentPolling(order);
+        setPosConfirmNote(`${payload.error || "Transaction lookup failed."} Automatic payment monitoring is still running.`);
         return;
       }
       if (payload.passed) {
-        if (isRealDogeTxid(payload.txid || txid)) {
+        order = {
+          ...order,
+          txid: payload.txid || txid,
+          confirmations: Number(payload.confirmations || 0),
+          min_confirmations: minConfirmations,
+          status: "confirmed",
+          payment_detected_at: order.payment_detected_at || new Date().toISOString(),
+          confirmed_at: now,
+          validation: "blockchain",
+          validation_source: payload.source || "",
+          validation_errors: [],
+        };
+        if (isRealDogeTxid(order.txid)) {
           markPosOrderPaid(order, `Blockchain validation passed and order marked paid: ${payload.matched_doge} DOGE matched with ${payload.confirmations} confirmation(s).`);
           return;
         }
         upsertPosOrder(order);
         setPosConfirmNote(`Blockchain validation passed: ${payload.matched_doge} DOGE matched with ${payload.confirmations} confirmation(s).`);
-      } else {
+      } else if (confirmationPending) {
+        order = {
+          ...order,
+          txid: payload.txid || txid,
+          confirmations: Number(payload.confirmations || 0),
+          min_confirmations: minConfirmations,
+          status: "pending",
+          payment_detected_at: order.payment_detected_at || new Date().toISOString(),
+          validation: "blockchain",
+          validation_source: payload.source || "",
+          validation_errors: validationErrors,
+        };
         upsertPosOrder(order);
-        if (confirmationPending) {
-          setPosStatusDisplay("Verification pending");
-          setPosVerificationCopy(order);
-          setPosConfirmNote(`Payment detected. Waiting for ${minConfirmations || 1} blockchain confirmation${(minConfirmations || 1) === 1 ? "" : "s"}; ${Number(payload.confirmations || 0)} seen so far.`);
-          if (!automatic) startPosPaymentPolling(order);
-        } else {
-          setPosConfirmNote(`Needs review: ${(payload.errors || ["transaction did not match the order"]).join(" ")}`);
-        }
+        setPosStatusDisplay("Verification pending");
+        setPosVerificationCopy(order);
+        setPosConfirmNote(`Payment detected. Waiting for ${minConfirmations || 1} blockchain confirmation${(minConfirmations || 1) === 1 ? "" : "s"}; ${Number(payload.confirmations || 0)} seen so far.`);
+      } else {
+        order = {
+          ...order,
+          txid: automatic ? (payload.txid || txid) : order.txid,
+          confirmations: automatic ? Number(payload.confirmations || 0) : order.confirmations,
+          min_confirmations: minConfirmations,
+          status: "needs review",
+          validation: "blockchain",
+          validation_source: payload.source || "",
+          validation_errors: validationErrors,
+        };
+        upsertPosOrder(order);
+        setPosConfirmNote(`Needs review: ${(payload.errors || ["transaction did not match the order"]).join(" ")} Automatic payment monitoring is still running.`);
       }
     } catch (error) {
       if (automatic && expectedToken !== posPaymentPollToken) return;
-      if (resumeAfterManualFailure) {
-        const liveOrder = selectedPosOrder();
-        if (liveOrder?.id === order.id && !["paid", "confirmed", "cancelled"].includes(liveOrder.status)) {
-          setPosConfirmNote(`Transaction lookup failed: ${error.message}. Automatic verification resumed.`);
-          startPosPaymentPolling(liveOrder);
-          return;
-        }
-      }
-      setPosConfirmNote(`Transaction lookup failed: ${error.message}`);
+      setPosConfirmNote(`Transaction lookup failed: ${error.message}. Automatic payment monitoring is still running.`);
     }
   }
 
@@ -2962,7 +3007,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function activePosPaymentState() {
     const order = selectedPosOrder();
-    return order?.payment_started_at && order.status !== "cancelled" ? order : buildPosPayment();
+    return activePosOrder(order) || posStartingPaymentState || buildPosPayment();
   }
 
   function updatePosCustomerDisplay(state = activePosPaymentState()) {
@@ -3057,8 +3102,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     stopPosPaymentPolling();
     const startToken = posPaymentPollToken;
     posPaymentStarting = true;
+    posStartingPaymentState = state;
     setPosSaleLocked(true);
     syncPosStageControls();
+    setPosConfirmNote("Preparing the frozen quote and customer QR. Payment monitoring will start automatically.");
     const button = $id("posStartPayment");
     if (button) {
       button.disabled = true;
@@ -3071,6 +3118,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     } catch {
       if (startToken !== posPaymentPollToken) {
         posPaymentStarting = false;
+        posStartingPaymentState = null;
         syncPosStageControls();
         return;
       }
@@ -3078,6 +3126,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       posWalletPanelOpen = true;
       syncPosWalletSetup();
       posPaymentStarting = false;
+      posStartingPaymentState = null;
       setPosSaleLocked(false);
       syncPosStageControls();
       if (button) {
@@ -3089,12 +3138,14 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
     if (startToken !== posPaymentPollToken) {
       posPaymentStarting = false;
+      posStartingPaymentState = null;
       syncPosStageControls();
       return;
     }
     const baseline = await fetchPosBaselineTxids(state.wallet);
     if (startToken !== posPaymentPollToken) {
       posPaymentStarting = false;
+      posStartingPaymentState = null;
       syncPosStageControls();
       return;
     }
@@ -3108,7 +3159,9 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       baseline_ready: baseline.ready,
     });
     posPaymentStarting = false;
+    posStartingPaymentState = null;
     upsertPosOrder(order);
+    updatePos();
     recordPosMemo(order.memo);
     if (button) button.textContent = "Return to customer scan";
     setPosWorkflowStage(2, order);
@@ -3236,21 +3289,46 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   function cancelPosPayment() {
-    const order = selectedPosOrder();
-    if (order && posWorkflowStageForOrder(order) >= 3) {
-      setPosConfirmNote("This payment has already been detected and cannot be cancelled from the QR step.");
-      navigatePosStage(3);
+    restartPosSaleForEditing("Sale cancelled. Enter an amount when you are ready for the next customer.");
+  }
+
+  function resetPosRestartArm() {
+    posRestartArmed = false;
+    if (posRestartTimer) window.clearTimeout(posRestartTimer);
+    posRestartTimer = null;
+    if ($id("posEditSale")) $id("posEditSale").textContent = "Edit / restart sale";
+    if ($id("posCancelPayment")) $id("posCancelPayment").textContent = "Abandon and start over";
+    if ($id("posAbandonPayment")) $id("posAbandonPayment").textContent = "Abandon and start over";
+  }
+
+  function armPosDetectedRestart() {
+    posRestartArmed = true;
+    ["posEditSale", "posCancelPayment", "posAbandonPayment"].forEach((id) => {
+      if ($id(id)) $id(id).textContent = "Confirm abandon payment";
+    });
+    setPosConfirmNote("A payment was detected for this request. Click Confirm abandon payment within 6 seconds only if you intend to stop monitoring and start over.");
+    if (posRestartTimer) window.clearTimeout(posRestartTimer);
+    posRestartTimer = window.setTimeout(resetPosRestartArm, 6000);
+  }
+
+  function restartPosSaleForEditing(message = "Previous payment request closed. Edit the amount, memo, business, or wallet and start again.") {
+    const order = activePosOrder();
+    if (order && posPaymentWasDetected(order) && !posRestartArmed) {
+      armPosDetectedRestart();
       return;
     }
-    if (order && order.status !== "paid") {
+    resetPosRestartArm();
+    if (order) {
       upsertPosOrder(normalizePosOrder({ ...order, status: "cancelled", cancelled_at: new Date().toISOString() }));
     }
-    beginNewPosSale("Sale cancelled. Enter an amount when you are ready for the next customer.");
+    beginNewPosSale(message);
   }
 
   function beginNewPosSale(message = "Ready for a new sale.") {
     stopPosPaymentPolling();
+    resetPosRestartArm();
     posPaymentStarting = false;
+    posStartingPaymentState = null;
     closePosCustomerDisplay();
     if ($id("posTroubleDetails")) $id("posTroubleDetails").open = false;
     if ($id("posSaleOptions")) $id("posSaleOptions").open = false;
@@ -3282,6 +3360,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   function updatePos() {
     if (!$id("dogePosTerminal")) return;
     const order = selectedPosOrder();
+    const startedOrder = startedPosOrder(order);
     const activeOrder = activePosOrder(order);
     const state = activePosPaymentState();
     localStorage.setItem("doge-pos:merchant", state.merchant);
@@ -3310,6 +3389,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posStartHint")) {
       $id("posStartHint").textContent = activeOrder
         ? "This quote is frozen. Reviewing steps does not interrupt automatic payment monitoring."
+        : order?.status === "paid"
+          ? "This sale is complete. Adjust the fields if needed, then start a new payment."
         : state.wallet
           ? "Starting freezes this quote, opens the customer QR, and begins automatic payment detection."
           : "Save your business and wallet above before starting a payment.";
@@ -3317,8 +3398,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posStartPayment") && $id("posStartPayment").textContent !== "Preparing payment...") {
       $id("posStartPayment").textContent = activeOrder
         ? posWorkflowStageForOrder(order) >= 3 ? "View verification" : "Return to customer scan"
-        : "Start payment";
-      $id("posStartPayment").disabled = !posInitialized || (activeOrder ? false : !(state.wallet && state.usd > 0 && state.doge > 0));
+        : startedOrder ? "Start new payment" : "Start payment";
+      $id("posStartPayment").disabled = !posInitialized || posPaymentStarting;
     }
     if ($id("posPriceOut")) $id("posPriceOut").textContent = money.format(dogeUsd);
     renderDogeConversionChart("pos", state.usd);
@@ -3365,6 +3446,16 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (window.dogeAnnounce) window.dogeAnnounce("Business name and receiving wallet saved for this browser.");
     });
     $id("posChangeWallet")?.addEventListener("click", () => {
+      if (posPaymentStarting) {
+        setPosConfirmNote("The sale is being prepared. You can change the wallet after it finishes, or restart the sale.");
+        return;
+      }
+      if (activePosOrder()) {
+        navigatePosStage(1);
+        setPosConfirmNote("The wallet is locked to this payment request. Use Edit / restart sale to change it safely.");
+        $id("posEditSale")?.focus();
+        return;
+      }
       posWalletPanelOpen = true;
       syncPosWalletSetup();
       $id("posWallet")?.focus();
@@ -3412,7 +3503,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       syncPosWalletSetup();
     });
     initPosMemoTypeahead();
-    await fetchDogePrice();
+    const posPricePromise = fetchDogePrice();
     $id("posUsd")?.addEventListener("input", () => limitDecimalInput($id("posUsd"), 2));
     $id("posUsd")?.addEventListener("blur", () => {
       limitDecimalInput($id("posUsd"), 2, true);
@@ -3439,6 +3530,11 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (event.target === $id("posCustomerDisplayModal")) closePosCustomerDisplay();
     });
     const handleStartOrContinue = () => {
+      if (posGeneratedWallet && !$id("posNewWallet")?.hidden) {
+        setPosConfirmNote("Back up the new wallet key, then click I saved it before starting a customer payment.");
+        $id("posDismissNewWallet")?.focus();
+        return;
+      }
       const order = selectedPosOrder();
       if (activePosOrder(order)) {
         navigatePosStage(posWorkflowStageForOrder(order) >= 3 ? 3 : 2);
@@ -3446,6 +3542,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
       startPosPayment().catch((error) => {
         posPaymentStarting = false;
+        posStartingPaymentState = null;
         setPosConfirmNote(error.message || "Could not start the payment.");
         if ($id("posStartPayment")) {
           $id("posStartPayment").disabled = false;
@@ -3486,10 +3583,18 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       event.preventDefault();
       buttons[nextIndex]?.focus();
     });
+    const showPosSaleSetup = () => {
+      navigatePosStage(1);
+      if (!activePosOrder()) $id("posUsd")?.focus();
+    };
+    $id("posStep2StartSale")?.addEventListener("click", showPosSaleSetup);
+    $id("posStep3StartSale")?.addEventListener("click", showPosSaleSetup);
+    $id("posEditSale")?.addEventListener("click", restartPosSaleForEditing);
     $id("posBackToAmount")?.addEventListener("click", () => navigatePosStage(1));
     $id("posGoToVerify")?.addEventListener("click", () => navigatePosStage(3));
     $id("posBackToScan")?.addEventListener("click", () => navigatePosStage(2));
     $id("posCancelPayment")?.addEventListener("click", cancelPosPayment);
+    $id("posAbandonPayment")?.addEventListener("click", restartPosSaleForEditing);
     $id("posNewSale")?.addEventListener("click", () => beginNewPosSale());
     $id("posConfirmTransaction")?.addEventListener("click", () => {
       confirmPosTransaction().catch((error) => setPosConfirmNote(error.message));
@@ -3591,6 +3696,30 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       });
     });
     $id("posClearOrders")?.addEventListener("click", () => {
+      const button = $id("posClearOrders");
+      if (activePosOrder()) {
+        setPosConfirmNote("A payment is still being monitored. Finish it or use Edit / restart sale before clearing order history.");
+        return;
+      }
+      if (!posOrders().length) {
+        setPosConfirmNote("There are no local orders to clear.");
+        return;
+      }
+      if (!posClearOrdersArmed) {
+        posClearOrdersArmed = true;
+        if (button) button.textContent = "Confirm clear all";
+        setPosConfirmNote("Click Confirm clear all within 6 seconds to erase every local order from this browser.");
+        if (posClearOrdersTimer) window.clearTimeout(posClearOrdersTimer);
+        posClearOrdersTimer = window.setTimeout(() => {
+          posClearOrdersArmed = false;
+          if (button) button.textContent = "Clear local orders";
+        }, 6000);
+        return;
+      }
+      posClearOrdersArmed = false;
+      if (posClearOrdersTimer) window.clearTimeout(posClearOrdersTimer);
+      posClearOrdersTimer = null;
+      if (button) button.textContent = "Clear local orders";
       stopPosPaymentPolling();
       savePosOrders([]);
       posOrderPage = 1;
@@ -3598,6 +3727,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       resetPosStartButton();
       updatePos();
       renderPosOrders();
+      setPosConfirmNote("Local order history cleared.");
     });
     posInitialized = true;
     setPosOrderPageSize(localStorage.getItem("doge-pos:page-size") || 10);
@@ -3614,6 +3744,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       renderPosOrders();
     }
     window.addEventListener("beforeunload", stopPosPaymentPolling, { once: true });
+    posPricePromise.then(() => updatePos());
   }
 
   function initValidationSample() {
