@@ -202,3 +202,29 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn('id="posReceiptModalContext"', pos_html)
         self.assertIn(".pos-order-receipt-actions", site_css)
         self.assertIn(".pos-order-actions-cell", site_css)
+
+    def test_order_history_email_uses_a_local_rich_table_snapshot(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        email_block = doge_tools.split("function posEmailOrderRecord", 1)[1].split(
+            "function openPosConversionModal", 1
+        )[0]
+        self.assertIn('id="openPosEmailOrders"', pos_html)
+        self.assertIn('id="posEmailOrdersModal"', pos_html)
+        self.assertIn('name="posEmailOrdersScope" value="page" checked', pos_html)
+        self.assertIn('name="posEmailOrdersScope" value="all"', pos_html)
+        self.assertIn('id="posEmailOrdersRecipient" type="email"', pos_html)
+        self.assertIn("function posEmailOrdersBundle", doge_tools)
+        self.assertIn("function containPosEmailOrdersFocus", doge_tools)
+        self.assertIn("posEmailOrdersSnapshot = Object.freeze", email_block)
+        self.assertIn("data-pos-order-history-table", email_block)
+        self.assertIn('"text/html": new Blob([bundle.html]', email_block)
+        self.assertIn('"text/plain": new Blob([bundle.text]', email_block)
+        self.assertIn("!emailField.checkValidity()", email_block)
+        self.assertIn("mailto:${encodeURIComponent(email)}?subject=", email_block)
+        self.assertNotIn("body=", email_block)
+        self.assertNotIn("baseline_txids", email_block)
+        self.assertNotIn("validation_errors", email_block)
+        self.assertIn(".pos-history-toolbar-actions", site_css)
+        self.assertIn(".pos-email-orders-scope-grid", site_css)

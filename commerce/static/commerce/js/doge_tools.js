@@ -77,6 +77,8 @@
   let posReceiptModalReturnFocus = null;
   let posReceiptModalReturnOrderId = "";
   let posReceiptModalReturnControlId = "";
+  let posEmailOrdersSnapshot = null;
+  let posEmailOrdersReturnFocus = null;
 
   function logo() {
     return document.body.dataset.dogeLogo || "";
@@ -2309,6 +2311,11 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     setPosWorkflowStage(1, null);
   }
 
+  function posOrderDisplayDoge(order) {
+    const matchedDoge = positiveNumber(order?.matched_doge);
+    return order?.status === "paid" && matchedDoge > 0 ? matchedDoge : positiveNumber(order?.doge);
+  }
+
   function renderPosOrders() {
     const rows = $id("posOrderRows");
     if (!rows) return;
@@ -2319,9 +2326,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     rows.innerHTML = pageOrders.length
       ? pageOrders.map((order) => {
         const orderId = escapeHtml(order.id);
-        const displayDoge = order.status === "paid" && positiveNumber(order.matched_doge) > 0
-          ? positiveNumber(order.matched_doge)
-          : Number(order.doge);
+        const displayDoge = posOrderDisplayDoge(order);
         const receiptActions = order.status === "paid"
           ? `<div class="pos-order-receipt-actions" role="group" aria-label="Receipt actions for order ${orderId}">
               <button class="button small quiet table-button pos-order-receipt-action" type="button" data-pos-receipt-share="${orderId}" aria-haspopup="dialog" aria-controls="posReceiptModal" aria-label="Share rich receipt for order ${orderId}">Share</button>
@@ -2649,6 +2654,241 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function closePosExportModal() {
     if ($id("posExportModal")) $id("posExportModal").hidden = true;
+  }
+
+  function posEmailOrderRecord(order) {
+    const txid = String(order?.txid || "").trim();
+    const realTx = isRealDogeTxid(txid);
+    const confirmations = Number(order?.confirmations || 0);
+    return Object.freeze({
+      id: String(order?.id || ""),
+      date: String(order?.paid_at || order?.confirmed_at || order?.time || ""),
+      merchant: String(order?.merchant || "DOGE Merchant"),
+      memo: String(order?.memo || "DOGE sale"),
+      usd: positiveNumber(order?.usd),
+      requestedDoge: positiveNumber(order?.doge),
+      receivedDoge: realTx ? positiveNumber(order?.matched_doge) : 0,
+      status: String(order?.status || "unpaid"),
+      confirmations: Number.isFinite(confirmations) ? Math.max(0, confirmations) : 0,
+      txid: realTx ? txid : "",
+    });
+  }
+
+  function setPosEmailOrdersStatus(message = "", state = "") {
+    const status = $id("posEmailOrdersStatus");
+    if (!status) return;
+    status.textContent = message;
+    status.hidden = !String(message).trim();
+    if (state) status.dataset.state = state;
+    else delete status.dataset.state;
+  }
+
+  function selectedPosEmailOrdersScope() {
+    return document.querySelector('input[name="posEmailOrdersScope"]:checked')?.value === "all" ? "all" : "page";
+  }
+
+  function scopedPosEmailOrders() {
+    if (!posEmailOrdersSnapshot) return [];
+    return selectedPosEmailOrdersScope() === "all" ? posEmailOrdersSnapshot.all : posEmailOrdersSnapshot.page;
+  }
+
+  function updatePosEmailOrdersSummary() {
+    if (!posEmailOrdersSnapshot) return;
+    const scope = selectedPosEmailOrdersScope();
+    const count = scopedPosEmailOrders().length;
+    if ($id("posEmailOrdersSummary")) {
+      $id("posEmailOrdersSummary").textContent = scope === "all"
+        ? `${count} saved order${count === 1 ? "" : "s"} will be included.`
+        : `${count} order${count === 1 ? "" : "s"} from page ${posEmailOrdersSnapshot.pageNumber} will be included.`;
+    }
+    setPosEmailOrdersStatus();
+  }
+
+  function openPosEmailOrdersModal() {
+    const allOrders = posOrders();
+    if (!allOrders.length) {
+      setPosConfirmNote("There are no local orders to email yet.");
+      return;
+    }
+    const pageOrders = posOrderPageOrders(allOrders);
+    const now = new Date();
+    posEmailOrdersSnapshot = Object.freeze({
+      all: Object.freeze(allOrders.map(posEmailOrderRecord)),
+      page: Object.freeze(pageOrders.map(posEmailOrderRecord)),
+      pageNumber: posOrderPage,
+      generatedAt: now.toLocaleString(),
+      dateStamp: now.toISOString().slice(0, 10),
+    });
+    posEmailOrdersReturnFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : $id("openPosEmailOrders");
+    if ($id("posEmailOrdersPageCount")) {
+      const count = posEmailOrdersSnapshot.page.length;
+      $id("posEmailOrdersPageCount").textContent = `${count} order${count === 1 ? "" : "s"} on page ${posOrderPage}`;
+    }
+    if ($id("posEmailOrdersAllCount")) {
+      const count = posEmailOrdersSnapshot.all.length;
+      $id("posEmailOrdersAllCount").textContent = `${count} total order${count === 1 ? "" : "s"}`;
+    }
+    const pageScope = document.querySelector('input[name="posEmailOrdersScope"][value="page"]');
+    if (pageScope) pageScope.checked = true;
+    if ($id("posEmailOrdersRecipient")) $id("posEmailOrdersRecipient").value = "";
+    updatePosEmailOrdersSummary();
+    if ($id("posEmailOrdersModal")) $id("posEmailOrdersModal").hidden = false;
+    $id("posEmailOrdersRecipient")?.focus();
+  }
+
+  function closePosEmailOrdersModal() {
+    const modal = $id("posEmailOrdersModal");
+    const wasOpen = Boolean(modal && !modal.hidden);
+    const returnFocus = posEmailOrdersReturnFocus?.isConnected
+      ? posEmailOrdersReturnFocus
+      : $id("openPosEmailOrders");
+    if (modal) modal.hidden = true;
+    if ($id("posEmailOrdersRecipient")) $id("posEmailOrdersRecipient").value = "";
+    posEmailOrdersSnapshot = null;
+    posEmailOrdersReturnFocus = null;
+    setPosEmailOrdersStatus();
+    if (wasOpen && returnFocus?.isConnected) {
+      window.requestAnimationFrame(() => returnFocus.focus({ preventScroll: true }));
+    }
+  }
+
+  function containPosEmailOrdersFocus(event) {
+    if (event.key !== "Tab") return;
+    const modal = $id("posEmailOrdersModal");
+    if (!modal || modal.hidden) return;
+    const controls = Array.from(modal.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+    )).filter((control) => !control.hidden && control.getClientRects().length > 0);
+    if (!controls.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function posEmailOrdersBundle() {
+    if (!posEmailOrdersSnapshot) return null;
+    const scope = selectedPosEmailOrdersScope();
+    const records = scopedPosEmailOrders();
+    if (!records.length) return null;
+    const scopeTitle = scope === "all" ? "All saved orders" : `Current page ${posEmailOrdersSnapshot.pageNumber}`;
+    const subjectScope = scope === "all" ? "all orders" : `page ${posEmailOrdersSnapshot.pageNumber}`;
+    const cleanText = (value) => String(value ?? "").replace(/[\t\r\n]+/g, " ").trim();
+    const headerStyle = "box-sizing:border-box;padding:9px 8px;border:1px solid #dfe4dd;background:#f3f5ef;color:#5d625f;font-size:11px;font-weight:800;text-align:left;text-transform:uppercase;vertical-align:top";
+    const cellStyle = "box-sizing:border-box;padding:10px 8px;border:1px solid #dfe4dd;color:#171715;font-size:12px;text-align:left;vertical-align:top;overflow-wrap:anywhere;word-break:break-word";
+    const rows = records.map((record) => {
+      const receivedDiffers = record.receivedDoge > 0
+        && Math.abs(record.receivedDoge - record.requestedDoge) > POS_AUTO_VERIFY_TOLERANCE_DOGE;
+      const dogeHtml = record.receivedDoge > 0
+        ? receivedDiffers
+          ? `<span style="display:block;color:#5d625f">Requested ${escapeHtml(record.requestedDoge.toFixed(8))} DOGE</span><strong style="display:block">Received ${escapeHtml(record.receivedDoge.toFixed(8))} DOGE</strong>`
+          : `<strong style="display:block">${escapeHtml(record.receivedDoge.toFixed(8))} DOGE</strong>`
+        : `<span style="display:block">${escapeHtml(record.requestedDoge.toFixed(8))} DOGE requested</span>`;
+      const transactionHtml = record.txid
+        ? `<a href="${escapeHtml(explorerUrl(record.txid, ""))}" style="display:block;margin-top:4px;color:#0f8f78;text-decoration:none;overflow-wrap:anywhere" aria-label="Transaction ${escapeHtml(record.txid)}">${escapeHtml(`${record.txid.slice(0, 8)}…${record.txid.slice(-8)}`)}</a>`
+        : "";
+      return `<tr data-pos-email-order-row>
+        <td style="${cellStyle};width:22%"><span style="display:block">${escapeHtml(record.date)}</span><code style="display:block;margin-top:4px;color:#5d625f;font-size:10px;overflow-wrap:anywhere">${escapeHtml(record.id)}</code></td>
+        <td style="${cellStyle};width:30%"><strong style="display:block">${escapeHtml(record.merchant)}</strong><span style="display:block;margin-top:4px;color:#5d625f">${escapeHtml(record.memo)}</span></td>
+        <td style="${cellStyle};width:24%"><strong style="display:block;font-size:14px">${escapeHtml(moneyCents.format(record.usd))}</strong>${dogeHtml}</td>
+        <td style="${cellStyle};width:24%"><strong style="display:block;text-transform:capitalize">${escapeHtml(record.status)}</strong>${record.txid ? `<span style="display:block;margin-top:4px;color:#5d625f">${escapeHtml(String(record.confirmations))} confirmation${record.confirmations === 1 ? "" : "s"}</span>` : ""}${transactionHtml}</td>
+      </tr>`;
+    }).join("");
+    const html = `<div data-pos-order-history-email style="box-sizing:border-box;width:100%;max-width:760px;margin:0 auto;padding:20px;border:1px solid #dfe4dd;border-radius:12px;background:#ffffff;color:#171715;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+      <div style="margin-bottom:14px"><div style="color:#96690e;font-size:11px;font-weight:900;letter-spacing:.10em;text-transform:uppercase">Dogecoin POS</div><div style="font-size:22px;font-weight:900">Order history</div><div style="margin-top:4px;color:#5d625f;font-size:12px">${escapeHtml(scopeTitle)} · ${records.length} order${records.length === 1 ? "" : "s"} · generated ${escapeHtml(posEmailOrdersSnapshot.generatedAt)}</div></div>
+      <table data-pos-order-history-table style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;background:#ffffff">
+        <caption style="padding:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">DOGE POS order history</caption>
+        <thead><tr><th scope="col" style="${headerStyle};width:22%">Date / Order</th><th scope="col" style="${headerStyle};width:30%">Sale</th><th scope="col" style="${headerStyle};width:24%">Amount</th><th scope="col" style="${headerStyle};width:24%">Status / Transaction</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:12px;color:#8a8f88;font-size:11px;text-align:center">Generated locally by commerce.dog</div>
+    </div>`;
+    const textRows = records.map((record) => [
+      cleanText(record.date),
+      cleanText(record.id),
+      cleanText(record.merchant),
+      cleanText(record.memo),
+      moneyCents.format(record.usd),
+      `${record.requestedDoge.toFixed(8)} DOGE`,
+      record.receivedDoge > 0 ? `${record.receivedDoge.toFixed(8)} DOGE` : "",
+      cleanText(record.status),
+      String(record.confirmations),
+      record.txid,
+    ].join("\t"));
+    const text = [
+      "DOGE POS order history",
+      `${scopeTitle} | ${records.length} order${records.length === 1 ? "" : "s"} | generated ${posEmailOrdersSnapshot.generatedAt}`,
+      "",
+      "Date\tOrder ID\tMerchant\tMemo\tUSD\tDOGE requested\tDOGE received\tStatus\tConfirmations\tTransaction",
+      ...textRows,
+    ].join("\n");
+    return Object.freeze({
+      html,
+      text,
+      subject: `DOGE POS orders — ${subjectScope} — ${records.length} order${records.length === 1 ? "" : "s"} — ${posEmailOrdersSnapshot.dateStamp}`,
+      count: records.length,
+      scope,
+    });
+  }
+
+  async function copyPosEmailOrdersBundle(bundle) {
+    if (!bundle) {
+      setPosEmailOrdersStatus("No orders are available for this selection.", "error");
+      return false;
+    }
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([bundle.html], { type: "text/html" }),
+            "text/plain": new Blob([bundle.text], { type: "text/plain" }),
+          }),
+        ]);
+        setPosEmailOrdersStatus("Rich order table copied. Paste it into your email.");
+        if (window.dogeAnnounce) window.dogeAnnounce("Rich order table copied.");
+        return true;
+      }
+    } catch {
+      /* Fall through to selection-based rich HTML copy. */
+    }
+    if (legacyCopyPosReceiptRich(bundle.html)) {
+      setPosEmailOrdersStatus("Rich order table copied. Paste it into your email.");
+      if (window.dogeAnnounce) window.dogeAnnounce("Rich order table copied.");
+      return true;
+    }
+    setPosEmailOrdersStatus("This browser could not copy the formatted table. Use CSV export instead.", "error");
+    return false;
+  }
+
+  async function openPosEmailOrdersClient() {
+    const emailField = $id("posEmailOrdersRecipient");
+    const email = (emailField?.value || "").trim();
+    if (email && emailField && !emailField.checkValidity()) {
+      emailField.reportValidity();
+      setPosEmailOrdersStatus("Enter a valid recipient email, or leave it blank.", "error");
+      return;
+    }
+    const bundle = posEmailOrdersBundle();
+    const copied = await copyPosEmailOrdersBundle(bundle);
+    if (!copied || !bundle) return;
+    const link = document.createElement("a");
+    link.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(bundle.subject)}`;
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setPosEmailOrdersStatus("Table copied. Paste it into the email message, then send.");
+    if (window.dogeAnnounce) window.dogeAnnounce("Email app opened. Paste the copied order table into the message.");
   }
 
   function openPosConversionModal() {
@@ -4081,6 +4321,23 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       posOrderPage += 1;
       renderPosOrders();
     });
+    $id("openPosEmailOrders")?.addEventListener("click", openPosEmailOrdersModal);
+    $id("closePosEmailOrders")?.addEventListener("click", closePosEmailOrdersModal);
+    $id("posEmailOrdersModal")?.addEventListener("click", (event) => {
+      if (event.target === $id("posEmailOrdersModal")) closePosEmailOrdersModal();
+    });
+    $id("posEmailOrdersModal")?.addEventListener("keydown", containPosEmailOrdersFocus);
+    document.querySelectorAll('input[name="posEmailOrdersScope"]').forEach((input) => {
+      input.addEventListener("change", updatePosEmailOrdersSummary);
+    });
+    $id("posEmailOrdersCopy")?.addEventListener("click", () => {
+      const bundle = posEmailOrdersBundle();
+      copyPosEmailOrdersBundle(bundle).catch((error) => setPosEmailOrdersStatus(error.message, "error"));
+    });
+    $id("posEmailOrdersForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      openPosEmailOrdersClient().catch((error) => setPosEmailOrdersStatus(error.message, "error"));
+    });
     $id("posExportCsv")?.addEventListener("click", () => openPosExportModal("csv"));
     $id("posExportJson")?.addEventListener("click", () => openPosExportModal("json"));
     $id("closePosExportModal")?.addEventListener("click", closePosExportModal);
@@ -4104,6 +4361,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       closePosOrdersHelpModal();
       closePosCustomerDisplay();
       closePosReceiptModal();
+      closePosEmailOrdersModal();
     });
     document.querySelectorAll("[data-pos-export-scope]").forEach((button) => {
       button.addEventListener("click", () => {

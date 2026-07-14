@@ -3585,6 +3585,87 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+.pos-email-orders-modal {
+  width: min(520px, 100%);
+}
+
+.pos-email-orders-form {
+  display: grid;
+  gap: 12px;
+}
+
+.pos-email-orders-scope {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pos-email-orders-scope legend {
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.pos-email-orders-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pos-email-orders-scope-grid label {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 58px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+}
+
+.pos-email-orders-scope-grid label:has(input:checked) {
+  border-color: rgba(15, 143, 120, 0.46);
+  background: rgba(15, 143, 120, 0.08);
+}
+
+.pos-email-orders-scope-grid input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: var(--mint);
+}
+
+.pos-email-orders-scope-grid span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pos-email-orders-scope-grid small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.pos-email-orders-actions {
+  flex-wrap: wrap;
+}
+
+.pos-email-orders-status {
+  margin: 0;
+  padding: 9px 10px;
+  border-left: 3px solid var(--mint);
+  background: rgba(15, 143, 120, 0.08);
+}
+
+.pos-email-orders-status[data-state="error"] {
+  border-left-color: var(--rose);
+  background: rgba(180, 43, 43, 0.08);
+}
+
 .export-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8833,7 +8914,8 @@ body[data-page="wallet"] main {
 }
 
 @media (max-width: 400px) {
-  #posReceiptModal {
+  #posReceiptModal,
+  #posEmailOrdersModal {
     padding: 8px;
   }
 
@@ -8849,6 +8931,17 @@ body[data-page="wallet"] main {
 
   .pos-receipt-preview > [data-pos-receipt-card] {
     padding: 12px !important;
+  }
+
+  .pos-email-orders-scope-grid,
+  .pos-email-orders-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .pos-email-orders-actions .button {
+    width: 100%;
+    min-height: 44px;
   }
 }
 
@@ -9100,6 +9193,10 @@ body[data-page="wallet"] main {
   padding: 14px 0 12px;
 }
 
+.pos-history-toolbar-actions {
+  align-items: center;
+}
+
 .pos-orders-panel .pos-order-actions {
   display: grid;
   gap: 6px;
@@ -9133,6 +9230,44 @@ body[data-page="wallet"] main {
 }
 
 @media (max-width: 700px) {
+  .pos-history-toolbar-actions {
+    display: grid;
+    grid-template-columns: 44px repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .pos-history-toolbar-actions #openPosEmailOrders {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .pos-history-toolbar-actions #openPosOrdersHelp {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .pos-history-toolbar-actions #posExportCsv {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .pos-history-toolbar-actions #posExportJson {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .pos-history-toolbar-actions #posClearOrders {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .pos-history-toolbar-actions .button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
   .pos-orders-panel .responsive-card-table .pos-order-actions-cell {
     display: block;
     margin-top: 4px;

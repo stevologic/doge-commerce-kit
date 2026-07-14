@@ -263,8 +263,9 @@
         <p class="note compact-note" id="posOrderPageStatus">Showing local orders.</p>
       </div>
     </div>
-    <div class="inline-actions">
+    <div class="inline-actions pos-history-toolbar-actions">
       <button class="button small quiet help-button" id="openPosOrdersHelp" type="button" aria-label="How to use local orders" title="How to use local orders">?</button>
+      <button class="button primary small" id="openPosEmailOrders" type="button" aria-haspopup="dialog" aria-controls="posEmailOrdersModal">Email table</button>
       <button class="button small" id="posExportCsv" type="button">Export CSV</button>
       <button class="button small" id="posExportJson" type="button">Export JSON</button>
       <button class="button small quiet" id="posClearOrders" type="button">Clear local orders</button>
@@ -316,6 +317,45 @@
         <strong id="posExportAllCount">0 orders</strong>
       </button>
     </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="posEmailOrdersModal" hidden>
+  <section class="pos-receipt-modal pos-email-orders-modal" role="dialog" aria-modal="true" aria-labelledby="posEmailOrdersTitle" aria-describedby="posEmailOrdersHelp">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Email order history</p>
+        <h2 id="posEmailOrdersTitle">Send a formatted order table</h2>
+        <p id="posEmailOrdersHelp">Choose which orders to include. The rich table is copied before your email app opens.</p>
+      </div>
+      <button class="button small quiet" type="button" id="closePosEmailOrders">Close</button>
+    </div>
+    <form class="pos-email-orders-form" id="posEmailOrdersForm">
+      <label class="pos-receipt-email-field" for="posEmailOrdersRecipient">
+        <span>Recipient email <small>optional</small></span>
+        <input id="posEmailOrdersRecipient" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="accounting@example.com">
+      </label>
+      <fieldset class="pos-email-orders-scope">
+        <legend>Orders to include</legend>
+        <div class="pos-email-orders-scope-grid">
+          <label>
+            <input type="radio" name="posEmailOrdersScope" value="page" checked>
+            <span><strong>Current page</strong><small id="posEmailOrdersPageCount">0 orders</small></span>
+          </label>
+          <label>
+            <input type="radio" name="posEmailOrdersScope" value="all">
+            <span><strong>All orders</strong><small id="posEmailOrdersAllCount">0 orders</small></span>
+          </label>
+        </div>
+      </fieldset>
+      <p class="note compact-note" id="posEmailOrdersSummary">Choose the orders to include.</p>
+      <div class="inline-actions pos-email-orders-actions">
+        <button class="button primary small" id="posEmailOrdersOpen" type="submit">Copy &amp; open email</button>
+        <button class="button small" id="posEmailOrdersCopy" type="button">Copy rich table</button>
+      </div>
+      <p class="note compact-note pos-email-orders-status" id="posEmailOrdersStatus" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      <p class="note compact-note">Orders stay on this device until you paste them into your email. The recipient is never stored.</p>
+    </form>
   </section>
 </div>
 
@@ -409,6 +449,7 @@
       <li><strong>Pick transaction</strong><span>If needed, use the transaction picker in Manual verify to fill the transaction ID from recent blockchain activity.</span></li>
       <li><strong>Confirm then mark paid</strong><span>Confirm the transaction, amount, address, and confirmation count before fulfillment.</span></li>
       <li><strong>Receipts</strong><span>Paid orders include Share receipt and Print / Save actions without interrupting the current sale.</span></li>
+      <li><strong>Email table</strong><span>Copy the current page or all saved orders as a formatted table, then open your email app and paste it.</span></li>
       <li><strong>Export</strong><span>Download the current page or every saved local order as CSV or JSON.</span></li>
     </ol>
     <p class="note compact-note">Delete removes a single unlocked local row. Clear local orders wipes the browser table.</p>

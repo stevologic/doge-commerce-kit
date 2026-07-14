@@ -719,6 +719,191 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertEqual(state_after, state_before)
             browser.close()
 
+    def test_pos_order_history_email_copies_scoped_safe_table_without_mutating_sale(self):
+        base = self.live_server_url
+        wallet = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        orders = []
+        for number in range(1, 12):
+            paid = number % 2 == 0 or number == 11
+            order = {
+                "id": f"email-order-{number:02d}",
+                "merchant": f"Merchant {number:02d}",
+                "wallet": wallet,
+                "usd": number,
+                "doge": number * 10.0,
+                "memo": f"Order memo {number:02d}",
+                "status": "paid" if paid else "cancelled",
+                "time": f"7/14/2026, {number}:00:00 AM",
+                "confirmations": number if paid else 0,
+            }
+            if paid:
+                order.update({
+                    "matched_doge": number * 10.0,
+                    "paid_at": f"7/14/2026, {number}:05:00 AM",
+                    "txid": f"{number:064x}",
+                })
+            orders.append(order)
+        orders[0].update({
+            "merchant": "Current Active Merchant",
+            "memo": "Current active customer",
+            "status": "unpaid",
+            "payment_started_at": "2099-01-01T00:00:00Z",
+            "baseline_ready": True,
+            "baseline_txids": [],
+        })
+        orders[-1].update({
+            "merchant": '<img src=x onerror="alert(1)"> & Co',
+            "memo": "<script>alert('unsafe')</script>",
+        })
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.add_init_script(
+                """
+                  window.__orderEmailCopies = [];
+                  window.__orderMailtos = [];
+                  window.ClipboardItem = class {
+                    constructor(items) { this.items = items; }
+                  };
+                  Object.defineProperty(navigator, 'clipboard', {
+                    configurable: true,
+                    value: {
+                      write: async (items) => {
+                        const item = items[0];
+                        window.__orderEmailCopies.push({
+                          html: await item.items['text/html'].text(),
+                          text: await item.items['text/plain'].text(),
+                        });
+                      },
+                    },
+                  });
+                  const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+                  HTMLAnchorElement.prototype.click = function () {
+                    const href = this.getAttribute('href') || '';
+                    if (href.startsWith('mailto:')) {
+                      window.__orderMailtos.push(href);
+                      return;
+                    }
+                    return nativeAnchorClick.call(this);
+                  };
+                """
+            )
+            page.add_init_script(
+                f"""
+                  localStorage.setItem('doge-pos:orders', JSON.stringify({json.dumps(orders)}));
+                  localStorage.setItem('doge-pos:selected-order', 'email-order-01');
+                  localStorage.setItem('doge-pos:page-size', '10');
+                """
+            )
+            page.route(
+                "**/api/wallet/transactions/**",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({"transactions": [], "provider_name": "browser test"}),
+                ),
+            )
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.click(".pos-history-details > summary")
+            page.click("#posOrderNext")
+            self.assertEqual(page.locator("#posOrderPageInfo").inner_text(), "Page 2 of 2")
+
+            state_before = page.evaluate(
+                """() => ({
+                  orders: localStorage.getItem('doge-pos:orders'),
+                  selected: localStorage.getItem('doge-pos:selected-order'),
+                  merchant: document.getElementById('posMerchant')?.value,
+                  usd: document.getElementById('posUsd')?.value,
+                  memo: document.getElementById('posMemo')?.value,
+                  stage: document.getElementById('posWorkflow')?.dataset.posStage,
+                  status: document.getElementById('posStatus')?.textContent?.trim(),
+                  page: document.getElementById('posOrderPageInfo')?.textContent?.trim(),
+                  pageSize: document.getElementById('posOrderPageSize')?.value,
+                })"""
+            )
+
+            page.click("#openPosEmailOrders")
+            self.assertIn("1 order on page 2", page.locator("#posEmailOrdersPageCount").inner_text())
+            self.assertIn("11 total orders", page.locator("#posEmailOrdersAllCount").inner_text())
+            page.click("#posEmailOrdersCopy")
+            page.wait_for_function("() => window.__orderEmailCopies.length === 1", timeout=5000)
+            current_page_copy = page.evaluate(
+                """() => {
+                  const copy = window.__orderEmailCopies[0];
+                  const doc = new DOMParser().parseFromString(copy.html, 'text/html');
+                  return {
+                    rows: doc.querySelectorAll('[data-pos-email-order-row]').length,
+                    textContent: doc.body.textContent,
+                    scripts: doc.querySelectorAll('script').length,
+                    images: doc.querySelectorAll('img').length,
+                    hasHead: Boolean(doc.querySelector('table thead')),
+                    hasBody: Boolean(doc.querySelector('table tbody')),
+                    plain: copy.text,
+                  };
+                }"""
+            )
+            self.assertEqual(current_page_copy["rows"], 1)
+            self.assertIn("email-order-11", current_page_copy["textContent"])
+            self.assertIn("<img src=x", current_page_copy["textContent"])
+            self.assertIn("<script>", current_page_copy["textContent"])
+            self.assertNotIn("Merchant 02", current_page_copy["textContent"])
+            self.assertEqual(current_page_copy["scripts"], 0)
+            self.assertEqual(current_page_copy["images"], 0)
+            self.assertTrue(current_page_copy["hasHead"])
+            self.assertTrue(current_page_copy["hasBody"])
+            self.assertIn("email-order-11", current_page_copy["plain"])
+            page.click("#closePosEmailOrders")
+
+            page.click("#openPosEmailOrders")
+            page.check('input[name="posEmailOrdersScope"][value="all"]')
+            page.fill("#posEmailOrdersRecipient", "not-an-email")
+            page.click("#posEmailOrdersOpen")
+            self.assertEqual(page.evaluate("window.__orderEmailCopies.length"), 1)
+            self.assertTrue(page.is_visible("#posEmailOrdersModal"))
+
+            page.fill("#posEmailOrdersRecipient", "qa+orders@example.com")
+            page.click("#posEmailOrdersOpen")
+            page.wait_for_function(
+                "() => window.__orderEmailCopies.length === 2 && window.__orderMailtos.length === 1",
+                timeout=5000,
+            )
+            all_copy = page.evaluate(
+                """() => {
+                  const doc = new DOMParser().parseFromString(window.__orderEmailCopies[1].html, 'text/html');
+                  return {
+                    rows: doc.querySelectorAll('[data-pos-email-order-row]').length,
+                    textContent: doc.body.textContent,
+                  };
+                }"""
+            )
+            self.assertEqual(all_copy["rows"], 11)
+            self.assertIn("email-order-01", all_copy["textContent"])
+            self.assertIn("email-order-11", all_copy["textContent"])
+            mailto = page.evaluate("window.__orderMailtos[0]")
+            decoded_mailto = page.evaluate("decodeURIComponent(window.__orderMailtos[0])")
+            self.assertTrue(mailto.startswith("mailto:"))
+            self.assertNotIn("body=", mailto.lower())
+            self.assertIn("qa+orders@example.com", decoded_mailto)
+            self.assertIn("DOGE POS orders", decoded_mailto)
+            page.click("#closePosEmailOrders")
+
+            state_after = page.evaluate(
+                """() => ({
+                  orders: localStorage.getItem('doge-pos:orders'),
+                  selected: localStorage.getItem('doge-pos:selected-order'),
+                  merchant: document.getElementById('posMerchant')?.value,
+                  usd: document.getElementById('posUsd')?.value,
+                  memo: document.getElementById('posMemo')?.value,
+                  stage: document.getElementById('posWorkflow')?.dataset.posStage,
+                  status: document.getElementById('posStatus')?.textContent?.trim(),
+                  page: document.getElementById('posOrderPageInfo')?.textContent?.trim(),
+                  pageSize: document.getElementById('posOrderPageSize')?.value,
+                })"""
+            )
+            self.assertEqual(state_after, state_before)
+            browser.close()
+
     def test_pos_near_match_quick_approve_revalidates_the_detected_transaction(self):
         base = self.live_server_url
         detected_txid = "c" * 64
