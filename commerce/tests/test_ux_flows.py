@@ -159,6 +159,7 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertFalse(page.is_disabled("#posChangeWallet"))
             page.click("#posChangeWallet")
             self.assertIn("locked to this payment request", page.locator("#posFlowNotice").inner_text())
+            background_order_id = page.evaluate("localStorage.getItem('doge-pos:selected-order')")
             page.click("#posEditSale")
             for selector in ("#posUsd", "#posMemo", "#posMerchant", "#posWallet", "#posUseWallet", "#posGenerateWallet"):
                 self.assertFalse(page.is_disabled(selector), selector)
@@ -173,11 +174,16 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertTrue(page.is_disabled("#posUsd"))
             active_order_id = page.evaluate("localStorage.getItem('doge-pos:selected-order')")
             page.click(".pos-history-details > summary")
-            cancelled_load = page.locator("#posOrderRows tr", has_text="cancelled").locator("[data-pos-load]")
-            self.assertEqual(cancelled_load.count(), 1)
-            cancelled_load.click()
+            background_load = page.locator(f'[data-pos-load="{background_order_id}"]')
+            self.assertEqual(background_load.count(), 1)
+            background_load.click()
             self.assertEqual(page.evaluate("localStorage.getItem('doge-pos:selected-order')"), active_order_id)
             self.assertIn("still being monitored", page.locator("#posHistoryNotice").inner_text())
+            background_status = page.evaluate(
+                """(id) => (JSON.parse(localStorage.getItem('doge-pos:orders') || '[]').find((order) => order.id === id) || {}).status""",
+                background_order_id,
+            )
+            self.assertEqual(background_status, "unpaid")
             page.click('[data-pos-go="3"]')
             self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "3")
             self.assertFalse(page.locator("#posManualDetails").get_attribute("open") is not None)
