@@ -242,6 +242,37 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertNotIn("await fetchDogePrice();", doge_tools)
         self.assertIn("Other verification options", pos_html)
 
+    def test_pos_footer_navigation_moves_one_adjacent_step_at_a_time(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+
+        for marker in (
+            'id="posStartPayment" type="submit" form="posSaleForm" disabled data-pos-nav-direction="next"',
+            'id="posBackToAmount" type="button" data-pos-nav-direction="previous" data-pos-nav-target="1"',
+            'id="posGoToVerify" type="button" data-pos-nav-direction="next" data-pos-nav-target="3"',
+            'id="posBackToScan" type="button" data-pos-nav-direction="previous" data-pos-nav-target="2"',
+            "Back · Set price",
+            "Next · Verify payment",
+            "Back · Customer scan",
+        ):
+            self.assertIn(marker, pos_html)
+
+        self.assertIn('document.querySelectorAll("[data-pos-nav-target]")', doge_tools)
+        self.assertIn("navigatePosStage(Number(button.dataset.posNavTarget))", doge_tools)
+        self.assertIn('backToAmount.textContent = paid ? "Start new sale" : "Back · Set price"', doge_tools)
+        start_handler = doge_tools.split("const handleStartOrContinue", 1)[1].split(
+            '$id("posStartPayment")?.addEventListener', 1
+        )[0]
+        self.assertIn("navigatePosStage(2)", start_handler)
+        self.assertNotIn("posWorkflowStageForOrder(order)", start_handler)
+        self.assertNotIn("Return to customer scan", doge_tools)
+        self.assertNotIn("View verification", doge_tools)
+
+        mobile_css = site_css.split("/* Mobile counter mode", 1)[1]
+        self.assertIn('body[data-page="pos_terminal"] .pos-stage-navigation {\n    position: sticky;', mobile_css)
+        self.assertNotIn('.pos-stage-navigation {\n    display: none;', mobile_css)
+
     def test_pos_recent_activity_has_narrow_screen_layout_rules(self):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
         self.assertIn("pos-transaction-picker .wallet-activity-item", site_css)

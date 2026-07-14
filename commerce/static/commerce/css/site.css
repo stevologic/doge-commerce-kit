@@ -4665,9 +4665,9 @@ body[data-page="merchant_kit"] main {
 
 .pos-sale-panel,
 .pos-payment-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-content: start;
 }
 
 .pos-sale-panel .form-grid.compact {
@@ -8858,14 +8858,47 @@ body[data-page="wallet"] main {
 }
 
 .pos-stage-navigation {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: 8px;
   width: 100%;
-  margin-top: 14px;
+  margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid var(--line);
+}
+
+.pos-stage-navigation-forward-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pos-stage-navigation .button {
+  gap: 6px;
+  min-height: 46px;
+}
+
+.pos-stage-navigation [data-pos-nav-direction="previous"] {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.pos-stage-navigation [data-pos-nav-direction="next"] {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.pos-stage-navigation [data-pos-nav-direction="previous"]::before,
+.pos-stage-navigation [data-pos-nav-direction="next"]::after {
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+.pos-stage-navigation [data-pos-nav-direction="previous"]::before {
+  content: "←";
+}
+
+.pos-stage-navigation [data-pos-nav-direction="next"]::after {
+  content: "→";
 }
 
 .pos-manual-fallback,
@@ -10215,7 +10248,32 @@ body[data-page="wallet"] main {
   }
 
   body[data-page="pos_terminal"] .pos-stage-navigation {
-    display: none;
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: auto;
+    padding: 8px 0 2px;
+    border-top: 1px solid rgba(14, 91, 99, 0.16);
+    background: rgba(251, 252, 247, 0.98);
+    box-shadow: 0 -8px 16px rgba(251, 252, 247, 0.92);
+  }
+
+  body[data-page="pos_terminal"] .pos-stage-navigation-forward-only {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page="pos_terminal"] .pos-stage-navigation .button {
+    width: 100%;
+    min-height: 48px;
+    padding-inline: 12px;
+  }
+
+  body[data-page="pos_terminal"] .pos-stage-navigation #posStartPayment {
+    position: static;
+    box-shadow: none;
   }
 
   body[data-page="pos_terminal"] .pos-verify-hero {

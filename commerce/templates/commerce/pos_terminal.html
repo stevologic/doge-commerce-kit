@@ -115,7 +115,9 @@
         <strong id="posStartDoge">Loading DOGE quote...</strong>
         <small id="posStartHint">Choose an amount, then start the payment.</small>
       </div>
-      <button class="button primary pos-start-payment" id="posStartPayment" type="submit" form="posSaleForm" disabled>Start payment</button>
+      <nav class="pos-stage-navigation pos-stage-navigation-forward-only" aria-label="Step 1 navigation">
+        <button class="button primary pos-start-payment" id="posStartPayment" type="submit" form="posSaleForm" disabled data-pos-nav-direction="next" aria-controls="posStage2" aria-label="Start payment, then continue to Step 2: Customer scans">Start payment</button>
+      </nav>
     </article>
 
     <article class="panel pos-payment-panel pos-checkout-stage" id="posStage2" data-pos-panel="2" role="region" aria-labelledby="posStage2Title">
@@ -170,11 +172,11 @@
           <p class="note compact-note">Close this payment request and return to editable sale fields.</p>
           <button class="button small quiet" id="posCancelPayment" type="button">Abandon and start over</button>
         </details>
-        <div class="pos-stage-navigation">
-          <button class="button small quiet" id="posBackToAmount" type="button">Review amount</button>
-          <button class="button small" id="posGoToVerify" type="button">View verification</button>
-        </div>
       </div>
+      <nav class="pos-stage-navigation" aria-label="Step 2 navigation">
+        <button class="button small quiet" id="posBackToAmount" type="button" data-pos-nav-direction="previous" data-pos-nav-target="1" aria-controls="dogePosTerminal" aria-label="Previous step: Set the price">Back · Set price</button>
+        <button class="button small primary" id="posGoToVerify" type="button" data-pos-nav-direction="next" data-pos-nav-target="3" aria-controls="posStage3" aria-label="Next step: Verify payment">Next · Verify payment</button>
+      </nav>
     </article>
 
     <article class="panel accent-panel pos-confirm-panel pos-checkout-stage" id="posStage3" data-pos-panel="3" role="region" aria-labelledby="posStage3Title">
@@ -264,9 +266,9 @@
         </details>
       </details>
       <span id="posPriceOut" hidden>Loading</span>
-      <div class="pos-stage-navigation">
-        <button class="button small quiet" id="posBackToScan" type="button">Back to customer QR</button>
-      </div>
+      <nav class="pos-stage-navigation" aria-label="Step 3 navigation">
+        <button class="button small quiet" id="posBackToScan" type="button" data-pos-nav-direction="previous" data-pos-nav-target="2" aria-controls="posStage2" aria-label="Previous step: Customer scans">Back · Customer scan</button>
+      </nav>
     </article>
   </section>
 

@@ -2243,9 +2243,22 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     });
   }
 
-  function resetPosStartButton() {
+  function setPosStartButtonLabel(label) {
     const button = $id("posStartPayment");
-    if (button) button.textContent = "Start payment";
+    if (!button) return;
+    const safeLabel = String(label || "Start payment");
+    const accessibleLabels = {
+      "Start payment": "Start payment, then continue to Step 2: Customer scans",
+      "Preparing payment...": "Preparing payment",
+      "Next · Customer scan": "Next step: Customer scans",
+      "Start new payment": "Start a new payment, then continue to Step 2: Customer scans",
+    };
+    button.textContent = safeLabel;
+    button.setAttribute("aria-label", accessibleLabels[safeLabel] || safeLabel);
+  }
+
+  function resetPosStartButton() {
+    setPosStartButtonLabel("Start payment");
   }
 
   function isPosNearMatchApprovalCandidate(order) {
@@ -2374,8 +2387,17 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
     if ($id("posSaleLockNote")) $id("posSaleLockNote").hidden = !activeOrder;
     if (startedOrder && $id("posStartPayment")?.textContent !== "Preparing payment...") {
-      $id("posStartPayment").textContent = paid ? "Start new payment" : lifecycleStage >= 3 ? "View verification" : "Return to customer scan";
+      setPosStartButtonLabel(paid ? "Start new payment" : "Next · Customer scan");
       $id("posStartPayment").disabled = false;
+    }
+    document.querySelectorAll("[data-pos-nav-target]").forEach((button) => {
+      button.disabled = posPaymentStarting;
+    });
+    const backToAmount = $id("posBackToAmount");
+    if (backToAmount) {
+      backToAmount.textContent = paid ? "Start new sale" : "Back · Set price";
+      backToAmount.dataset.posNavDirection = paid ? "next" : "previous";
+      backToAmount.setAttribute("aria-label", paid ? "Start a new sale" : "Previous step: Set the price");
     }
     if ($id("posStep2Empty")) $id("posStep2Empty").hidden = Boolean(startedOrder);
     if ($id("posStep3Empty")) $id("posStep3Empty").hidden = Boolean(startedOrder);
@@ -4042,7 +4064,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const button = $id("posStartPayment");
     if (button) {
       button.disabled = true;
-      button.textContent = "Preparing payment...";
+      setPosStartButtonLabel("Preparing payment...");
     }
     try {
       if (!window.dogeWalletCore?.base58CheckDecode) throw new Error("Wallet validation unavailable");
@@ -4096,7 +4118,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     upsertPosOrder(order);
     updatePos();
     recordPosMemo(order.memo);
-    if (button) button.textContent = "Return to customer scan";
+    if (button) setPosStartButtonLabel("Next · Customer scan");
     setPosWorkflowStage(2, order);
     setPosStatusDisplay("Unpaid");
     setPosConfirmNote("Payment started. Monitoring the Dogecoin network automatically.");
@@ -4446,9 +4468,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           : "Save your business and wallet above before starting a payment.";
     }
     if ($id("posStartPayment") && $id("posStartPayment").textContent !== "Preparing payment...") {
-      $id("posStartPayment").textContent = activeOrder
-        ? posWorkflowStageForOrder(order) >= 3 ? "View verification" : "Return to customer scan"
-        : startedOrder ? "Start new payment" : "Start payment";
+      setPosStartButtonLabel(activeOrder ? "Next · Customer scan" : startedOrder ? "Start new payment" : "Start payment");
       $id("posStartPayment").disabled = !posInitialized || posPaymentStarting;
     }
     if ($id("posPriceOut")) $id("posPriceOut").textContent = money.format(dogeUsd);
@@ -4701,7 +4721,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
       const order = selectedPosOrder();
       if (activePosOrder(order)) {
-        navigatePosStage(posWorkflowStageForOrder(order) >= 3 ? 3 : 2);
+        navigatePosStage(2);
         return;
       }
       startPosPayment().catch((error) => {
@@ -4710,7 +4730,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         setPosConfirmNote(error.message || "Could not start the payment.");
         if ($id("posStartPayment")) {
           $id("posStartPayment").disabled = false;
-          $id("posStartPayment").textContent = "Start payment";
+          setPosStartButtonLabel("Start payment");
         }
         setPosSaleLocked(false);
         syncPosStageControls();
@@ -4772,9 +4792,9 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     $id("posStep2StartSale")?.addEventListener("click", showPosSaleSetup);
     $id("posStep3StartSale")?.addEventListener("click", showPosSaleSetup);
     $id("posEditSale")?.addEventListener("click", () => restartPosSaleForEditing());
-    $id("posBackToAmount")?.addEventListener("click", () => navigatePosStage(1));
-    $id("posGoToVerify")?.addEventListener("click", () => navigatePosStage(3));
-    $id("posBackToScan")?.addEventListener("click", () => navigatePosStage(2));
+    document.querySelectorAll("[data-pos-nav-target]").forEach((button) => {
+      button.addEventListener("click", () => navigatePosStage(Number(button.dataset.posNavTarget)));
+    });
     $id("posCancelPayment")?.addEventListener("click", cancelPosPayment);
     $id("posAbandonPayment")?.addEventListener("click", () => abandonPosPayment());
     $id("posNewSale")?.addEventListener("click", () => beginNewPosSale());
