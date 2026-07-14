@@ -71,6 +71,7 @@
   let posClearOrdersTimer = null;
   let posRestartArmed = false;
   let posRestartTimer = null;
+  let posWorkflowScrollTimer = null;
 
   function logo() {
     return document.body.dataset.dogeLogo || "";
@@ -2148,9 +2149,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posWorkflow")) $id("posWorkflow").dataset.posLifecycleStage = String(lifecycleStage);
   }
 
-  function setPosWorkflowStage(stage, order = selectedPosOrder(), { focus = false } = {}) {
+  function setPosWorkflowStage(stage, order = selectedPosOrder(), { focus = false, scroll = true } = {}) {
     const safeStage = Math.min(3, Math.max(1, Number(stage) || 1));
     const workflow = $id("posWorkflow");
+    const previousStage = Number(workflow?.dataset.posStage || 1);
     if (workflow) workflow.dataset.posStage = String(safeStage);
     document.querySelectorAll("[data-pos-panel]").forEach((panel) => {
       // Keep all three checkout stages visible. Navigation now highlights and
@@ -2167,10 +2169,17 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     });
     syncPosStageControls(order, safeStage);
     if (safeStage === 3) setPosVerificationCopy(order);
+    const panel = document.querySelector(`[data-pos-panel="${safeStage}"]`);
+    const mobileWorkflow = window.matchMedia?.("(max-width: 700px)").matches;
+    if (scroll && mobileWorkflow && panel && previousStage !== safeStage) {
+      window.requestAnimationFrame(() => {
+        panel.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+      });
+    }
     if (focus) {
       const heading = $id(`posStage${safeStage}Title`);
       heading?.focus({ preventScroll: true });
-      heading?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!mobileWorkflow) heading?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
@@ -2261,14 +2270,16 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posOrderNext")) $id("posOrderNext").disabled = posOrderPage >= totalPages;
   }
 
-  function upsertPosOrder(order) {
+  function upsertPosOrder(order, { select = true } = {}) {
     const orders = posOrders();
     const index = orders.findIndex((existing) => existing.id === order.id);
     if (index >= 0) orders[index] = order;
     else orders.unshift(order);
     savePosOrders(orders);
-    setPosOrderPageForOrder(orders, order.id);
-    setSelectedPosOrder(order);
+    if (select) {
+      setPosOrderPageForOrder(orders, order.id);
+      setSelectedPosOrder(order);
+    }
     renderPosOrders();
   }
 
@@ -2694,7 +2705,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           validation_source: payload.source || "",
           validation_errors: validationErrors.length ? validationErrors : [`Transaction amount is ${matchedDoge.toFixed(8)} DOGE; expected ${Number(order.doge).toFixed(8)} DOGE.`],
         };
-        upsertPosOrder(order);
+        upsertPosOrder(order, { select: !automatic || selected() });
         if (selected()) {
           syncPosStageControls(order, 3);
           setPosConfirmNote(`This transaction is ${amountDifference.toFixed(8)} DOGE away from the expected amount. Is this the correct transaction? Review the details, then click Yes, verify near-match to approve it.`);
@@ -2720,7 +2731,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           markPosOrderPaid(order, `Blockchain validation passed and order marked paid: ${payload.matched_doge} DOGE matched with ${payload.confirmations} confirmation(s).`);
           return;
         }
-        upsertPosOrder(order);
+        upsertPosOrder(order, { select: !automatic || selected() });
         setPosConfirmNote(`Blockchain validation passed: ${payload.matched_doge} DOGE matched with ${payload.confirmations} confirmation(s).`);
       } else if (nearMatchApproved) {
         order = {
@@ -2753,7 +2764,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           near_match: false,
           near_match_difference: 0,
         };
-        upsertPosOrder(order);
+        upsertPosOrder(order, { select: !automatic || selected() });
         if (selected()) {
           setPosStatusDisplay("Verification pending");
           setPosVerificationCopy(order);
@@ -2772,7 +2783,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           near_match: false,
           near_match_difference: 0,
         };
-        upsertPosOrder(order);
+        upsertPosOrder(order, { select: !automatic || selected() });
         if (selected()) setPosConfirmNote(`Needs review: ${(payload.errors || ["transaction did not match the order"]).join(" ")} Automatic payment monitoring is still running.`);
       }
     } catch (error) {
@@ -2788,9 +2799,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       status: "paid",
       paid_at: order.paid_at || new Date().toLocaleString(),
     });
-    upsertPosOrder(paidOrder);
+    const wasSelected = isSelectedPosOrder(order);
+    upsertPosOrder(paidOrder, { select: wasSelected });
     stopPosPaymentPolling(order.id);
-    if (!isSelectedPosOrder(order)) return;
+    if (!wasSelected) return;
     closePosCustomerDisplay();
     setPosWorkflowStage(3, paidOrder);
     setPosStatusDisplay("paid");
@@ -3077,6 +3089,14 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (setup) setup.classList.toggle("is-collapsed", collapsed);
   }
 
+  function resetMobilePosViewport() {
+    if (!window.matchMedia?.("(max-width: 700px)").matches) return;
+    window.requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, left: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    });
+  }
+
 
   function activePosPaymentState() {
     const order = selectedPosOrder();
@@ -3297,7 +3317,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           baseline_txids: (payload.transactions || []).map((transaction) => transaction.txid).filter(isRealDogeTxid).slice(0, 25),
           baseline_ready: true,
         });
-        upsertPosOrder(order);
+        upsertPosOrder(order, { select: selected });
         if (keepManualStage) setPosWorkflowStage(3, order);
         if (selected) {
           if ($id("posWaitingNote")) $id("posWaitingNote").textContent = "Automatic detection is online. Watching for the next exact incoming payment.";
@@ -3316,8 +3336,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
       const candidate = candidates[0];
       order = detectedPosOrder(order, candidate.transaction, candidate.quality);
-      upsertPosOrder(order);
       const selected = isSelectedPosOrder(order);
+      upsertPosOrder(order, { select: selected });
       if (selected) {
         setPosStatusDisplay("Verification pending");
         setPosVerificationCopy(order);
@@ -3553,6 +3573,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       localStorage.setItem("doge-wallet:address", wallet);
       posWalletPanelOpen = false;
       updatePos();
+      resetMobilePosViewport();
       if (window.dogeAnnounce) window.dogeAnnounce("Business name and receiving wallet saved for this browser.");
     });
     $id("posChangeWallet")?.addEventListener("click", () => {
@@ -3611,6 +3632,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
       posWalletPanelOpen = false;
       syncPosWalletSetup();
+      resetMobilePosViewport();
     });
     initPosMemoTypeahead();
     const posPricePromise = fetchDogePrice();
@@ -3693,6 +3715,24 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       event.preventDefault();
       buttons[nextIndex]?.focus();
     });
+    $id("posWorkflow")?.addEventListener("scroll", () => {
+      if (!window.matchMedia?.("(max-width: 700px)").matches) return;
+      if (posWorkflowScrollTimer) window.clearTimeout(posWorkflowScrollTimer);
+      posWorkflowScrollTimer = window.setTimeout(() => {
+        const workflow = $id("posWorkflow");
+        if (!workflow) return;
+        const workflowLeft = workflow.getBoundingClientRect().left;
+        const panels = Array.from(workflow.querySelectorAll("[data-pos-panel]"));
+        const nearest = panels.reduce((best, panel) => {
+          const distance = Math.abs(panel.getBoundingClientRect().left - workflowLeft);
+          return !best || distance < best.distance ? { panel, distance } : best;
+        }, null);
+        const stage = Number(nearest?.panel?.dataset.posPanel || 0);
+        if (stage && stage !== Number(workflow.dataset.posStage || 1)) {
+          setPosWorkflowStage(stage, selectedPosOrder(), { focus: false, scroll: false });
+        }
+      }, 90);
+    }, { passive: true });
     const showPosSaleSetup = () => {
       navigatePosStage(1);
       if (!activePosOrder()) $id("posUsd")?.focus();
@@ -3853,7 +3893,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       setSelectedPosOrder(null);
       renderPosOrders();
     }
-    window.addEventListener("beforeunload", stopPosPaymentPolling, { once: true });
+    // Every unfinished payment request remains live across refreshes, not just
+    // the order the cashier currently has open on screen.
+    orders
+      .filter((order) => activePosOrder(order) && !posPaymentPollOrderIds.has(order.id))
+      .forEach((order) => startPosPaymentPolling(order));
+    window.addEventListener("beforeunload", () => stopPosPaymentPolling(), { once: true });
     posPricePromise.then(() => updatePos());
   }
 

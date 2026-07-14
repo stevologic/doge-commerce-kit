@@ -9045,3 +9045,354 @@ body[data-page="wallet"] main {
     flex: 1 1 100%;
   }
 }
+
+/* Mobile counter mode: the checkout behaves like a compact three-screen app.
+   The stages stay mounted and swipeable while the numbered rail remains in
+   reach, so normal checkout does not require page-length scrolling. */
+@media (max-width: 700px) {
+  body[data-page="pos_terminal"] .site-header {
+    padding-right: 58px;
+  }
+
+  body[data-page="pos_terminal"] .header-utilities {
+    display: contents;
+  }
+
+  body[data-page="pos_terminal"] .site-header:not(.nav-open) {
+    row-gap: 0;
+  }
+
+  body[data-page="pos_terminal"] .site-header:not(.nav-open) .main-nav {
+    border-width: 0;
+  }
+
+  body[data-page="pos_terminal"] main {
+    width: 100%;
+  }
+
+  body[data-page="pos_terminal"] .pos-workspace {
+    gap: 6px;
+    padding: 0 6px 10px;
+  }
+
+  body[data-page="pos_terminal"] .pos-hero-slim {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-progress {
+    position: sticky;
+    top: 63px;
+    z-index: 18;
+    gap: 4px;
+    margin: 0;
+    padding: 5px 0;
+    background: rgba(251, 252, 247, 0.94);
+    box-shadow: 0 8px 18px rgba(16, 35, 36, 0.08);
+    backdrop-filter: blur(14px);
+  }
+
+  body[data-page="pos_terminal"] .pos-progress button {
+    min-height: 44px;
+    gap: 5px;
+    padding: 5px 6px;
+    border-radius: 8px;
+  }
+
+  body[data-page="pos_terminal"] .pos-progress button > b {
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-progress strong {
+    font-size: 0.8rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-flow-notice:not([hidden]) {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    max-height: 52px;
+    margin: 0;
+    overflow: auto;
+    padding: 7px 10px;
+    box-shadow: none;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    pointer-events: auto;
+  }
+
+  body[data-page="pos_terminal"] .nav-pos-shortcut.is-current {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup {
+    padding: 10px;
+    border-radius: 9px;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed {
+    padding: 5px 7px;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed .section-heading {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed .pos-wallet-setup-head {
+    display: block;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed .pos-wallet-active {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 8px;
+    width: 100%;
+    padding: 5px 7px;
+    border-radius: 7px;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed .pos-wallet-active > span,
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed .pos-wallet-active code {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed .pos-wallet-active > strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed #posChangeWallet {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 34px;
+    padding: 0 10px;
+  }
+
+  body[data-page="pos_terminal"] .pos-operator-grid {
+    display: flex;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body[data-page="pos_terminal"] .pos-operator-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed + .pos-operator-grid {
+    height: calc(100dvh - 188px);
+    min-height: 0;
+    max-height: 680px;
+  }
+
+  body[data-page="pos_terminal"] .pos-checkout-stage {
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    scroll-margin: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  body[data-page="pos_terminal"] .pos-wallet-setup.is-collapsed + .pos-operator-grid .pos-checkout-stage {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  body[data-page="pos_terminal"] .pos-sale-panel,
+  body[data-page="pos_terminal"] .pos-payment-panel {
+    gap: 7px;
+  }
+
+  body[data-page="pos_terminal"] .pos-step-chip {
+    gap: 7px;
+    margin-bottom: 5px;
+  }
+
+  body[data-page="pos_terminal"] .pos-step-chip b {
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-step-chip h2 {
+    font-size: 0.98rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-sale-panel .form-grid.compact {
+    gap: 6px;
+  }
+
+  body[data-page="pos_terminal"] .pos-amount-field input {
+    min-height: 54px;
+    font-size: 1.65rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-quick-amounts {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  body[data-page="pos_terminal"] .pos-quick-amount {
+    min-width: 0;
+    min-height: 38px;
+    padding: 4px 2px;
+    border-radius: 8px;
+    font-size: 0.86rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-memo-field input {
+    min-height: 42px;
+  }
+
+  body[data-page="pos_terminal"] .pos-start-summary {
+    margin: 3px 0;
+    padding: 8px 10px;
+  }
+
+  body[data-page="pos_terminal"] #posStartHint {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-start-payment {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    min-height: 50px;
+    box-shadow: 0 -8px 16px rgba(251, 252, 247, 0.9);
+  }
+
+  body[data-page="pos_terminal"] .pos-waiting-card {
+    gap: 9px;
+    margin-bottom: 5px;
+    padding: 8px 10px;
+  }
+
+  body[data-page="pos_terminal"] .pos-waiting-card small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-page="pos_terminal"] .pos-preview-simple .pos-qr-button img,
+  body[data-page="pos_terminal"] .pos-payment-panel .pos-preview-simple img {
+    width: min(210px, 58vw, 42dvh);
+    height: min(210px, 58vw, 42dvh);
+  }
+
+  body[data-page="pos_terminal"] .pos-qr-zoom-hint {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-payment-panel .pos-preview.pos-preview-simple {
+    gap: 6px;
+  }
+
+  body[data-page="pos_terminal"] .pos-doge-total {
+    font-size: 1.2rem;
+  }
+
+  body[data-page="pos_terminal"] #openPosCustomerDisplay {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .customer-display-backdrop {
+    padding: 0;
+  }
+
+  body[data-page="pos_terminal"] .customer-display {
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    align-content: center;
+    border: 0;
+    border-radius: 0;
+    padding: 18px 14px;
+  }
+
+  body[data-page="pos_terminal"] .customer-display-qr-frame img {
+    width: min(72vw, 48dvh, 320px);
+    height: min(72vw, 48dvh, 320px);
+  }
+
+  body[data-page="pos_terminal"] .pos-more-details summary {
+    min-height: 38px;
+    padding: 7px 4px;
+  }
+
+  body[data-page="pos_terminal"] .pos-stage-navigation {
+    display: none;
+  }
+
+  body[data-page="pos_terminal"] .pos-verify-hero {
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  body[data-page="pos_terminal"] .pos-verify-hero .pos-status-pill {
+    padding: 7px 10px;
+    font-size: 0.88rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-verification-copy,
+  body[data-page="pos_terminal"] .pos-stage-empty,
+  body[data-page="pos_terminal"] .pos-sale-lock-note,
+  body[data-page="pos_terminal"] .pos-payment-closed {
+    padding: 9px 10px;
+  }
+
+  body[data-page="pos_terminal"] #posConfirmNote {
+    margin: 4px 0;
+    font-size: 0.8rem;
+    line-height: 1.35;
+  }
+
+  body[data-page="pos_terminal"] .pos-receipt-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  body[data-page="pos_terminal"] .pos-receipt-actions .button {
+    min-height: 42px;
+    padding: 5px;
+    font-size: 0.76rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-history-details {
+    margin: 0 6px;
+  }
+
+  body[data-page="pos_terminal"] .site-footer {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) {
+  body[data-page="pos_terminal"] .pos-operator-grid {
+    scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 700px) and (max-height: 640px) {
+  body[data-page="pos_terminal"] .customer-display {
+    align-content: start;
+  }
+}

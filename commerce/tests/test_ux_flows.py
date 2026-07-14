@@ -78,6 +78,171 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
         log_lines.append("handoff_wallet_to_tools=ok")
         self._write_flow_log("ux-handoff-flow.log", log_lines)
 
+    def test_pos_mobile_checkout_is_a_compact_swipeable_counter_flow(self):
+        base = self.live_server_url
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 390, "height": 844})
+            page.route(
+                "**/products/DOGE-USD/ticker",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({"price": "0.125"}),
+                ),
+            )
+            page.route(
+                "**/api/wallet/transactions/**",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({"transactions": [], "provider_name": "test chain"}),
+                ),
+            )
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.click("#posGenerateWallet")
+            page.wait_for_function(
+                "() => document.getElementById('posWallet')?.value?.startsWith('D')",
+                timeout=20000,
+            )
+            page.click("#posDismissNewWallet")
+            page.wait_for_selector("#posWalletSetup.is-collapsed", timeout=20000)
+            page.wait_for_function("() => window.scrollY < 5", timeout=5000)
+
+            layout = page.evaluate(
+                """() => {
+                  const workflow = document.getElementById('posWorkflow');
+                  const panels = [...workflow.querySelectorAll('[data-pos-panel]')];
+                  const style = getComputedStyle(workflow);
+                  return {
+                    display: style.display,
+                    scrollSnapType: style.scrollSnapType,
+                    workflowWidth: workflow.getBoundingClientRect().width,
+                    workflowHeight: workflow.getBoundingClientRect().height,
+                    workflowBottom: workflow.getBoundingClientRect().bottom,
+                    panelWidths: panels.map((panel) => panel.getBoundingClientRect().width),
+                    panelsMounted: panels.every((panel) => !panel.hidden),
+                    progressPosition: getComputedStyle(document.getElementById('posProgress')).position,
+                    heroDisplay: getComputedStyle(document.querySelector('.pos-hero-slim')).display,
+                    walletHeight: document.getElementById('posWalletSetup').getBoundingClientRect().height,
+                    documentWidth: document.documentElement.scrollWidth,
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                  };
+                }"""
+            )
+            self.assertEqual(layout["display"], "flex")
+            self.assertIn("x mandatory", layout["scrollSnapType"])
+            self.assertEqual(layout["progressPosition"], "sticky")
+            self.assertEqual(layout["heroDisplay"], "none")
+            self.assertTrue(layout["panelsMounted"])
+            self.assertLess(layout["walletHeight"], 60)
+            self.assertGreater(layout["workflowHeight"], 400)
+            self.assertLessEqual(layout["workflowBottom"], layout["viewportHeight"] + 1)
+            self.assertLessEqual(layout["documentWidth"], layout["viewportWidth"] + 1)
+            for panel_width in layout["panelWidths"]:
+                self.assertAlmostEqual(panel_width, layout["workflowWidth"], delta=2)
+
+            page.click('[data-pos-amount="5"]')
+            self.assertEqual(page.input_value("#posUsd"), "5.00")
+            page.click('[data-pos-go="2"]')
+            page.wait_for_function(
+                "() => document.getElementById('posWorkflow').scrollLeft > 250",
+                timeout=5000,
+            )
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "2")
+            page.click('[data-pos-go="3"]')
+            page.wait_for_function(
+                "() => document.getElementById('posWorkflow').scrollLeft > 500",
+                timeout=5000,
+            )
+            self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "3")
+            page.click('[data-pos-go="1"]')
+            page.wait_for_function(
+                "() => document.getElementById('posWorkflow').scrollLeft < 10",
+                timeout=5000,
+            )
+
+            page.wait_for_function(
+                "() => !document.getElementById('posStartPayment').disabled",
+                timeout=20000,
+            )
+            page.click("#posStartPayment")
+            page.wait_for_function(
+                "() => document.getElementById('posWorkflow')?.dataset.posStage === '2'",
+                timeout=20000,
+            )
+            customer_display = page.evaluate(
+                """() => {
+                  const modal = document.querySelector('.customer-display');
+                  const rect = modal.getBoundingClientRect();
+                  return { width: rect.width, height: rect.height, viewportHeight: innerHeight };
+                }"""
+            )
+            self.assertAlmostEqual(customer_display["width"], 390, delta=1)
+            self.assertAlmostEqual(customer_display["height"], customer_display["viewportHeight"], delta=1)
+            browser.close()
+
+    def test_pos_reload_resumes_every_unfinished_payment(self):
+        base = self.live_server_url
+        wallet_calls = {"count": 0}
+        wallet = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        started_at = "2099-01-01T00:00:00Z"
+        orders = [
+            {
+                "id": "selected-sale",
+                "merchant": "DOGE Merchant",
+                "wallet": wallet,
+                "usd": 5,
+                "doge": 40,
+                "memo": "Selected sale",
+                "status": "unpaid",
+                "payment_started_at": started_at,
+                "baseline_ready": True,
+            },
+            {
+                "id": "background-sale",
+                "merchant": "DOGE Merchant",
+                "wallet": wallet,
+                "usd": 7,
+                "doge": 56,
+                "memo": "Background sale",
+                "status": "unpaid",
+                "payment_started_at": started_at,
+                "baseline_ready": True,
+            },
+        ]
+
+        def wallet_transactions(route):
+            wallet_calls["count"] += 1
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"transactions": [], "provider_name": "test chain"}),
+            )
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.add_init_script(
+                f"""
+                  localStorage.setItem('doge-pos:orders', JSON.stringify({json.dumps(orders)}));
+                  localStorage.setItem('doge-pos:selected-order', 'selected-sale');
+                """
+            )
+            page.route("**/api/wallet/transactions/**", wallet_transactions)
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            for _ in range(20):
+                if wallet_calls["count"] >= 2:
+                    break
+                page.wait_for_timeout(100)
+            self.assertGreaterEqual(wallet_calls["count"], 2)
+            self.assertEqual(
+                page.evaluate("localStorage.getItem('doge-pos:selected-order')"),
+                "selected-sale",
+            )
+            browser.close()
+
     def test_pos_initiate_then_manual_verify_requires_human_confirmation(self):
         log_lines = []
         base = self.live_server_url

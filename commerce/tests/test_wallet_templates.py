@@ -131,6 +131,19 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("body[data-page=\"pos_terminal\"] .site-footer", site_css)
         self.assertIn("width: min(1360px, calc(100% - 80px))", site_css)
 
+    def test_pos_has_mobile_counter_carousel_layout(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        self.assertIn('aria-label="POS checkout steps"', pos_html)
+        self.assertIn("scroll-snap-type: x mandatory", site_css)
+        self.assertIn("height: calc(100dvh - 188px)", site_css)
+        self.assertIn("grid-template-columns: repeat(6, minmax(0, 1fr))", site_css)
+        self.assertIn("posWorkflowScrollTimer", doge_tools)
+        self.assertIn("scroll: false", doge_tools)
+        self.assertIn("function upsertPosOrder(order, { select = true } = {})", doge_tools)
+        self.assertIn("upsertPosOrder(paidOrder, { select: wasSelected })", doge_tools)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)
