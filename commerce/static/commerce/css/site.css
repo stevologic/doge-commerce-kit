@@ -4105,6 +4105,49 @@ label.wallet-share-social {
   min-height: 44px;
 }
 
+.pos-wallet-setup-body input.sr-only {
+  min-height: 0;
+}
+
+.pos-wallet-import-status {
+  margin: 0;
+}
+
+.pos-wallet-import-status[data-state="success"] {
+  color: var(--teal);
+}
+
+.pos-wallet-import-status[data-state="error"] {
+  color: var(--rose);
+}
+
+.pos-wallet-import-review {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(15, 143, 120, 0.34);
+  border-radius: 8px;
+  background: rgba(15, 143, 120, 0.07);
+}
+
+.pos-wallet-import-review[hidden] {
+  display: none;
+}
+
+.pos-wallet-import-review > strong {
+  color: var(--teal);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.pos-wallet-import-review code {
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 700px) {
   .pos-wallet-setup-head {
     grid-template-columns: 1fr;
@@ -4112,6 +4155,41 @@ label.wallet-share-social {
 
   .pos-wallet-active {
     justify-self: start;
+  }
+
+  .pos-wallet-setup-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pos-wallet-setup-actions #posUseWallet {
+    grid-column: 1 / -1;
+  }
+
+  .pos-wallet-setup-actions .button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .pos-wallet-import-review .inline-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pos-wallet-import-review .button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 400px) {
+  .pos-wallet-setup-actions,
+  .pos-wallet-import-review .inline-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-wallet-setup-actions #posUseWallet {
+    grid-column: auto;
   }
 }
 

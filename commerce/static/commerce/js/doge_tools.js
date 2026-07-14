@@ -59,6 +59,8 @@
   const POS_PAYMENT_POLL_INTERVAL_MS = 10000;
   const POS_AUTO_VERIFY_TOLERANCE_DOGE = 0.00000001;
   const POS_NEAR_MATCH_MARGIN_DOGE = 1;
+  const POS_WALLET_BACKUP_MAX_BYTES = 64 * 1024;
+  const POS_WALLET_IMPORT_IDLE = "Import a backup created by this POS. Its private key is verified locally and never uploaded or stored.";
   let posPaymentPollTimer = null;
   let posPaymentPollToken = 0;
   const posPaymentPollOrderIds = new Set();
@@ -79,6 +81,10 @@
   let posReceiptModalReturnControlId = "";
   let posEmailOrdersSnapshot = null;
   let posEmailOrdersReturnFocus = null;
+  let posGeneratedWallet = null;
+  let pendingPosWalletImport = null;
+  let posWalletOperationBusy = false;
+  let posWalletOperationToken = 0;
 
   function logo() {
     return document.body.dataset.dogeLogo || "";
@@ -3480,6 +3486,153 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     printBuiltPosReceipt(currentPosReceipt());
   }
 
+  function setPosWalletOperationBusy(busy) {
+    posWalletOperationBusy = Boolean(busy);
+    ["posUseWallet", "posGenerateWallet", "posImportWallet", "posImportWalletFile", "posWallet"].forEach((id) => {
+      const control = $id(id);
+      if (control) control.disabled = posWalletOperationBusy;
+    });
+    if ($id("posWalletSetupBody")) $id("posWalletSetupBody").setAttribute("aria-busy", String(posWalletOperationBusy));
+  }
+
+  function beginPosWalletOperation() {
+    posWalletOperationToken += 1;
+    setPosWalletOperationBusy(true);
+    return posWalletOperationToken;
+  }
+
+  function finishPosWalletOperation(token) {
+    if (token !== posWalletOperationToken) return false;
+    setPosWalletOperationBusy(false);
+    return true;
+  }
+
+  function setPosWalletImportStatus(message = POS_WALLET_IMPORT_IDLE, state = "") {
+    const status = $id("posImportWalletStatus");
+    if (!status) return;
+    status.textContent = message;
+    if (state) status.dataset.state = state;
+    else delete status.dataset.state;
+  }
+
+  function clearPosWalletImportReview({ focus = false, resetStatus = false } = {}) {
+    pendingPosWalletImport = null;
+    if ($id("posWalletImportReview")) $id("posWalletImportReview").hidden = true;
+    if ($id("posWalletImportAddress")) $id("posWalletImportAddress").textContent = "";
+    if ($id("posWalletImportReviewCopy")) $id("posWalletImportReviewCopy").textContent = "Confirm the receiving address before replacing this device's wallet.";
+    if ($id("posWalletImportLegacyWarning")) $id("posWalletImportLegacyWarning").hidden = true;
+    if ($id("posConfirmWalletImport")) $id("posConfirmWalletImport").setAttribute("aria-describedby", "posWalletImportReviewCopy posWalletImportAddress");
+    if ($id("posImportWalletFile")) $id("posImportWalletFile").value = "";
+    if (resetStatus) setPosWalletImportStatus();
+    if (focus) $id("posImportWallet")?.focus();
+  }
+
+  function posWalletImportLockMessage() {
+    if (posGeneratedWallet && !$id("posNewWallet")?.hidden) {
+      return "Back up or dismiss the newly generated wallet before replacing it.";
+    }
+    if (posPaymentStarting) return "The sale is being prepared. Change wallets after it finishes or restart the sale.";
+    if (activePosOrder()) return "The wallet is locked to this payment request. Finish it or use Edit / restart sale before changing it.";
+    return "";
+  }
+
+  async function preparePosWalletImport(file) {
+    const locked = posWalletImportLockMessage();
+    if (locked) throw new Error(locked);
+    if (!file || Number(file.size || 0) > POS_WALLET_BACKUP_MAX_BYTES) {
+      throw new Error("Choose a wallet backup JSON file smaller than 64 KB.");
+    }
+    const core = window.dogeWalletCore;
+    if (!core?.parseWalletBackupJson) throw new Error("Wallet import tools are unavailable in this browser.");
+    const verified = await core.parseWalletBackupJson(await file.text());
+    const postValidationLock = posWalletImportLockMessage();
+    if (postValidationLock) throw new Error(postValidationLock);
+    const savedLegacyWif = (localStorage.getItem("doge-wallet:wif") || "").trim();
+    let clearLegacyWif = false;
+    if (savedLegacyWif) {
+      if (savedLegacyWif.length > 128) {
+        clearLegacyWif = true;
+      } else {
+        try {
+          clearLegacyWif = (await core.walletFromWif(savedLegacyWif)).address !== verified.address;
+        } catch {
+          clearLegacyWif = true;
+        }
+      }
+    }
+    pendingPosWalletImport = Object.freeze({
+      address: verified.address,
+      clearLegacyWif,
+    });
+    const currentAddress = ($id("posWallet")?.value || "").trim();
+    if ($id("posWalletImportReviewCopy")) {
+      $id("posWalletImportReviewCopy").textContent = currentAddress === verified.address
+        ? "This backup matches this device's current receiving address."
+        : currentAddress
+          ? "Confirm to replace this device's current receiving wallet."
+          : "Confirm to use this as this device's receiving wallet.";
+    }
+    if ($id("posWalletImportAddress")) $id("posWalletImportAddress").textContent = verified.address;
+    if ($id("posWalletImportLegacyWarning")) $id("posWalletImportLegacyWarning").hidden = !clearLegacyWif;
+    if ($id("posConfirmWalletImport")) {
+      $id("posConfirmWalletImport").setAttribute(
+        "aria-describedby",
+        `posWalletImportReviewCopy posWalletImportAddress${clearLegacyWif ? " posWalletImportLegacyWarning" : ""}`,
+      );
+    }
+    if ($id("posWalletImportReview")) $id("posWalletImportReview").hidden = false;
+    setPosWalletImportStatus("Backup verified locally. Confirm the receiving address below.", "success");
+    $id("posConfirmWalletImport")?.focus();
+  }
+
+  async function processPosWalletImportFile(input, importer = preparePosWalletImport) {
+    const file = input?.files?.[0] || null;
+    try {
+      if (!file) return false;
+      await importer(file);
+      return true;
+    } finally {
+      if (input) input.value = "";
+    }
+  }
+
+  function persistPosImportedWallet(imported, merchant, storage = localStorage) {
+    const address = String(imported?.address || "").trim();
+    if (!address) throw new Error("A verified Dogecoin address is required.");
+    if (imported.clearLegacyWif) storage.removeItem("doge-wallet:wif");
+    storage.setItem("doge-wallet:address", address);
+    storage.setItem("doge-pos:wallet", address);
+    storage.setItem("doge-pos:merchant", String(merchant || "DOGE Merchant"));
+    return address;
+  }
+
+  function applyPendingPosWalletImport() {
+    if (!pendingPosWalletImport) return;
+    const locked = posWalletImportLockMessage();
+    if (locked) {
+      setPosWalletImportStatus(locked, "error");
+      return;
+    }
+    const { address, clearLegacyWif } = pendingPosWalletImport;
+    const merchant = ($id("posMerchant")?.value || "").trim() || "DOGE Merchant";
+    persistPosImportedWallet({ address, clearLegacyWif }, merchant);
+    if ($id("posWallet")) $id("posWallet").value = address;
+    posGeneratedWallet = null;
+    if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = "••• hidden •••";
+    if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
+    clearPosWalletImportReview();
+    resetPosTransactions("Wallet imported. Open recent wallet activity to load transactions for this address.");
+    if (isPosTransactionPickerOpen()) refreshPosTransactions().catch((error) => setPosTransactionsStatus(error.message));
+    posWalletPanelOpen = false;
+    updatePos();
+    const success = "Wallet imported and saved for this browser. No private-key data from the file was stored.";
+    setPosWalletImportStatus(success, "success");
+    if ($id("posProfileStatus")) $id("posProfileStatus").textContent = success;
+    resetMobilePosViewport();
+    window.requestAnimationFrame(() => $id("posChangeWallet")?.focus({ preventScroll: true }));
+    if (window.dogeAnnounce) window.dogeAnnounce(success);
+  }
+
   function updatePosProfileStatus(state = posState()) {
     const status = $id("posProfileStatus");
     const source = browserSavedPosWalletSource();
@@ -4031,6 +4184,13 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     // Wallet setup wires up before any network awaits so it works even when
     // the price fetch is slow or offline.
     $id("posUseWallet")?.addEventListener("click", () => {
+      if (posWalletOperationBusy) return;
+      if (posGeneratedWallet && !$id("posNewWallet")?.hidden) {
+        setPosConfirmNote("Back up the new wallet key, then click I saved it before closing wallet setup.");
+        $id("posDismissNewWallet")?.focus();
+        return;
+      }
+      if (pendingPosWalletImport) clearPosWalletImportReview({ resetStatus: true });
       const wallet = ($id("posWallet")?.value || "").trim();
       const merchant = ($id("posMerchant")?.value || "").trim() || "DOGE Merchant";
       if (!wallet) {
@@ -4061,12 +4221,26 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       syncPosWalletSetup();
       $id("posWallet")?.focus();
     });
-    let posGeneratedWallet = null;
     $id("posGenerateWallet")?.addEventListener("click", async () => {
+      if (posWalletOperationBusy) return;
+      const locked = posWalletImportLockMessage();
+      if (locked) {
+        setPosConfirmNote(locked);
+        return;
+      }
+      const token = beginPosWalletOperation();
+      const button = $id("posGenerateWallet");
+      let failed = false;
+      let generatedSuccessfully = false;
+      if (button) button.textContent = "Generating...";
       try {
+        clearPosWalletImportReview({ resetStatus: true });
         const core = window.dogeWalletCore;
         if (!core) throw new Error("Wallet tools are unavailable in this browser.");
-        posGeneratedWallet = await core.generateWallet();
+        const generatedWallet = await core.generateWallet();
+        if (token !== posWalletOperationToken) return;
+        if (posPaymentStarting || activePosOrder()) throw new Error("A payment started before wallet creation finished. The new wallet was not applied.");
+        posGeneratedWallet = generatedWallet;
         if ($id("posWallet")) $id("posWallet").value = posGeneratedWallet.address;
         localStorage.setItem("doge-wallet:address", posGeneratedWallet.address);
         localStorage.setItem("doge-pos:wallet", posGeneratedWallet.address);
@@ -4074,9 +4248,19 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = posGeneratedWallet.wif;
         if ($id("posNewWallet")) $id("posNewWallet").hidden = false;
         updatePos();
+        generatedSuccessfully = true;
         if (window.dogeAnnounce) window.dogeAnnounce("New wallet created. Back up the private key before taking real payments.");
       } catch (error) {
-        setPosConfirmNote(error.message || "Could not generate a wallet.");
+        if (token === posWalletOperationToken) {
+          failed = true;
+          setPosConfirmNote(error.message || "Could not generate a wallet.");
+        }
+      } finally {
+        if (finishPosWalletOperation(token)) {
+          if (button) button.textContent = "Generate new wallet";
+          if (failed) window.requestAnimationFrame(() => button?.focus());
+          else if (generatedSuccessfully) window.requestAnimationFrame(() => $id("posDownloadWallet")?.focus());
+        }
       }
     });
     $id("posDownloadWallet")?.addEventListener("click", () => {
@@ -4084,9 +4268,13 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       downloadText(
         `doge-wallet-${posGeneratedWallet.address.slice(0, 8)}.json`,
         JSON.stringify({
+          schema: "doge-commerce-wallet-backup",
+          version: 1,
+          network: "dogecoin-mainnet",
           address: posGeneratedWallet.address,
           wif: posGeneratedWallet.wif,
           public_key: posGeneratedWallet.public_key,
+          compressed: posGeneratedWallet.compressed ?? true,
           created_at: new Date().toISOString(),
           warning: "Anyone with this WIF can spend the funds. Store offline and never share it.",
         }, null, 2),
@@ -4104,6 +4292,48 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       syncPosWalletSetup();
       resetMobilePosViewport();
     });
+    $id("posImportWallet")?.addEventListener("click", () => {
+      if (posWalletOperationBusy) return;
+      const locked = posWalletImportLockMessage();
+      if (locked) {
+        setPosWalletImportStatus(locked, "error");
+        return;
+      }
+      clearPosWalletImportReview({ resetStatus: true });
+      $id("posImportWalletFile")?.click();
+    });
+    $id("posImportWalletFile")?.addEventListener("change", async (event) => {
+      const input = event.currentTarget;
+      const file = input?.files?.[0] || null;
+      const button = $id("posImportWallet");
+      if (posWalletOperationBusy) {
+        if (input) input.value = "";
+        return;
+      }
+      if (!file) {
+        if (input) input.value = "";
+        return;
+      }
+      const token = beginPosWalletOperation();
+      let failed = false;
+      if (button) button.textContent = "Checking backup...";
+      try {
+        await processPosWalletImportFile(input);
+      } catch (error) {
+        if (token === posWalletOperationToken) {
+          failed = true;
+          clearPosWalletImportReview();
+          setPosWalletImportStatus(`${error.message || "Could not import this wallet backup."} Nothing was imported.`, "error");
+        }
+      } finally {
+        if (finishPosWalletOperation(token)) {
+          if (button) button.textContent = "Import wallet JSON";
+          if (failed) window.requestAnimationFrame(() => button?.focus());
+        }
+      }
+    });
+    $id("posConfirmWalletImport")?.addEventListener("click", applyPendingPosWalletImport);
+    $id("posCancelWalletImport")?.addEventListener("click", () => clearPosWalletImportReview({ focus: true, resetStatus: true }));
     initPosMemoTypeahead();
     const posPricePromise = fetchDogePrice();
     $id("posUsd")?.addEventListener("input", () => limitDecimalInput($id("posUsd"), 2));
@@ -4111,7 +4341,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       limitDecimalInput($id("posUsd"), 2, true);
       updatePos();
     });
-    document.querySelectorAll("#dogePosTerminal input, #posWalletSetup input").forEach((input) => input.addEventListener("input", updatePos));
+    document.querySelectorAll('#dogePosTerminal input, #posWalletSetup input:not([type="file"])').forEach((input) => input.addEventListener("input", updatePos));
+    $id("posWallet")?.addEventListener("input", () => {
+      if (pendingPosWalletImport) clearPosWalletImportReview({ resetStatus: true });
+    });
     $id("posWallet")?.addEventListener("change", () => {
       resetPosTransactions("Wallet changed. Open recent wallet activity to load transactions for this address.");
       if (isPosTransactionPickerOpen()) refreshPosTransactions().catch((error) => setPosTransactionsStatus(error.message));
@@ -4132,6 +4365,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (event.target === $id("posCustomerDisplayModal")) closePosCustomerDisplay();
     });
     const handleStartOrContinue = () => {
+      if (posWalletOperationBusy) {
+        setPosConfirmNote("Wait for the wallet check to finish before starting a payment.");
+        return;
+      }
       if (posGeneratedWallet && !$id("posNewWallet")?.hidden) {
         setPosConfirmNote("Back up the new wallet key, then click I saved it before starting a customer payment.");
         $id("posDismissNewWallet")?.focus();

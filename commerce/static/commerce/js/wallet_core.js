@@ -306,6 +306,85 @@
     return walletFromPrivateKey(privateKey, compressed);
   }
 
+  function walletBackupObjects(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new Error("Wallet backup must be a JSON object.");
+    }
+    const nested = payload.wallet;
+    if (nested != null && (typeof nested !== "object" || Array.isArray(nested))) {
+      throw new Error("Wallet backup has an invalid wallet record.");
+    }
+    return nested ? [payload, nested] : [payload];
+  }
+
+  function walletBackupString(objects, key, label, maxLength, caseInsensitive = false) {
+    const values = [];
+    objects.forEach((record) => {
+      if (!Object.prototype.hasOwnProperty.call(record, key) || record[key] == null || record[key] === "") return;
+      if (typeof record[key] !== "string") throw new Error(`Wallet backup has an invalid ${label}.`);
+      const value = record[key].trim();
+      if (!value) return;
+      if (value.length > maxLength) throw new Error(`Wallet backup has an invalid ${label}.`);
+      const comparable = caseInsensitive ? value.toLowerCase() : value;
+      if (!values.some((entry) => entry.comparable === comparable)) values.push({ value, comparable });
+    });
+    if (values.length > 1) throw new Error(`Wallet backup contains conflicting ${label} values.`);
+    return values[0]?.value || "";
+  }
+
+  function walletBackupBoolean(objects, key, label) {
+    const values = [];
+    objects.forEach((record) => {
+      if (!Object.prototype.hasOwnProperty.call(record, key) || record[key] == null) return;
+      if (typeof record[key] !== "boolean") throw new Error(`Wallet backup has an invalid ${label}.`);
+      if (!values.includes(record[key])) values.push(record[key]);
+    });
+    if (values.length > 1) throw new Error(`Wallet backup contains conflicting ${label} values.`);
+    return values.length ? values[0] : null;
+  }
+
+  async function validateWalletBackup(payload) {
+    const objects = walletBackupObjects(payload);
+    const address = walletBackupString(objects, "address", "address", 128);
+    const wif = walletBackupString(objects, "wif", "WIF private key", 128);
+    const publicKey = walletBackupString(objects, "public_key", "public key", 256, true);
+    const network = walletBackupString(objects, "network", "network", 64, true);
+    const compressed = walletBackupBoolean(objects, "compressed", "compression setting");
+    if (!address) throw new Error("Wallet backup is missing its Dogecoin address.");
+    if (!wif) throw new Error("Wallet backup is missing its WIF private key.");
+    if (network && network.toLowerCase() !== "dogecoin-mainnet") {
+      throw new Error("Wallet backup is not for Dogecoin mainnet.");
+    }
+    const derived = await walletFromWif(wif);
+    if (derived.address !== address) throw new Error("Wallet backup address does not match its private key.");
+    if (publicKey && derived.public_key.toLowerCase() !== publicKey.toLowerCase()) {
+      throw new Error("Wallet backup public key does not match its private key.");
+    }
+    if (compressed != null && compressed !== derived.compressed) {
+      throw new Error("Wallet backup compression setting does not match its private key.");
+    }
+    return Object.freeze({
+      address: derived.address,
+      public_key: derived.public_key,
+      compressed: derived.compressed,
+      has_private_key: true,
+      validated_in: "browser",
+    });
+  }
+
+  async function parseWalletBackupJson(raw) {
+    if (typeof raw !== "string" || !raw.trim() || raw.length > 65536) {
+      throw new Error("Choose a valid wallet backup JSON file.");
+    }
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      throw new Error("Choose a valid wallet backup JSON file.");
+    }
+    return validateWalletBackup(payload);
+  }
+
   function derEncodeSignature(r, s) {
     function encodeInteger(value) {
       let bytes = bigIntTo32Bytes(value);
@@ -437,6 +516,8 @@
   global.dogeWalletCore = {
     generateWallet,
     walletFromWif,
+    validateWalletBackup,
+    parseWalletBackupJson,
     walletFromPrivateKey,
     buildSignedTransaction,
     dogeToAtoms,

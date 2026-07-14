@@ -1,3 +1,7 @@
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 from django.test import SimpleTestCase
@@ -12,12 +16,74 @@ class WalletTemplateStructureTests(SimpleTestCase):
         for marker in (
             "posWallet",
             "posGenerateWallet",
+            "posImportWallet",
+            "posImportWalletFile",
+            "posWalletImportReview",
             "posNewWalletAddress",
             "posNewWalletWif",
             "posDownloadWallet",
             "posDismissNewWallet",
         ):
             self.assertIn(marker, pos_html)
+
+    def test_pos_wallet_json_import_is_local_validated_and_confirmation_gated(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        wallet_core = (ROOT / "static" / "commerce" / "js" / "wallet_core.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        import_block = doge_tools.split("function setPosWalletImportStatus", 1)[1].split(
+            "function updatePosProfileStatus", 1
+        )[0]
+        self.assertIn('id="posImportWallet"', pos_html)
+        self.assertIn('id="posImportWalletFile" type="file" accept=".json,application/json"', pos_html)
+        self.assertIn('id="posConfirmWalletImport"', pos_html)
+        self.assertIn('id="posCancelWalletImport"', pos_html)
+        self.assertIn('aria-describedby="posWalletImportReviewCopy posWalletImportAddress"', pos_html)
+        self.assertIn("POS_WALLET_BACKUP_MAX_BYTES", doge_tools)
+        self.assertIn('schema: "doge-commerce-wallet-backup"', doge_tools)
+        self.assertIn('network: "dogecoin-mainnet"', doge_tools)
+        self.assertIn("parseWalletBackupJson", import_block)
+        self.assertIn("pendingPosWalletImport = Object.freeze", import_block)
+        self.assertIn("function processPosWalletImportFile", import_block)
+        self.assertIn("function persistPosImportedWallet", import_block)
+        self.assertIn('storage.setItem("doge-wallet:address", address)', import_block)
+        self.assertNotIn('storage.setItem("doge-wallet:wif"', import_block)
+        self.assertNotIn("fetch(", import_block)
+        self.assertIn('input:not([type="file"])', doge_tools)
+        self.assertIn('if (input) input.value = ""', import_block)
+        self.assertIn("function beginPosWalletOperation", doge_tools)
+        self.assertIn("window.requestAnimationFrame(() => $id(\"posChangeWallet\")?.focus", import_block)
+        self.assertNotIn("window.dogePosWalletImportApi", doge_tools)
+        self.assertIn("function validateWalletBackup", wallet_core)
+        self.assertIn("Wallet backup address does not match its private key", wallet_core)
+        self.assertIn("has_private_key: true", wallet_core)
+        self.assertIn(".pos-wallet-import-review[hidden]", site_css)
+        self.assertIn(".pos-wallet-setup-actions #posUseWallet", site_css)
+
+    def test_wallet_backup_node_runtime(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node.js is not available")
+        with tempfile.TemporaryDirectory() as scratch:
+            result = subprocess.run(
+                [node, str(ROOT / "tests" / "run_wallet_logic_test.mjs")],
+                cwd=ROOT.parent,
+                env={**os.environ, "DOGE2MOON_SCRATCH": scratch},
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for marker in (
+            "walletBackup.matches=true",
+            "walletBackup.secretReturned=false",
+            "walletBackup.mismatchRejected=true",
+            "walletBackup.fileInputReset=true",
+            "walletBackup.publicOnlyPersistence=true",
+            "walletBackup.networkCalls=0",
+        ):
+            self.assertIn(marker, result.stdout)
 
     def test_base_loads_rate_limit_scripts_without_header_indicator(self):
         base_html = (ROOT / "templates" / "commerce" / "base.html").read_text(encoding="utf-8")

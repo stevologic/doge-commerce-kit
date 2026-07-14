@@ -65,3 +65,73 @@ class WalletLogicTests(SimpleTestCase):
             f"buildSignedTransaction.feeDoge={generated['feeDoge']}",
         ]
         (SCRATCH / "wallet-logic.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_wallet_backup_json_is_verified_and_sanitized(self):
+        ctx = MiniRacer()
+        ctx.eval(CRYPTO_POLYFILL + CORE_JS.read_text(encoding="utf-8"))
+        promise = ctx.eval("""
+          (async () => {
+            const wallet = await window.dogeWalletCore.generateWallet();
+            const other = await window.dogeWalletCore.walletFromPrivateKey(new Uint8Array(32).fill(2), true);
+            const valid = await window.dogeWalletCore.parseWalletBackupJson(JSON.stringify({
+              schema: "doge-commerce-wallet-backup",
+              version: 1,
+              network: "dogecoin-mainnet",
+              address: wallet.address,
+              wif: wallet.wif,
+              public_key: wallet.public_key,
+              compressed: wallet.compressed,
+            }));
+            const legacy = await window.dogeWalletCore.parseWalletBackupJson(JSON.stringify({
+              address: wallet.address,
+              wallet: {
+                address: wallet.address,
+                wif: wallet.wif,
+                public_key: wallet.public_key,
+                compressed: wallet.compressed,
+              },
+            }));
+            async function rejection(raw) {
+              try {
+                await window.dogeWalletCore.parseWalletBackupJson(raw);
+                return "accepted";
+              } catch (error) {
+                return String(error.message || error);
+              }
+            }
+            const errors = {
+              malformed: await rejection("{bad json"),
+              array: await rejection("[]"),
+              missingWif: await rejection(JSON.stringify({ address: wallet.address })),
+              mismatch: await rejection(JSON.stringify({ address: wallet.address, wif: other.wif })),
+              publicKey: await rejection(JSON.stringify({ address: wallet.address, wif: wallet.wif, public_key: other.public_key })),
+              compressed: await rejection(JSON.stringify({ address: wallet.address, wif: wallet.wif, compressed: !wallet.compressed })),
+              network: await rejection(JSON.stringify({ address: wallet.address, wif: wallet.wif, network: "dogecoin-testnet" })),
+              conflict: await rejection(JSON.stringify({
+                address: wallet.address,
+                wif: wallet.wif,
+                wallet: { address: other.address, wif: other.wif },
+              })),
+              oversized: await rejection(" ".repeat(65537)),
+            };
+            return JSON.stringify({
+              address: wallet.address,
+              publicKey: wallet.public_key,
+              valid,
+              legacy,
+              errors,
+              leakedSecret: JSON.stringify({ valid, legacy, errors }).includes(wallet.wif)
+                || JSON.stringify(errors).includes(other.wif),
+            });
+          })()
+        """)
+        result = json.loads(promise.get(timeout=30))
+        self.assertEqual(result["valid"]["address"], result["address"])
+        self.assertEqual(result["legacy"]["address"], result["address"])
+        self.assertEqual(result["valid"]["public_key"], result["publicKey"])
+        self.assertTrue(result["valid"]["has_private_key"])
+        self.assertNotIn("wif", result["valid"])
+        self.assertNotIn("wif", result["legacy"])
+        self.assertFalse(result["leakedSecret"])
+        for name, message in result["errors"].items():
+            self.assertNotEqual(message, "accepted", name)

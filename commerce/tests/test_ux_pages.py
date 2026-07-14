@@ -22,6 +22,9 @@ class HumanCentricPageTests(SimpleTestCase):
             "/pos/",
             [
                 "posGenerateWallet",
+                "posImportWallet",
+                "posImportWalletFile",
+                "posConfirmWalletImport",
                 "posNewWallet",
                 "posNewWalletWif",
                 "posDownloadWallet",

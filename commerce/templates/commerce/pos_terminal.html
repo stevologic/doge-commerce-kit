@@ -49,9 +49,22 @@
           <input id="posWallet" value="" placeholder="Paste your D… address, or generate a new wallet" spellcheck="false" autocomplete="off">
         </label>
       </div>
-      <div class="inline-actions">
+      <div class="inline-actions pos-wallet-setup-actions">
         <button class="button primary small" id="posUseWallet" type="button">Save business &amp; wallet</button>
         <button class="button small" id="posGenerateWallet" type="button">Generate new wallet</button>
+        <button class="button small" id="posImportWallet" type="button" aria-controls="posWalletImportReview" aria-describedby="posImportWalletStatus">Import wallet JSON</button>
+        <input class="sr-only" id="posImportWalletFile" type="file" accept=".json,application/json" aria-describedby="posImportWalletStatus" tabindex="-1">
+      </div>
+      <p class="note compact-note pos-wallet-import-status" id="posImportWalletStatus" role="status" aria-live="polite" aria-atomic="true">Import a backup created by this POS. Its private key is verified locally and never uploaded or stored.</p>
+      <div class="pos-wallet-import-review" id="posWalletImportReview" role="group" aria-labelledby="posWalletImportReviewTitle" hidden>
+        <strong id="posWalletImportReviewTitle">Backup verified</strong>
+        <span id="posWalletImportReviewCopy">Confirm the receiving address before replacing this device's wallet.</span>
+        <code id="posWalletImportAddress"></code>
+        <p class="note compact-note" id="posWalletImportLegacyWarning" hidden>An older, different private key is saved in this browser. Confirming will remove that old browser copy to prevent a wallet mismatch.</p>
+        <div class="inline-actions">
+          <button class="button primary small" id="posConfirmWalletImport" type="button" aria-describedby="posWalletImportReviewCopy posWalletImportAddress">Use imported wallet</button>
+          <button class="button small quiet" id="posCancelWalletImport" type="button">Cancel</button>
+        </div>
       </div>
       <div class="pos-new-wallet" id="posNewWallet" hidden>
         <strong>New wallet created — back it up now</strong>
