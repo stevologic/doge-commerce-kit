@@ -101,6 +101,12 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("grid-template-columns: minmax(0, 1fr) minmax(86px, auto)", site_css)
         self.assertIn("text-overflow: ellipsis", site_css)
 
+    def test_pos_waiting_state_has_motion_and_reduced_motion_fallback(self):
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        self.assertIn("animation: pos-waiting-sheen", site_css)
+        self.assertIn("@keyframes pos-waiting-sheen", site_css)
+        self.assertIn(".pos-live-dot,\n  .pos-waiting-card", site_css)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)
