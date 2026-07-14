@@ -339,6 +339,14 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("invalidatePosManualVerification();", doge_tools)
         self.assertIn('setPosVerificationCopy(order)', doge_tools)
 
+    def test_pos_click_events_are_not_forwarded_as_status_messages(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        self.assertIn('const safeMessage = typeof message === "string" ? message : "";', doge_tools)
+        self.assertIn('addEventListener("click", () => restartPosSaleForEditing())', doge_tools)
+        self.assertIn('addEventListener("click", () => abandonPosPayment())', doge_tools)
+        self.assertNotIn('addEventListener("click", restartPosSaleForEditing)', doge_tools)
+        self.assertNotIn('addEventListener("click", abandonPosPayment)', doge_tools)
+
     def test_footer_tracks_body_content_width(self):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
         self.assertIn("width: min(1280px, calc(100% - clamp(24px, 3vw, 64px)))", site_css)

@@ -2121,14 +2121,17 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   function setPosConfirmNote(message) {
-    if ($id("posConfirmNote")) $id("posConfirmNote").textContent = message;
+    // Event listeners receive a PointerEvent argument automatically. Never
+    // let an accidentally forwarded event/object become customer-facing copy.
+    const safeMessage = typeof message === "string" ? message : "";
+    if ($id("posConfirmNote")) $id("posConfirmNote").textContent = safeMessage;
     if ($id("posFlowNotice")) {
-      $id("posFlowNotice").textContent = message;
-      $id("posFlowNotice").hidden = !String(message || "").trim();
+      $id("posFlowNotice").textContent = safeMessage;
+      $id("posFlowNotice").hidden = !safeMessage.trim();
     }
     if ($id("posHistoryNotice")) {
-      $id("posHistoryNotice").textContent = message;
-      $id("posHistoryNotice").hidden = !String(message || "").trim();
+      $id("posHistoryNotice").textContent = safeMessage;
+      $id("posHistoryNotice").hidden = !safeMessage.trim();
     }
   }
 
@@ -4734,12 +4737,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     };
     $id("posStep2StartSale")?.addEventListener("click", showPosSaleSetup);
     $id("posStep3StartSale")?.addEventListener("click", showPosSaleSetup);
-    $id("posEditSale")?.addEventListener("click", restartPosSaleForEditing);
+    $id("posEditSale")?.addEventListener("click", () => restartPosSaleForEditing());
     $id("posBackToAmount")?.addEventListener("click", () => navigatePosStage(1));
     $id("posGoToVerify")?.addEventListener("click", () => navigatePosStage(3));
     $id("posBackToScan")?.addEventListener("click", () => navigatePosStage(2));
     $id("posCancelPayment")?.addEventListener("click", cancelPosPayment);
-    $id("posAbandonPayment")?.addEventListener("click", abandonPosPayment);
+    $id("posAbandonPayment")?.addEventListener("click", () => abandonPosPayment());
     $id("posNewSale")?.addEventListener("click", () => beginNewPosSale());
     $id("posConfirmTransaction")?.addEventListener("click", () => {
       verifyPosManualTransaction().catch((error) => setPosConfirmNote(error.message));
