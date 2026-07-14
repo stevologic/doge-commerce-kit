@@ -246,7 +246,6 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
     def test_pos_initiate_then_manual_verify_requires_human_confirmation(self):
         log_lines = []
         base = self.live_server_url
-        sample_tx = "sample-local-test"
         mismatch_tx = "f" * 64
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
@@ -377,7 +376,7 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertEqual(selected_after_mismatch.get("txid"), "")
             self.assertFalse(page.locator("#posSaleOptions").get_attribute("hidden") is not None)
             self.assertTrue(page.is_visible("#posAbandonPayment"))
-            page.fill("#posTxId", sample_tx)
+            page.fill("#posTxId", "")
             page.wait_for_timeout(800)
             status_before = page.locator("#posStatus").inner_text().strip().lower()
             mark_paid_disabled = page.is_disabled("#posMarkPaid")
@@ -385,8 +384,12 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             log_lines.append(f"mark_paid_disabled_after_paste={mark_paid_disabled}")
             self.assertEqual(status_before, "needs review")
             self.assertTrue(mark_paid_disabled)
+            self.assertTrue(page.is_disabled("#posConfirmTransaction"))
 
-            page.click("#posConfirmTransaction")
+            page.click("#posManualRecordOptions summary")
+            page.click("#posRecordManualPayment")
+            self.assertEqual(page.locator("#posStatus").inner_text().strip().lower(), "needs review")
+            page.click("#posRecordManualPayment")
             page.wait_for_function(
                 "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase() === 'confirmed'",
                 timeout=20000,

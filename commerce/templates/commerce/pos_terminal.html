@@ -196,10 +196,12 @@
           <span class="pos-review-icon" aria-hidden="true">&#10003;</span>
           <span>Approve</span>
         </button>
-        <button class="button small quiet pos-review-action" id="posReviewPayment" type="button" aria-controls="posManualDetails" aria-expanded="false">
-          <span class="pos-review-icon" aria-hidden="true">i</span>
-          <span>Review details</span>
+        <button class="pos-review-link" id="posReviewPayment" type="button" aria-controls="posManualDetails" aria-expanded="false">
+          <span>Review payment</span>
         </button>
+        <span class="disabled-button-hint pos-review-complete" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid." hidden>
+          <button class="button primary small" id="posMarkPaid" type="button" disabled>Complete sale</button>
+        </span>
       </div>
       <div class="pos-paid-receipt" id="posPaidReceipt" hidden aria-live="polite"></div>
       <div class="inline-actions pos-receipt-actions" id="posReceiptActions" hidden>
@@ -216,30 +218,26 @@
           <span><small>Confirmations</small><strong id="posReviewConfirmations">&mdash;</strong></span>
         </div>
         <p class="note compact-note pos-review-reason" id="posReviewReason" hidden></p>
-        <span class="disabled-button-hint pos-review-complete" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid." hidden>
-          <button class="button primary small" id="posMarkPaid" type="button" disabled>Complete sale</button>
-        </span>
         <details class="pos-manual-tools" id="posManualTools">
-          <summary>Manual verification options</summary>
+          <summary>Other verification options</summary>
           <div class="pos-manual-tools-body">
-            <p class="note compact-note">Use these tools only when automatic verification needs help.</p>
             <p class="note compact-note" id="posSelectedOrder">No local order loaded. Save an order or load one from the table below.</p>
             <form class="form-grid compact" id="posManualForm">
               <label>
                 <span>Transaction ID</span>
-                <input id="posTxId" spellcheck="false" placeholder="Paste txid or leave blank for manual check" title="Paste a 64-character Dogecoin transaction ID, or leave this blank for a manual register check." aria-label="Transaction ID. Paste a 64-character Dogecoin transaction ID, or leave this blank for a manual register check.">
+                <input id="posTxId" spellcheck="false" placeholder="Paste the 64-character transaction ID" title="Paste the 64-character Dogecoin transaction ID." aria-label="Dogecoin transaction ID">
               </label>
               <label>
                 <span>Confirmations</span>
                 <input id="posMinConfirmations" type="number" min="0" step="1" value="1">
               </label>
             </form>
-            <div class="inline-actions pos-manual-actions">
-              <button class="button small" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Check blockchain</button>
-              <button class="button small" id="posConfirmTransaction" type="button">Verify transaction</button>
-              <button class="button small quiet" id="posShowTransactions" type="button" aria-controls="posTransactionDrawer" aria-expanded="false">Recent payments</button>
+            <div class="pos-manual-primary-action">
+              <button class="button primary small" id="posConfirmTransaction" type="button" disabled>Verify transaction</button>
             </div>
             <div class="pos-manual-secondary-actions">
+              <button class="pos-manual-link" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Retry automatic check</button>
+              <button class="pos-manual-link" id="posShowTransactions" type="button" aria-controls="posTransactionDrawer" aria-expanded="false">Recent payments</button>
               <a class="pos-manual-link verify-link" id="posExplorerLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Open explorer</a>
               <button class="pos-manual-link pos-manual-danger" id="posAbandonPayment" type="button">Abandon payment</button>
             </div>
@@ -251,12 +249,16 @@
                 </div>
                 <div class="inline-actions compact-actions">
                   <button class="button small quiet" id="posRefreshTransactions" type="button">Refresh</button>
-                  <button class="button small quiet" id="posHideTransactions" type="button">Hide</button>
                 </div>
               </div>
               <p class="note" id="posTransactionsStatus">Pick a recent wallet transaction to load its transaction ID for this sale.</p>
               <div class="wallet-activity-list" id="posTransactionList" aria-live="polite"></div>
             </div>
+            <details class="pos-manual-record" id="posManualRecordOptions">
+              <summary>No transaction ID?</summary>
+              <p class="note compact-note">Only use this register fallback after confirming the payment outside this terminal.</p>
+              <button class="pos-manual-link pos-manual-danger" id="posRecordManualPayment" type="button">Record manual payment</button>
+            </details>
           </div>
         </details>
       </details>

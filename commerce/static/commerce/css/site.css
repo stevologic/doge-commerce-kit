@@ -3402,6 +3402,33 @@ textarea:focus {
   max-width: 100%;
 }
 
+.integration-preview.is-live-checkout {
+  min-height: 360px;
+  align-items: start;
+  justify-items: center;
+  padding: 10px;
+  overflow: visible;
+}
+
+.integration-preview doge-checkout {
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+}
+
+.integration-trust-note {
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold);
+  background: rgba(255, 250, 230, 0.62);
+}
+
+.integration-config-error {
+  padding: 12px;
+  border: 1px solid #d9b85f;
+  border-radius: 8px;
+  background: #fff7dc;
+}
+
 .integration-status-preview,
 .integration-data-preview {
   display: grid;
@@ -9161,6 +9188,7 @@ body[data-page="wallet"] main {
 .pos-review-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin: 2px 0 8px;
 }
@@ -9181,13 +9209,26 @@ body[data-page="wallet"] main {
   color: var(--mint);
 }
 
-#posReviewPayment {
-  flex: 0 0 auto;
-  justify-content: center;
+.pos-review-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 6px 2px;
   margin-left: auto;
-  border-color: transparent;
+  border: 0;
   background: transparent;
   color: var(--teal);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.pos-review-link:hover,
+.pos-review-link:focus-visible {
+  color: var(--ink);
 }
 
 .pos-review-icon {
@@ -9289,9 +9330,13 @@ body[data-page="wallet"] main {
   margin: 0;
 }
 
-.pos-confirm-panel .pos-manual-actions .button {
-  flex: 1 1 130px;
-  min-height: 40px;
+.pos-manual-primary-action {
+  display: flex;
+}
+
+.pos-manual-primary-action .button {
+  width: 100%;
+  min-height: 44px;
 }
 
 .pos-manual-secondary-actions {
@@ -9299,6 +9344,25 @@ body[data-page="wallet"] main {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 14px;
+}
+
+.pos-manual-record {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.pos-manual-record > summary {
+  width: max-content;
+  max-width: 100%;
+  padding: 8px 2px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pos-manual-record .note {
+  margin: 0 0 4px;
 }
 
 .pos-review-complete {
@@ -10177,26 +10241,9 @@ body[data-page="wallet"] main {
     font-size: 0.78rem;
   }
 
-  body[data-page="pos_terminal"] .pos-review-icon {
-    width: 22px;
-    height: 22px;
-  }
-
-  body[data-page="pos_terminal"] .pos-manual-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  body[data-page="pos_terminal"] .pos-manual-actions .button {
-    width: 100%;
-    min-height: 42px;
-    padding-inline: 6px;
+  body[data-page="pos_terminal"] .pos-review-link {
+    min-height: 38px;
     font-size: 0.76rem;
-  }
-
-  body[data-page="pos_terminal"] #posShowTransactions {
-    grid-column: 1 / -1;
   }
 
   body[data-page="pos_terminal"] .pos-manual-secondary-actions {

@@ -84,6 +84,31 @@ class WalletTemplateStructureTests(SimpleTestCase):
             "walletBackup.networkCalls=0",
             "posPayment.postStartBroadcast=true",
             "posPayment.feeSafetyAndAlignedTotal=true",
+            "posPayment.nearMatchApprovalMatrix=true",
+        ):
+            self.assertIn(marker, result.stdout)
+
+    def test_checkout_embed_core_node_runtime(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node.js is not available")
+        result = subprocess.run(
+            [node, str(ROOT / "tests" / "run_checkout_embed_test.mjs")],
+            cwd=ROOT.parent,
+            env=os.environ.copy(),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for marker in (
+            "checkoutEmbed.configValidation=true",
+            "checkoutEmbed.integerFeeAndQuantum=true",
+            "checkoutEmbed.uriAmountAndMemo=true",
+            "checkoutEmbed.baselineAndOldTransactionRejection=true",
+            "checkoutEmbed.exactAndNearMatching=true",
+            "checkoutEmbed.all=true",
         ):
             self.assertIn(marker, result.stdout)
 
@@ -199,7 +224,7 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("function abandonPosPayment", doge_tools)
         self.assertIn("const posPricePromise = fetchDogePrice()", doge_tools)
         self.assertNotIn("await fetchDogePrice();", doge_tools)
-        self.assertIn("Manual verification options", pos_html)
+        self.assertIn("Other verification options", pos_html)
 
     def test_pos_recent_activity_has_narrow_screen_layout_rules(self):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
@@ -253,6 +278,7 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn('class="pos-manual-tools" id="posManualTools"', pos_html)
         self.assertIn("posReviewExpected", pos_html)
         self.assertIn("posReviewReceived", pos_html)
+        review_actions_start = pos_html.index('id="posReviewActions"')
         review_start = pos_html.index('id="posManualDetails"')
         manual_tools_start = pos_html.index('id="posManualTools"', review_start)
         manual_tools_tag_start = pos_html.rfind("<details", review_start, manual_tools_start)
@@ -272,12 +298,13 @@ class WalletTemplateStructureTests(SimpleTestCase):
             "posExplorerLink",
             "posAbandonPayment",
             "posTransactionDrawer",
+            "posRecordManualPayment",
         ):
             control_index = pos_html.index(f'id="{control}"', manual_tools_start)
             self.assertGreater(control_index, manual_tools_start)
             self.assertLess(control_index, manual_tools_end)
-        mark_paid_index = pos_html.index('id="posMarkPaid"', review_start)
-        self.assertLess(mark_paid_index, manual_tools_start)
+        mark_paid_index = pos_html.index('id="posMarkPaid"', review_actions_start)
+        self.assertLess(mark_paid_index, review_start)
         self.assertIn('id="posMarkPaidHint" title=', pos_html)
         self.assertIn('before marking paid." hidden>', pos_html)
         self.assertIn("hint.hidden = !enabled", doge_tools)
@@ -296,6 +323,20 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn(".pos-manual-tools", site_css)
         self.assertIn(".pos-manual-link", site_css)
         self.assertIn('["pending", "needs review", "confirmed"]', doge_tools)
+        self.assertIn('["pending", "needs review"].includes(order?.status)', doge_tools)
+        self.assertIn('$id("posApprovePayment").hidden = !canApprove', doge_tools)
+        self.assertIn('class="pos-review-link" id="posReviewPayment"', pos_html)
+        self.assertIn('class="button primary small" id="posConfirmTransaction"', pos_html)
+        self.assertIn('id="posConfirmTransaction" type="button" disabled', pos_html)
+        self.assertIn('class="pos-manual-link" id="posAutoVerify"', pos_html)
+        self.assertIn('class="pos-manual-link" id="posShowTransactions"', pos_html)
+        self.assertIn('id="posManualRecordOptions"', pos_html)
+        self.assertIn("posManualRecordArmed", doge_tools)
+        self.assertIn("manualRequestToken !== posManualVerificationToken", doge_tools)
+        self.assertIn("nearMatch && storedApproval", doge_tools)
+        self.assertIn("async function verifyPosManualTransaction", doge_tools)
+        self.assertGreaterEqual(doge_tools.count("verifyPosManualTransaction().catch"), 2)
+        self.assertIn("invalidatePosManualVerification();", doge_tools)
         self.assertIn('setPosVerificationCopy(order)', doge_tools)
 
     def test_footer_tracks_body_content_width(self):

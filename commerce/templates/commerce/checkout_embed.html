@@ -1,0 +1,32 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <meta name="theme-color" content="#f4bd2a">
+    <title>Dogecoin checkout</title>
+    <link rel="stylesheet" href="{% static 'commerce/css/doge_checkout_embed.css' %}?v={{ asset_version }}">
+    <script defer src="{% static 'commerce/js/doge_checkout_core.js' %}?v={{ asset_version }}"></script>
+    <script defer src="{% static 'commerce/js/doge_checkout_embed.js' %}?v={{ asset_version }}"></script>
+  </head>
+  <body
+    data-price-url="{% url 'commerce:doge_price' %}"
+    data-transactions-url="{% url 'commerce:wallet_transactions' %}"
+    data-validation-url="{% url 'commerce:transaction_validate' %}"
+    data-qr-url="{% url 'commerce:qr_svg' %}"
+    data-explorer-tx-url="{{ explorer_tx_url }}"
+    data-site-url="{{ site_url }}"
+  >
+    <main id="dogeCheckoutRoot" class="checkout-mount" aria-busy="true">
+      <section class="checkout-card checkout-loading" aria-label="Dogecoin checkout">
+        <div class="loading-mark" aria-hidden="true">&#272;</div>
+        <p>Preparing secure Dogecoin checkout&hellip;</p>
+      </section>
+    </main>
+    <noscript>
+      <p class="checkout-noscript">JavaScript is required to calculate and verify this Dogecoin payment.</p>
+    </noscript>
+  </body>
+</html>

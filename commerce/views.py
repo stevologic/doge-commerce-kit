@@ -15,6 +15,7 @@ from xml.sax.saxutils import escape as xml_escape
 import qrcode
 import qrcode.image.svg
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.templatetags.static import static
@@ -35,6 +36,7 @@ DOGE_ENABLE_BLOCKCYPHER_FALLBACK = os.environ.get("DOGE_ENABLE_BLOCKCYPHER_FALLB
 DOGE_BLOCKCHAIN_PROVIDER_NAME = os.environ.get("DOGE_BLOCKCHAIN_PROVIDER_NAME", "Dedicated Dogecoin indexer")
 BLOCKCYPHER_PROVIDER_NAME = "BlockCypher demo fallback"
 DOGE_EXPLORER_TX_URL = os.environ.get("DOGE_EXPLORER_TX_URL", "https://blockchair.com/dogecoin/transaction/{txid}")
+COINBASE_DOGE_TICKER_URL = "https://api.exchange.coinbase.com/products/DOGE-USD/ticker"
 try:
     DOGE_LOOKUP_CACHE_TTL = max(15, int(os.environ.get("DOGE_LOOKUP_CACHE_TTL", "90") or 90))
 except (TypeError, ValueError):
@@ -48,7 +50,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20260714-pos-review-simplified-v15"
+ASSET_VERSION = "20260714-live-checkout-v16"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -512,6 +514,23 @@ def cached_provider_lookup(cache_key, fetcher, ttl=DOGE_LOOKUP_CACHE_TTL, allow_
         raise
     DOGE_LOOKUP_CACHE[cache_key] = {"loaded_at": now, "payload": payload}
     return payload
+
+
+def latest_doge_usd_price():
+    """Return a recent live DOGE/USD quote without silently using a fallback."""
+    payload = cached_provider_lookup(
+        ("coinbase-doge-usd-ticker",),
+        lambda: fetch_json(COINBASE_DOGE_TICKER_URL, timeout=8),
+        ttl=30,
+        allow_stale=False,
+    )
+    try:
+        price = Decimal(str(payload.get("price", "")))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise DogeLookupError("The live DOGE/USD quote is unavailable.") from exc
+    if not price.is_finite() or price <= 0:
+        raise DogeLookupError("The live DOGE/USD quote is unavailable.")
+    return format(price, "f")
 
 
 def blockchair_api_url(path, params=None):
@@ -2707,6 +2726,35 @@ def merchant_kit(request):
     return render(request, "commerce/merchant_kit.html", base_context("merchant_kit", request))
 
 
+@xframe_options_exempt
+def checkout_embed(request):
+    """Purpose-built frameable checkout shell used by third-party websites."""
+    response = render(
+        request,
+        "commerce/checkout_embed.html",
+        {
+            "asset_version": ASSET_VERSION,
+            "site_url": site_base_url(request),
+            "explorer_tx_url": DOGE_EXPLORER_TX_URL,
+        },
+    )
+    response["Content-Security-Policy"] = (
+        "default-src 'none'; "
+        "script-src 'self'; "
+        "style-src 'self'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors *; "
+        "base-uri 'none'; "
+        "form-action 'none'; "
+        "object-src 'none'"
+    )
+    response["Referrer-Policy"] = "no-referrer"
+    response["Permissions-Policy"] = "camera=(), geolocation=(), microphone=(), payment=()"
+    response["Cache-Control"] = "no-store"
+    return response
+
+
 def pos_terminal(request):
     return render(request, "commerce/pos_terminal.html", base_context("pos_terminal", request))
 
@@ -2823,6 +2871,29 @@ def llms_txt(request):
 
 def health(request):
     return JsonResponse({"status": "ok"})
+
+
+def doge_price(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Use GET to request the current DOGE/USD quote."}, status=405)
+    try:
+        price = latest_doge_usd_price()
+    except (DogeLookupError, HTTPError, OSError, TimeoutError, ValueError):
+        return JsonResponse(
+            {"error": "A fresh DOGE/USD quote is temporarily unavailable. Try again shortly."},
+            status=503,
+        )
+    response = JsonResponse(
+        {
+            "pair": "DOGE-USD",
+            "price_usd": price,
+            "provider_name": "Coinbase Exchange",
+            "source": COINBASE_DOGE_TICKER_URL,
+            "updated_at": utc_now_iso(),
+        }
+    )
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 def rate_status(request):

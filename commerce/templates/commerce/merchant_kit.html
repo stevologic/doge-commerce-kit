@@ -3,13 +3,17 @@
 
 {% block title %}Dogecoin QR Codes, Snippets, Receipts, and Validation | DOGE Commerce Kit{% endblock %}
 
+{% block extra_scripts %}
+<script defer src="{% static 'commerce/js/doge_checkout.js' %}?v={{ asset_version }}"></script>
+{% endblock %}
+
 {% block content %}
 <section class="tools-workspace">
   <div class="tools-hero-panel">
     <div>
       <p class="eyebrow">Tools — Snippet marketplace</p>
       <h1>Pick a Dogecoin tool like choosing an app.</h1>
-      <p>Browse the tools below like an app store. Tap one to open it, fill in a couple of fields, and copy a self-contained snippet into your site, counter, or receipt — your saved wallet fills in automatically.</p>
+      <p>Browse the tools below like an app store. Tap one to open it, fill in a couple of fields, and copy a portable snippet into your site, counter, or receipt — your saved wallet fills in automatically.</p>
     </div>
     <div class="tools-wallet-strip">
       <span>Saved wallet</span>
@@ -376,12 +380,18 @@
         </div>
       </details>
 
-      <details class="panel integration-helper-panel tool-app" id="website-integration-kit" data-tool-category="website">
+      <details
+        class="panel integration-helper-panel tool-app"
+        id="website-integration-kit"
+        data-tool-category="website"
+        data-checkout-loader-url="{{ site_url }}/static/commerce/js/doge_checkout.js?v={{ asset_version }}"
+        data-checkout-embed-url="{{ site_url }}{% url 'commerce:checkout_embed' %}"
+      >
         <summary class="tool-app-summary">
           <span class="tool-app-icon" aria-hidden="true">🧩</span>
           <span class="tool-app-info">
-            <strong>Website checkout kit</strong>
-            <small>Pay-with-DOGE button, payment status, store manifest, and SEO.</small>
+            <strong>Live website checkout</strong>
+            <small>A portable three-step DOGE checkout with automatic detection and verification.</small>
           </span>
           <span class="tool-app-open" aria-hidden="true">Open</span>
         </summary>
@@ -402,7 +412,7 @@
               </label>
               <label>
                 <span>USD amount</span>
-                <input id="integrationUsd" type="number" min="0" step="0.01" value="10.00">
+                <input id="integrationUsd" type="number" min="0.01" step="0.01" value="10.00">
               </label>
               <label>
                 <span>Memo</span>
@@ -412,17 +422,35 @@
                 <span>Button text</span>
                 <input id="integrationButtonText" value="Pay with DOGE">
               </label>
+              <label>
+                <span>Required confirmations</span>
+                <select id="integrationConfirmations">
+                  <option value="0">Broadcast detected (0)</option>
+                  <option value="1" selected>1 confirmation</option>
+                  <option value="2">2 confirmations</option>
+                  <option value="3">3 confirmations</option>
+                </select>
+              </label>
+              <label>
+                <span>Order reference <small>(optional)</small></span>
+                <input id="integrationOrderId" placeholder="Generated for each checkout" maxlength="100">
+              </label>
+              <label class="full-row">
+                <span>Return URL after payment <small>(optional, HTTPS)</small></span>
+                <input id="integrationReturnUrl" type="url" placeholder="https://your-site.example/thank-you" spellcheck="false">
+              </label>
             </form>
             <div class="integration-helper-output">
               <div class="integration-tabs" role="tablist" aria-label="Website integration snippet type">
-                <button class="integration-tab is-active" type="button" data-integration-snippet="checkout">Checkout button</button>
-                <button class="integration-tab" type="button" data-integration-snippet="status">Payment status</button>
+                <button class="integration-tab is-active" type="button" data-integration-snippet="checkout">Live checkout</button>
+                <button class="integration-tab" type="button" data-integration-snippet="status">Host events</button>
                 <button class="integration-tab" type="button" data-integration-snippet="manifest">Store manifest</button>
                 <button class="integration-tab" type="button" data-integration-snippet="meta">SEO metadata</button>
               </div>
               <div class="integration-preview" id="integrationPreview" aria-live="polite"></div>
+              <p class="note compact-note integration-trust-note">Best for low-volume or manually fulfilled orders. For automatic digital fulfillment, independently revalidate the transaction on your server and use a unique receiving address per order; browser events are informational.</p>
               <div class="inline-actions">
-                <button class="button primary small" id="copyIntegrationSnippet" type="button">Copy snippet</button>
+                <button class="button primary small" id="copyIntegrationSnippet" type="button">Copy live checkout</button>
                 <button class="button small" id="copyIntegrationJson" type="button">Copy JSON</button>
               </div>
               <details class="tool-details tool-code-details">

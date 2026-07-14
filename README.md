@@ -55,6 +55,97 @@ generate a new wallet (with a one-time key backup) or paste your own address.
 
 ![Tools](docs/readme/tools.png)
 
+## Embed the live DOGE checkout
+
+The **Tools → Live website checkout** builder generates a portable three-stage
+checkout. Paste its script and custom element into any page, replacing the
+example address and order details with your own:
+
+```html
+<script async src="https://commerce.dog/static/commerce/js/doge_checkout.js"></script>
+<doge-checkout
+  merchant="Example Coffee"
+  address="YOUR_DOGECOIN_RECEIVING_ADDRESS"
+  offer="Coffee order"
+  usd="10.00"
+  memo="Web order 123"
+  order-id="order-123"
+  confirmations="1"
+  quote-minutes="10"
+  button-text="Continue with DOGE"
+  return-url="https://example.com/thanks">
+</doge-checkout>
+```
+
+The customer reviews a fresh USD-to-DOGE quote, scans or opens the frozen
+payment request, then sees detection and confirmation progress automatically.
+The final stage shows either a verified receipt or a clear merchant-review
+state. The quote includes the same small network-fee cushion used by the POS.
+
+### Checkout attributes
+
+| Attribute | Purpose |
+| --- | --- |
+| `merchant` | Business name shown in checkout. |
+| `address` | Required public Dogecoin mainnet receiving address. |
+| `offer`, `usd`, `memo` | Customer-facing order description, USD amount, and wallet memo. |
+| `order-id` | Optional host-side reference included in events and the receipt; it is not an on-chain identifier. |
+| `confirmations` | Confirmations required before verified, from `0` to `12` (default `1`). |
+| `quote-minutes` | Frozen quote window, from `1` to `30` minutes (default `10`). |
+| `button-text` | Stage-one call-to-action text. |
+| `return-url` | Optional HTTPS destination shown after verification. |
+| `embed-url` | Advanced HTTP(S) override when self-hosting the checkout frame. |
+
+Changing attributes or calling `update()` rebuilds the checkout only before
+payment begins. Once stage two freezes the quote, restart first or mount a new
+checkout; `configure()` / `update()` reject mid-payment changes.
+
+### Events and methods
+
+Checkout lifecycle events bubble from the `<doge-checkout>` element. Every
+event detail includes `version`, `instanceId`, `orderId`, and `advisory: true`.
+
+```js
+const checkout = document.querySelector("doge-checkout");
+
+const stopListening = checkout.on("verified", ({ detail }) => {
+  console.log(detail.txid, detail.matchedDoge, detail.confirmations);
+  // Revalidate these values on your server before automatic fulfillment.
+});
+
+checkout.addEventListener("dogecheckout:reviewrequired", ({ detail }) => {
+  console.log("Merchant review needed", detail);
+});
+```
+
+Events: `ready`, `quote`, `stagechange`, `paymentdetected`,
+`verificationpending`, `verified`, `reviewrequired`, `expired`, `error`, and
+`state`. The `quote` event reports whether the quote is frozen.
+
+Methods: `configure(config)` and `update(config)` apply new attributes;
+`restart()` creates a fresh quote; `refresh()` requests an immediate quote or
+chain check; `getState()` returns the latest cached public state; `on(name,
+handler)` returns an unsubscribe function; and `destroy()` removes the embed.
+JavaScript integrations can also call `DogeCheckout.mount(target, config)`.
+
+### Production boundaries
+
+- A browser `verified` event is advisory. Before releasing goods, downloads,
+  credits, or other automated fulfillment, revalidate the transaction ID,
+  receiving address, exact DOGE amount, and confirmation count on your server.
+- A memo and `order-id` do not uniquely identify an on-chain payment. Automated
+  stores with concurrent orders should issue a unique receiving address per
+  order or use a server-side invoice/processor flow. A shared address is best
+  for low-volume or manually fulfilled checkout.
+- The embed needs only a public receiving address. Never place a WIF, private
+  key, seed phrase, or mnemonic in HTML, attributes, events, or API requests.
+- Public address lookups reveal wallet activity and the hosted APIs are rate
+  limited. Higher-volume deployments should use their own Dogecoin indexer and
+  server-side order system.
+- Sites with a strict Content Security Policy must allow
+  `https://commerce.dog` in `script-src`, `style-src`, and `frame-src` (or the
+  equivalent self-hosted origin). No broad API CORS permission is required.
+
 ### Playbook
 
 Checklists, printables, and a runbook that turn Dogecoin acceptance into a

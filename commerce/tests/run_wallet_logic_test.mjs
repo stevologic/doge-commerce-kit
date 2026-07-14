@@ -175,6 +175,43 @@ assert.equal(hasPostStartTimestamp({ time: "2026-07-14T18:29:30Z" }, paymentStar
 assert.equal(hasPostStartTimestamp({ time: "2026-07-14T18:28:00Z" }, paymentStart), false);
 assert.equal(hasPostStartTimestamp({ time: "" }, paymentStart), false);
 log("posPayment.postStartBroadcast=true");
+const nearMatchApprovalSource = dogeToolsSource.slice(
+  dogeToolsSource.indexOf("  function isPosNearMatchApprovalCandidate"),
+  dogeToolsSource.indexOf("  function updatePosReviewDetails"),
+).trim();
+const nearMatchApproval = (0, eval)(`(() => {
+  const POS_AUTO_VERIFY_TOLERANCE_DOGE = 0.00000001;
+  const POS_NEAR_MATCH_MARGIN_DOGE = 1;
+  const isRealDogeTxid = (txid) => /^[0-9a-f]{64}$/i.test(String(txid || "").trim());
+  ${nearMatchApprovalSource}
+  return { isPosNearMatchApprovalCandidate, canApprovePosNearMatch };
+})()`);
+const safeNearMatch = {
+  status: "needs review",
+  near_match: true,
+  validation: "near amount match requires confirmation",
+  txid: "c".repeat(64),
+  doge: 40.0024,
+  matched_doge: 39.5024,
+  near_match_difference: 0.5,
+  confirmations: 1,
+  min_confirmations: 1,
+  validation_errors: ["Transaction amount did not match this sale."],
+};
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate(safeNearMatch), true);
+assert.equal(nearMatchApproval.canApprovePosNearMatch(safeNearMatch), true);
+assert.equal(nearMatchApproval.canApprovePosNearMatch({ ...safeNearMatch, confirmations: 0 }), false);
+assert.equal(nearMatchApproval.canApprovePosNearMatch({ ...safeNearMatch, min_confirmations: 2 }), false);
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate({ ...safeNearMatch, near_match_difference: 0.00000001, matched_doge: 40.00239999 }), false);
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate({ ...safeNearMatch, near_match_difference: 1.00000001, matched_doge: 39.00239999 }), false);
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate({ ...safeNearMatch, txid: "not-a-txid" }), false);
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate({ ...safeNearMatch, status: "pending" }), false);
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate({ ...safeNearMatch, matched_doge: 0 }), false);
+assert.equal(nearMatchApproval.isPosNearMatchApprovalCandidate({
+  ...safeNearMatch,
+  validation_errors: ["No output pays the loaded merchant address."],
+}), false);
+log("posPayment.nearMatchApprovalMatrix=true");
 const importSection = dogeToolsSource.slice(
   dogeToolsSource.indexOf("  function setPosWalletImportStatus"),
   dogeToolsSource.indexOf("  function updatePosProfileStatus"),

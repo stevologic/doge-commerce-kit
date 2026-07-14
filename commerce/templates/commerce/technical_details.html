@@ -19,6 +19,7 @@
 <nav class="tool-filter-bar technical-toc" aria-label="Technical page sections">
   <a href="#wallet-keys">Wallet keys</a>
   <a href="#uri-qr">URI &amp; QR</a>
+  <a href="#checkout-embed">Checkout embed</a>
   <a href="#chain-lookup">Chain lookup</a>
   <a href="#market-data">Market data</a>
   <a href="#webhook-demo">Webhook demo</a>
@@ -93,6 +94,67 @@ https://blockchair.com/dogecoin/transaction/{txid}</pre>
       <li><a class="text-link" href="https://docs.cdp.coinbase.com/exchange/reference/exchangerestapi_getproductcandles" target="_blank" rel="noreferrer">Coinbase product candles endpoint</a></li>
     </ul>
   </article>
+</section>
+
+<section class="panel accent-panel" id="checkout-embed" aria-labelledby="checkoutEmbedTitle">
+  <div class="section-heading">
+    <p class="eyebrow">Live website checkout</p>
+    <h2 id="checkoutEmbedTitle">Embed review, payment, and verification in one component</h2>
+    <p>Build the snippet in <a href="{% url 'commerce:merchant_kit' %}#website-integration-kit">Tools</a>, then paste the generated loader and <code>&lt;doge-checkout&gt;</code> element into your site. The isolated checkout creates a fresh quote, freezes it when the customer continues, watches for a new matching transaction, and validates the public chain result.</p>
+  </div>
+  <pre class="copy-output compact-tech-code">&lt;script async src="https://commerce.dog/static/commerce/js/doge_checkout.js"&gt;&lt;/script&gt;
+&lt;doge-checkout
+  merchant="Example Coffee"
+  address="YOUR_DOGECOIN_RECEIVING_ADDRESS"
+  offer="Coffee order"
+  usd="10.00"
+  memo="Web order 123"
+  order-id="order-123"
+  confirmations="1"
+  quote-minutes="10"
+  button-text="Continue with DOGE"
+  return-url="https://example.com/thanks"&gt;
+&lt;/doge-checkout&gt;</pre>
+  <div class="result-grid three-cols">
+    <div><span>1 — Review</span><strong>Fresh DOGE quote</strong><small>Shows the USD total, buffered DOGE amount, and quote timing.</small></div>
+    <div><span>2 — Pay</span><strong>Frozen QR request</strong><small>Opens a wallet or displays the exact amount while automatic detection runs.</small></div>
+    <div><span>3 — Verify</span><strong>Chain confirmation</strong><small>Shows pending progress, a verified receipt, or a merchant-review state.</small></div>
+  </div>
+  <details class="tool-details">
+    <summary>Attributes, events, and methods</summary>
+    <div class="technical-card-grid">
+      <div>
+        <h3>Attributes</h3>
+        <ul class="clean-list">
+          <li><code>merchant</code>, required public <code>address</code>, <code>offer</code>, <code>usd</code>, and <code>memo</code> define the order.</li>
+          <li><code>order-id</code> is an optional host reference, not an on-chain identifier.</li>
+          <li><code>confirmations</code> accepts 0–12; <code>quote-minutes</code> accepts 1–30.</li>
+          <li><code>button-text</code> customizes the call to action; <code>return-url</code> adds an HTTPS-only post-payment destination.</li>
+          <li><code>embed-url</code> is an advanced HTTP(S) override for a self-hosted frame.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Lifecycle events</h3>
+        <p><code>ready</code>, <code>quote</code>, <code>stagechange</code>, <code>paymentdetected</code>, <code>verificationpending</code>, <code>verified</code>, <code>reviewrequired</code>, <code>expired</code>, <code>error</code>, and <code>state</code> are dispatched as <code>dogecheckout:&lt;name&gt;</code>.</p>
+        <pre class="copy-output compact-tech-code">const checkout = document.querySelector("doge-checkout");
+
+checkout.on("verified", ({ detail }) =&gt; {
+  console.log(detail.txid, detail.matchedDoge);
+  // Revalidate server-side before fulfillment.
+});</pre>
+      </div>
+      <div>
+        <h3>Host methods</h3>
+        <p><code>configure(config)</code> / <code>update(config)</code>, <code>restart()</code>, <code>refresh()</code>, <code>getState()</code>, <code>on(name, handler)</code>, and <code>destroy()</code> are available on the element. <code>DogeCheckout.mount(target, config)</code> creates one from JavaScript.</p>
+        <p class="note compact-note">Updating configuration rebuilds the frame only before payment begins. Once the quote is frozen, restart first or mount a new checkout; mid-payment updates are rejected.</p>
+      </div>
+    </div>
+  </details>
+  <div class="note">
+    <strong>Browser verification is not a fulfillment authorization.</strong>
+    <p>Every event is marked <code>advisory: true</code>. Revalidate the txid, receiving address, exact amount, and confirmations on your server before automated fulfillment. Concurrent automated orders need unique per-order receiving addresses or a server-side invoice provider; a memo and <code>order-id</code> do not distinguish payments on-chain. The embed accepts only a public address — never put a WIF, private key, seed phrase, or mnemonic in page markup.</p>
+    <p>For a strict host Content Security Policy, allow <code>https://commerce.dog</code> in <code>script-src</code>, <code>style-src</code>, and <code>frame-src</code>, or allow the equivalent origin when self-hosting. The isolated frame keeps blockchain API calls same-origin, so broad API CORS access is not needed.</p>
+  </div>
 </section>
 
 <section class="technical-ops-grid">
