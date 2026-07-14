@@ -275,14 +275,14 @@
     <table class="responsive-card-table">
       <thead>
         <tr>
-          <th>Time</th>
-          <th>Merchant</th>
-          <th>USD</th>
-          <th>DOGE</th>
-          <th>Status</th>
-          <th>Tx</th>
-          <th>Memo</th>
-          <th>Actions</th>
+          <th scope="col">Time</th>
+          <th scope="col">Merchant</th>
+          <th scope="col">USD</th>
+          <th scope="col">DOGE</th>
+          <th scope="col">Status</th>
+          <th scope="col">Tx</th>
+          <th scope="col">Memo</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody id="posOrderRows"></tbody>
@@ -368,12 +368,12 @@
 </div>
 
 <div class="modal-backdrop" id="posReceiptModal" hidden>
-  <section class="pos-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="posReceiptModalTitle">
+  <section class="pos-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="posReceiptModalTitle" aria-describedby="posReceiptModalContext">
     <div class="modal-head">
       <div>
         <p class="eyebrow">Payment receipt</p>
         <h2 id="posReceiptModalTitle">Share the customer's receipt</h2>
-        <p>The receipt below is real formatted HTML. Copy it, then paste it into an email or message without losing the design.</p>
+        <p id="posReceiptModalContext">The receipt below is real formatted HTML. Copy it, then paste it into an email or message without losing the design.</p>
       </div>
       <button class="button small quiet" type="button" id="closePosReceiptModal">Close</button>
     </div>
@@ -408,6 +408,7 @@
       <li><strong>Automatic detection</strong><span>The terminal watches for the exact new payment amount and advances to verification when it appears on-chain.</span></li>
       <li><strong>Pick transaction</strong><span>If needed, use the transaction picker in Manual verify to fill the transaction ID from recent blockchain activity.</span></li>
       <li><strong>Confirm then mark paid</strong><span>Confirm the transaction, amount, address, and confirmation count before fulfillment.</span></li>
+      <li><strong>Receipts</strong><span>Paid orders include Share receipt and Print / Save actions without interrupting the current sale.</span></li>
       <li><strong>Export</strong><span>Download the current page or every saved local order as CSV or JSON.</span></li>
     </ol>
     <p class="note compact-note">Delete removes a single unlocked local row. Clear local orders wipes the browser table.</p>

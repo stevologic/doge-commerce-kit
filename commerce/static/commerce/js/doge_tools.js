@@ -73,6 +73,10 @@
   let posRestartTimer = null;
   let posWorkflowScrollTimer = null;
   let posManualReviewVisible = false;
+  let posReceiptModalReceipt = null;
+  let posReceiptModalReturnFocus = null;
+  let posReceiptModalReturnOrderId = "";
+  let posReceiptModalReturnControlId = "";
 
   function logo() {
     return document.body.dataset.dogeLogo || "";
@@ -2313,21 +2317,36 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const pageOrders = posOrderPageOrders(orders);
     const selectedId = selectedPosOrderId();
     rows.innerHTML = pageOrders.length
-      ? pageOrders.map((order) => `<tr class="${order.id === selectedId ? "order-row-selected" : ""}">
+      ? pageOrders.map((order) => {
+        const orderId = escapeHtml(order.id);
+        const displayDoge = order.status === "paid" && positiveNumber(order.matched_doge) > 0
+          ? positiveNumber(order.matched_doge)
+          : Number(order.doge);
+        const receiptActions = order.status === "paid"
+          ? `<div class="pos-order-receipt-actions" role="group" aria-label="Receipt actions for order ${orderId}">
+              <button class="button small quiet table-button pos-order-receipt-action" type="button" data-pos-receipt-share="${orderId}" aria-haspopup="dialog" aria-controls="posReceiptModal" aria-label="Share rich receipt for order ${orderId}">Share</button>
+              <button class="button small quiet table-button pos-order-receipt-action" type="button" data-pos-receipt-print="${orderId}" aria-label="Print or save receipt for order ${orderId}">Print / Save</button>
+            </div>`
+          : "";
+        return `<tr class="${order.id === selectedId ? "order-row-selected" : ""}">
           <td data-label="Time">${escapeHtml(order.time)}</td>
           <td data-label="Merchant">${escapeHtml(order.merchant)}</td>
           <td data-label="USD">${money.format(order.usd)}</td>
-          <td data-label="DOGE">${Number(order.doge).toFixed(4)}</td>
+          <td data-label="DOGE">${displayDoge.toFixed(4)}</td>
           <td data-label="Status">${escapeHtml(order.status)}</td>
           <td data-label="Tx" class="tx-cell">${order.txid ? `<code>${escapeHtml(order.txid)}</code>` : "-"}</td>
           <td data-label="Memo">${escapeHtml(order.memo)}</td>
-          <td data-label="Actions">
+          <td data-label="Actions" class="pos-order-actions-cell">
             <div class="pos-order-actions">
-              <button class="button small quiet table-button" type="button" data-pos-load="${escapeHtml(order.id)}">Load</button>
-              <button class="button small danger table-button table-delete-button" type="button" data-pos-delete="${escapeHtml(order.id)}">Delete</button>
+              <div class="pos-order-primary-actions" role="group" aria-label="Order actions for ${orderId}">
+                <button class="button small quiet table-button" type="button" data-pos-load="${orderId}">Load</button>
+                <button class="button small danger table-button table-delete-button" type="button" data-pos-delete="${orderId}">Delete</button>
+              </div>
+              ${receiptActions}
             </div>
           </td>
-        </tr>`).join("")
+        </tr>`;
+      }).join("")
       : `<tr><td colspan="8">No local POS orders yet.</td></tr>`;
     const start = orders.length ? (posOrderPage - 1) * posOrderPageSize() + 1 : 0;
     const end = Math.min(orders.length, posOrderPage * posOrderPageSize());
@@ -3042,11 +3061,19 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return `Receipt from ${data.merchant} — ${moneyCents.format(data.usd)} paid in DOGE`;
   }
 
-  function currentPosReceipt() {
-    const order = selectedPosOrder();
-    if (!order) return null;
+  function posReceiptForOrder(order) {
+    if (!order || order.status !== "paid") return null;
     const data = posReceiptData(order);
     return { data, html: posReceiptHtml(data), text: posReceiptText(data), subject: posReceiptSubject(data) };
+  }
+
+  function paidPosReceiptById(orderId) {
+    const order = posOrders().find((item) => item.id === String(orderId || ""));
+    return posReceiptForOrder(order);
+  }
+
+  function currentPosReceipt() {
+    return posReceiptForOrder(selectedPosOrder());
   }
 
   function updatePosReceiptButton(order) {
@@ -3060,23 +3087,56 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
   }
 
-  function openPosReceiptModal() {
-    const receipt = currentPosReceipt();
+  function openPosReceiptModal(receipt = currentPosReceipt()) {
     if (!receipt) {
       setPosConfirmNote("Verify a payment before sending a receipt.");
       return;
     }
-    if ($id("posReceiptPreview")) $id("posReceiptPreview").innerHTML = receipt.html;
+    posReceiptModalReceipt = {
+      data: { ...receipt.data },
+      html: String(receipt.html || ""),
+      text: String(receipt.text || ""),
+      subject: String(receipt.subject || ""),
+    };
+    posReceiptModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    posReceiptModalReturnOrderId = posReceiptModalReturnFocus?.dataset.posReceiptShare || "";
+    posReceiptModalReturnControlId = posReceiptModalReturnFocus?.id || "";
+    if ($id("posReceiptPreview")) $id("posReceiptPreview").innerHTML = posReceiptModalReceipt.html;
+    if ($id("posReceiptModalContext")) {
+      $id("posReceiptModalContext").textContent = `${receipt.data.merchant} · ${moneyCents.format(receipt.data.usd)} · ${receipt.data.paidAt}`;
+    }
+    if ($id("posReceiptEmail")) $id("posReceiptEmail").value = "";
     if ($id("posReceiptModal")) $id("posReceiptModal").hidden = false;
     $id("posReceiptEmail")?.focus();
   }
 
   function closePosReceiptModal() {
-    if ($id("posReceiptModal")) $id("posReceiptModal").hidden = true;
+    const modal = $id("posReceiptModal");
+    const wasOpen = Boolean(modal && !modal.hidden);
+    let returnFocus = posReceiptModalReturnFocus?.isConnected ? posReceiptModalReturnFocus : null;
+    if (!returnFocus && posReceiptModalReturnOrderId) {
+      returnFocus = Array.from(document.querySelectorAll("[data-pos-receipt-share]")).find(
+        (button) => button.dataset.posReceiptShare === posReceiptModalReturnOrderId,
+      ) || null;
+    }
+    if (!returnFocus && posReceiptModalReturnControlId) returnFocus = $id(posReceiptModalReturnControlId);
+    if (!returnFocus) returnFocus = document.querySelector(".pos-history-details > summary");
+    if (modal) modal.hidden = true;
+    if ($id("posReceiptPreview")) $id("posReceiptPreview").innerHTML = "";
+    if ($id("posReceiptModalContext")) {
+      $id("posReceiptModalContext").textContent = "The receipt below is real formatted HTML. Copy it, then paste it into an email or message without losing the design.";
+    }
+    posReceiptModalReceipt = null;
+    posReceiptModalReturnFocus = null;
+    posReceiptModalReturnOrderId = "";
+    posReceiptModalReturnControlId = "";
+    if (wasOpen && returnFocus?.isConnected) {
+      window.requestAnimationFrame(() => returnFocus.focus({ preventScroll: true }));
+    }
   }
 
   async function openPosReceiptEmail() {
-    const receipt = currentPosReceipt();
+    const receipt = posReceiptModalReceipt;
     if (!receipt) {
       setPosConfirmNote("Verify a payment before sending a receipt.");
       return;
@@ -3088,7 +3148,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       setPosConfirmNote("Enter a valid customer email address, or leave it blank to choose the recipient in your email app.");
       return;
     }
-    const copied = await copyPosReceiptRich();
+    const copied = await copyPosReceiptRich(receipt);
     if (!copied) return;
     window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(receipt.subject)}`;
     if (window.dogeAnnounce) window.dogeAnnounce("Rich receipt copied. Paste it into the email message body.");
@@ -3118,9 +3178,11 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return copied;
   }
 
-  async function copyPosReceiptRich() {
-    const receipt = currentPosReceipt();
-    if (!receipt) return false;
+  async function copyPosReceiptRich(receipt = posReceiptModalReceipt) {
+    if (!receipt) {
+      setPosConfirmNote("Open a paid receipt before copying it.");
+      return false;
+    }
     const message = "Receipt copied — paste it into your email.";
     try {
       if (navigator.clipboard && window.ClipboardItem) {
@@ -3149,15 +3211,16 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return `<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light"><title>DOGE receipt — ${escapeHtml(receipt.data.merchant)}</title><style>@page{margin:16mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body style="margin:0;padding:24px;background:#eef0ea">${receipt.html}</body></html>`;
   }
 
-  function downloadPosReceiptHtml() {
-    const receipt = currentPosReceipt();
-    if (!receipt) return;
+  function downloadPosReceiptHtml(receipt = posReceiptModalReceipt) {
+    if (!receipt) {
+      setPosConfirmNote("Open a paid receipt before downloading it.");
+      return;
+    }
     const safeId = String(receipt.data.orderId || "receipt").replace(/[^a-z0-9-]/gi, "-").slice(0, 32) || "receipt";
     downloadText(`doge-receipt-${safeId}.html`, posReceiptDocument(receipt), "text/html;charset=utf-8");
   }
 
-  function printPosReceipt() {
-    const receipt = currentPosReceipt();
+  function printBuiltPosReceipt(receipt) {
     if (!receipt) {
       setPosConfirmNote("Verify a payment before printing a receipt.");
       return;
@@ -3171,6 +3234,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     win.document.close();
     win.focus();
     setTimeout(() => win.print(), 350);
+  }
+
+  function printPosReceipt() {
+    printBuiltPosReceipt(currentPosReceipt());
   }
 
   function updatePosProfileStatus(state = posState()) {
@@ -3934,12 +4001,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
     });
     $id("posMarkPaid")?.addEventListener("click", markSelectedPosOrderPaid);
-    $id("posEmailReceipt")?.addEventListener("click", openPosReceiptModal);
-    $id("posPrintReceipt")?.addEventListener("click", printPosReceipt);
+    $id("posEmailReceipt")?.addEventListener("click", () => openPosReceiptModal(currentPosReceipt()));
+    $id("posPrintReceipt")?.addEventListener("click", () => printPosReceipt());
     $id("posReceiptOpenEmail")?.addEventListener("click", openPosReceiptEmail);
-    $id("posReceiptCopyHtml")?.addEventListener("click", copyPosReceiptRich);
-    $id("posReceiptPrint")?.addEventListener("click", printPosReceipt);
-    $id("posReceiptDownloadHtml")?.addEventListener("click", downloadPosReceiptHtml);
+    $id("posReceiptCopyHtml")?.addEventListener("click", () => copyPosReceiptRich(posReceiptModalReceipt));
+    $id("posReceiptPrint")?.addEventListener("click", () => printBuiltPosReceipt(posReceiptModalReceipt));
+    $id("posReceiptDownloadHtml")?.addEventListener("click", () => downloadPosReceiptHtml(posReceiptModalReceipt));
     $id("closePosReceiptModal")?.addEventListener("click", closePosReceiptModal);
     $id("posReceiptModal")?.addEventListener("click", (event) => {
       if (event.target === $id("posReceiptModal")) closePosReceiptModal();
@@ -3956,6 +4023,26 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     });
     $id("posOrderRows")?.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : event.target.parentElement;
+      const shareReceiptButton = target?.closest("[data-pos-receipt-share]");
+      if (shareReceiptButton) {
+        const receipt = paidPosReceiptById(shareReceiptButton.dataset.posReceiptShare);
+        if (!receipt) {
+          setPosConfirmNote("A rich receipt is available after this order is paid.");
+          return;
+        }
+        openPosReceiptModal(receipt);
+        return;
+      }
+      const printReceiptButton = target?.closest("[data-pos-receipt-print]");
+      if (printReceiptButton) {
+        const receipt = paidPosReceiptById(printReceiptButton.dataset.posReceiptPrint);
+        if (!receipt) {
+          setPosConfirmNote("A printable receipt is available after this order is paid.");
+          return;
+        }
+        printBuiltPosReceipt(receipt);
+        return;
+      }
       const loadButton = target?.closest("[data-pos-load]");
       if (loadButton) {
         loadPosOrder(loadButton.dataset.posLoad);

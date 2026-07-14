@@ -579,6 +579,146 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             context.close()
             browser.close()
 
+    def test_pos_order_history_receipts_do_not_replace_the_active_sale(self):
+        base = self.live_server_url
+        current_order = {
+            "id": "current-active-sale",
+            "merchant": "Current Sale Merchant",
+            "wallet": "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK",
+            "usd": 2,
+            "doge": 27.5,
+            "memo": "Current customer",
+            "status": "unpaid",
+            "time": "7/14/2026, 2:00:00 PM",
+            "payment_started_at": "2099-01-01T00:00:00Z",
+            "baseline_ready": True,
+            "baseline_txids": [],
+        }
+        paid_txid = "1234567890abcdef" * 4
+        paid_order = {
+            "id": "history-paid-order",
+            "merchant": "Historical Paid Merchant",
+            "wallet": "D9RLnzJ7YwHjF7XG9M6q5AqBX1M8Y4Qw6P",
+            "usd": 5,
+            "base_doge": 69.4,
+            "fee_doge": 0.1,
+            "doge": 69.5,
+            "matched_doge": 69.5,
+            "memo": "Completed history sale",
+            "status": "paid",
+            "time": "7/14/2026, 1:00:00 PM",
+            "paid_at": "7/14/2026, 1:05:00 PM",
+            "txid": paid_txid,
+            "confirmations": 3,
+        }
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.add_init_script(
+                """
+                  window.__posPrintCalls = [];
+                  window.open = () => {
+                    const capture = { html: '', printed: false };
+                    window.__posPrintCalls.push(capture);
+                    return {
+                      document: {
+                        write: (html) => { capture.html = html; },
+                        close: () => {},
+                      },
+                      focus: () => {},
+                      print: () => { capture.printed = true; },
+                    };
+                  };
+                """
+            )
+            page.add_init_script(
+                f"""
+                  localStorage.setItem('doge-pos:orders', JSON.stringify({json.dumps([current_order, paid_order])}));
+                  localStorage.setItem('doge-pos:selected-order', 'current-active-sale');
+                """
+            )
+            page.route(
+                "**/api/wallet/transactions/**",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({"transactions": [], "provider_name": "browser test"}),
+                ),
+            )
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.click(".pos-history-details > summary")
+
+            self.assertEqual(page.locator('[data-pos-receipt-share="history-paid-order"]').count(), 1)
+            self.assertEqual(page.locator('[data-pos-receipt-print="history-paid-order"]').count(), 1)
+            self.assertEqual(page.locator('[data-pos-receipt-share="current-active-sale"]').count(), 0)
+            self.assertEqual(page.locator('[data-pos-receipt-print="current-active-sale"]').count(), 0)
+
+            state_before = page.evaluate(
+                """() => ({
+                  selected: localStorage.getItem('doge-pos:selected-order'),
+                  merchant: document.getElementById('posMerchant')?.value,
+                  usd: document.getElementById('posUsd')?.value,
+                  memo: document.getElementById('posMemo')?.value,
+                  stage: document.getElementById('posWorkflow')?.dataset.posStage,
+                  status: document.getElementById('posStatus')?.textContent?.trim(),
+                  receiptHidden: document.getElementById('posPaidReceipt')?.hidden,
+                })"""
+            )
+
+            page.click('[data-pos-receipt-share="history-paid-order"]')
+            preview = page.locator("#posReceiptPreview [data-pos-receipt-card]")
+            preview.wait_for(state="visible", timeout=20000)
+            preview_text = preview.inner_text()
+            self.assertIn("Historical Paid Merchant", preview_text)
+            self.assertIn("history-paid-order", preview_text)
+            self.assertNotIn("Current Sale Merchant", preview_text)
+            self.assertIn("Historical Paid Merchant", page.locator("#posReceiptModalContext").inner_text())
+
+            page.click("#posReceiptPrint")
+            page.wait_for_function(
+                "() => window.__posPrintCalls.length === 1 && window.__posPrintCalls[0].printed",
+                timeout=5000,
+            )
+            modal_print_html = page.evaluate("window.__posPrintCalls[0].html")
+            self.assertIn("Historical Paid Merchant", modal_print_html)
+            self.assertNotIn("Current Sale Merchant", modal_print_html)
+            page.evaluate(
+                """() => {
+                  const select = document.getElementById('posOrderPageSize');
+                  select.value = '25';
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+                }"""
+            )
+            page.click("#closePosReceiptModal")
+            page.wait_for_function(
+                "() => document.activeElement?.dataset?.posReceiptShare === 'history-paid-order'",
+                timeout=5000,
+            )
+
+            page.click('[data-pos-receipt-print="history-paid-order"]')
+            page.wait_for_function(
+                "() => window.__posPrintCalls.length === 2 && window.__posPrintCalls[1].printed",
+                timeout=5000,
+            )
+            row_print_html = page.evaluate("window.__posPrintCalls[1].html")
+            self.assertIn("Historical Paid Merchant", row_print_html)
+            self.assertNotIn("Current Sale Merchant", row_print_html)
+
+            state_after = page.evaluate(
+                """() => ({
+                  selected: localStorage.getItem('doge-pos:selected-order'),
+                  merchant: document.getElementById('posMerchant')?.value,
+                  usd: document.getElementById('posUsd')?.value,
+                  memo: document.getElementById('posMemo')?.value,
+                  stage: document.getElementById('posWorkflow')?.dataset.posStage,
+                  status: document.getElementById('posStatus')?.textContent?.trim(),
+                  receiptHidden: document.getElementById('posPaidReceipt')?.hidden,
+                })"""
+            )
+            self.assertEqual(state_after, state_before)
+            browser.close()
+
     def test_pos_near_match_quick_approve_revalidates_the_detected_transaction(self):
         base = self.live_server_url
         detected_txid = "c" * 64

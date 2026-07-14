@@ -183,3 +183,22 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("!emailField.checkValidity()", doge_tools)
         self.assertIn("mailto:${encodeURIComponent(email)}", doge_tools)
         self.assertNotIn("subject=${encodeURIComponent(receipt.subject)}&body=", doge_tools)
+
+    def test_paid_order_history_has_state_safe_receipt_actions(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        self.assertIn('data-pos-receipt-share="${orderId}"', doge_tools)
+        self.assertIn('data-pos-receipt-print="${orderId}"', doge_tools)
+        self.assertIn('order.status === "paid"', doge_tools)
+        self.assertIn("function posReceiptForOrder", doge_tools)
+        self.assertIn("function paidPosReceiptById", doge_tools)
+        self.assertIn("posReceiptModalReceipt", doge_tools)
+        self.assertIn("printBuiltPosReceipt(receipt)", doge_tools)
+        self.assertLess(
+            doge_tools.index('target?.closest("[data-pos-receipt-share]")'),
+            doge_tools.index('target?.closest("[data-pos-load]")'),
+        )
+        self.assertIn('id="posReceiptModalContext"', pos_html)
+        self.assertIn(".pos-order-receipt-actions", site_css)
+        self.assertIn(".pos-order-actions-cell", site_css)
