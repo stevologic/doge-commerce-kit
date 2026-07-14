@@ -286,17 +286,18 @@
   </div>
   <p class="note compact-note" id="posHistoryNotice" hidden></p>
   <div class="table-wrap">
-    <table class="responsive-card-table">
+    <table class="responsive-card-table pos-order-history-table" aria-describedby="posOrderPageStatus posHistoryNotice">
+      <caption class="sr-only">Local POS order history</caption>
       <thead>
         <tr>
-          <th scope="col">Time</th>
-          <th scope="col">Merchant</th>
-          <th scope="col">USD</th>
-          <th scope="col">DOGE</th>
-          <th scope="col">Status</th>
-          <th scope="col">Tx</th>
-          <th scope="col">Memo</th>
-          <th scope="col">Actions</th>
+          <th id="posOrderTimeHeader" scope="col">Time</th>
+          <th id="posOrderMerchantHeader" scope="col">Merchant</th>
+          <th id="posOrderUsdHeader" scope="col">USD</th>
+          <th id="posOrderDogeHeader" scope="col">DOGE</th>
+          <th id="posOrderStatusHeader" scope="col">Status</th>
+          <th id="posOrderTxHeader" scope="col">Tx</th>
+          <th id="posOrderMemoHeader" scope="col">Memo</th>
+          <th id="posOrderActionsHeader" scope="col">Actions</th>
         </tr>
       </thead>
       <tbody id="posOrderRows"></tbody>

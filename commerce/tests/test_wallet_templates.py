@@ -281,6 +281,45 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn(".pos-order-receipt-actions", site_css)
         self.assertIn(".pos-order-actions-cell", site_css)
 
+    def test_order_history_has_a_compact_mobile_card_layout(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        history_css = site_css.split("/* Order history: whole ledger collapses to one line until probed */", 1)[1].split(
+            "/* Keep recent transaction rows readable on narrow POS screens.", 1
+        )[0]
+
+        self.assertIn('class="responsive-card-table pos-order-history-table"', pos_html)
+        self.assertIn('<caption class="sr-only">Local POS order history</caption>', pos_html)
+        self.assertIn('aria-describedby="posOrderPageStatus posHistoryNotice"', pos_html)
+        self.assertIn('data-pos-order-card="${orderId}"', doge_tools)
+        self.assertIn('aria-current="true"', doge_tools)
+        self.assertIn('aria-label="Load order ${orderId}"', doge_tools)
+        self.assertIn('aria-label="Delete order ${orderId}"', doge_tools)
+        for cell_class in (
+            "pos-order-time-cell",
+            "pos-order-merchant-cell",
+            "pos-order-amount-cell",
+            "pos-order-status-cell",
+            "pos-order-tx-cell",
+            "pos-order-memo-cell",
+        ):
+            self.assertIn(cell_class, doge_tools)
+
+        self.assertIn("@media (max-width: 700px)", history_css)
+        self.assertRegex(
+            history_css,
+            r"\.pos-orders-panel \.pos-order-history-table\s*\{[^}]*width:\s*100%;[^}]*min-width:\s*0;",
+        )
+        self.assertIn("grid-template-areas:", history_css)
+        self.assertIn('"merchant status"', history_css)
+        self.assertIn('"actions actions"', history_css)
+        self.assertIn("grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);", history_css)
+        self.assertIn("min-height: 44px;", history_css)
+        self.assertIn("overflow: visible;", history_css)
+        self.assertIn(".pos-orders-panel .pos-order-tx-full", history_css)
+        self.assertIn("clip: rect(0, 0, 0, 0);", history_css)
+
     def test_order_history_email_uses_a_local_rich_table_snapshot(self):
         pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")

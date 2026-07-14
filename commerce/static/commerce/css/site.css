@@ -9325,7 +9325,78 @@ body[data-page="wallet"] main {
   font-size: 0.76rem;
 }
 
+.pos-order-status-pill {
+  min-height: 28px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pos-order-status-pill[data-state="needs review"] {
+  background: rgba(244, 189, 42, 0.2);
+  color: var(--gold-deep);
+}
+
+.pos-order-status-pill[data-state="cancelled"] {
+  background: rgba(98, 105, 100, 0.12);
+  color: var(--muted);
+}
+
+.pos-order-amount-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.pos-order-tx-short,
+.pos-order-current-label {
+  display: none;
+}
+
 @media (max-width: 700px) {
+  .pos-history-details[open] {
+    padding: 0 10px 12px;
+  }
+
+  .pos-history-details[open] summary {
+    padding: 13px 2px 11px;
+  }
+
+  .pos-orders-panel .table-actions {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .pos-orders-panel .table-actions > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pos-orders-panel .order-table-controls {
+    display: grid;
+    grid-template-columns: minmax(104px, 0.42fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: end;
+    margin: 0;
+  }
+
+  .pos-orders-panel .order-table-controls label {
+    width: auto;
+    min-width: 0;
+  }
+
+  .pos-orders-panel .order-table-controls select {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .pos-orders-panel #posOrderPageStatus {
+    margin: 0 0 5px;
+    line-height: 1.25;
+    text-align: right;
+  }
+
   .pos-history-toolbar-actions {
     display: grid;
     grid-template-columns: 44px repeat(2, minmax(0, 1fr));
@@ -9364,7 +9435,215 @@ body[data-page="wallet"] main {
     min-height: 44px;
   }
 
+  .pos-orders-panel .table-wrap {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .pos-orders-panel .pos-order-history-table {
+    width: 100%;
+    min-width: 0;
+    border-spacing: 0;
+    background: transparent;
+  }
+
+  .pos-orders-panel .pos-order-history-table thead {
+    display: table-header-group;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .pos-orders-panel .pos-order-history-table tbody {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 0.72fr);
+    grid-template-areas:
+      "merchant status"
+      "time status"
+      "usd doge"
+      "memo memo"
+      "tx tx"
+      "actions actions";
+    gap: 8px 10px;
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid rgba(15, 91, 99, 0.16);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 7px 20px rgba(30, 38, 34, 0.06);
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card.order-row-selected {
+    border-color: rgba(209, 146, 0, 0.62);
+    background: rgba(255, 250, 230, 0.96);
+    box-shadow: 0 0 0 2px rgba(244, 189, 42, 0.18), 0 7px 20px rgba(30, 38, 34, 0.06);
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card > td {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card > .pos-order-merchant-cell {
+    grid-area: merchant;
+    align-self: end;
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.18;
+  }
+
+  .pos-orders-panel .pos-order-merchant-cell > .pos-order-cell-value {
+    display: block;
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card > .pos-order-time-cell {
+    grid-area: time;
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 750;
+    line-height: 1.25;
+  }
+
+  .pos-orders-panel .pos-order-merchant-cell::before,
+  .pos-orders-panel .pos-order-time-cell::before,
+  .pos-orders-panel .pos-order-status-cell::before {
+    content: none;
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card > .pos-order-status-cell {
+    grid-area: status;
+    display: flex;
+    align-items: start;
+    justify-content: flex-end;
+  }
+
+  .pos-orders-panel .pos-order-status-pill {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .pos-orders-panel .pos-order-usd-cell {
+    grid-area: usd;
+  }
+
+  .pos-orders-panel .pos-order-doge-cell {
+    grid-area: doge;
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card > .pos-order-amount-cell {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding: 9px 11px;
+    border: 1px solid rgba(15, 91, 99, 0.1);
+    border-radius: 10px;
+    background: rgba(14, 91, 99, 0.045);
+  }
+
+  .pos-orders-panel .pos-order-amount-cell::before {
+    display: block;
+    color: var(--muted);
+    font-size: 0.62rem;
+  }
+
+  .pos-orders-panel .pos-order-amount-value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    font-size: 1rem;
+    line-height: 1.15;
+  }
+
+  .pos-orders-panel .pos-order-history-table .pos-order-card > .pos-order-memo-cell,
+  .pos-orders-panel .pos-order-history-table .pos-order-card > .pos-order-tx-cell {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+    padding-top: 2px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+  }
+
+  .pos-orders-panel .pos-order-memo-cell {
+    grid-area: memo;
+  }
+
+  .pos-orders-panel .pos-order-tx-cell {
+    grid-area: tx;
+  }
+
+  .pos-orders-panel .pos-order-memo-cell::before,
+  .pos-orders-panel .pos-order-tx-cell::before {
+    align-self: baseline;
+    font-size: 0.62rem;
+  }
+
+  .pos-orders-panel .pos-order-cell-value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pos-orders-panel .pos-order-tx-cell code {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--teal);
+    font-size: 0.74rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pos-orders-panel .pos-order-tx-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .pos-orders-panel .pos-order-tx-short {
+    display: inline;
+  }
+
+  .pos-orders-panel .pos-order-current-label {
+    display: inline-flex;
+    margin-top: 5px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(244, 189, 42, 0.2);
+    color: var(--gold-deep);
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
   .pos-orders-panel .responsive-card-table .pos-order-actions-cell {
+    grid-area: actions;
     display: block;
     margin-top: 4px;
     padding-top: 10px;
@@ -9372,8 +9651,7 @@ body[data-page="wallet"] main {
   }
 
   .pos-orders-panel .responsive-card-table .pos-order-actions-cell::before {
-    display: block;
-    margin-bottom: 7px;
+    content: none;
   }
 
   .pos-orders-panel .pos-order-actions {
@@ -9385,6 +9663,28 @@ body[data-page="wallet"] main {
     min-height: 44px;
     padding: 7px 8px;
     font-size: 0.76rem;
+  }
+
+  .pos-orders-panel .pagination-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 7px;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .pos-orders-panel .pagination-controls .button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+
+  .pos-orders-panel .pagination-controls span {
+    min-width: 82px;
+    font-size: 0.76rem;
+    text-align: center;
+    white-space: nowrap;
   }
 
   /* Keep recent transaction rows readable on narrow POS screens. The

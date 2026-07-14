@@ -2333,25 +2333,29 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       ? pageOrders.map((order) => {
         const orderId = escapeHtml(order.id);
         const displayDoge = posOrderDisplayDoge(order);
+        const isSelected = order.id === selectedId;
+        const status = String(order.status || "unpaid");
+        const txid = String(order.txid || "");
+        const shortTxid = txid.length > 20 ? `${txid.slice(0, 8)}…${txid.slice(-8)}` : txid;
         const receiptActions = order.status === "paid"
           ? `<div class="pos-order-receipt-actions" role="group" aria-label="Receipt actions for order ${orderId}">
               <button class="button small quiet table-button pos-order-receipt-action" type="button" data-pos-receipt-share="${orderId}" aria-haspopup="dialog" aria-controls="posReceiptModal" aria-label="Share rich receipt for order ${orderId}">Share</button>
               <button class="button small quiet table-button pos-order-receipt-action" type="button" data-pos-receipt-print="${orderId}" aria-label="Print or save receipt for order ${orderId}">Print / Save</button>
             </div>`
           : "";
-        return `<tr class="${order.id === selectedId ? "order-row-selected" : ""}">
-          <td data-label="Time">${escapeHtml(order.time)}</td>
-          <td data-label="Merchant">${escapeHtml(order.merchant)}</td>
-          <td data-label="USD">${money.format(order.usd)}</td>
-          <td data-label="DOGE">${displayDoge.toFixed(4)}</td>
-          <td data-label="Status">${escapeHtml(order.status)}</td>
-          <td data-label="Tx" class="tx-cell">${order.txid ? `<code>${escapeHtml(order.txid)}</code>` : "-"}</td>
-          <td data-label="Memo">${escapeHtml(order.memo)}</td>
-          <td data-label="Actions" class="pos-order-actions-cell">
+        return `<tr class="pos-order-card ${isSelected ? "order-row-selected" : ""}" data-pos-order-card="${orderId}" data-order-status="${escapeHtml(status)}"${isSelected ? ' aria-current="true"' : ""}>
+          <td data-label="Time" headers="posOrderTimeHeader" class="pos-order-time-cell"><span class="pos-order-cell-value">${escapeHtml(order.time)}</span></td>
+          <td data-label="Merchant" headers="posOrderMerchantHeader" class="pos-order-merchant-cell"><span class="pos-order-cell-value">${escapeHtml(order.merchant)}</span>${isSelected ? '<span class="pos-order-current-label" aria-hidden="true">Current</span>' : ""}</td>
+          <td data-label="USD" headers="posOrderUsdHeader" class="pos-order-amount-cell pos-order-usd-cell"><strong class="pos-order-amount-value">${money.format(order.usd)}</strong></td>
+          <td data-label="DOGE" headers="posOrderDogeHeader" class="pos-order-amount-cell pos-order-doge-cell"><strong class="pos-order-amount-value">${displayDoge.toFixed(4)}</strong></td>
+          <td data-label="Status" headers="posOrderStatusHeader" class="pos-order-status-cell"><span class="pos-status-pill pos-order-status-pill" data-state="${escapeHtml(status)}">${escapeHtml(status)}</span></td>
+          <td data-label="Tx" headers="posOrderTxHeader" class="tx-cell pos-order-tx-cell">${txid ? `<code title="${escapeHtml(txid)}"><span class="pos-order-tx-full">${escapeHtml(txid)}</span><span class="pos-order-tx-short" aria-hidden="true">${escapeHtml(shortTxid)}</span></code>` : '<span class="pos-order-cell-value">Not recorded</span>'}</td>
+          <td data-label="Memo" headers="posOrderMemoHeader" class="pos-order-memo-cell"><span class="pos-order-cell-value">${escapeHtml(order.memo)}</span></td>
+          <td data-label="Actions" headers="posOrderActionsHeader" class="pos-order-actions-cell">
             <div class="pos-order-actions">
               <div class="pos-order-primary-actions" role="group" aria-label="Order actions for ${orderId}">
-                <button class="button small quiet table-button" type="button" data-pos-load="${orderId}">Load</button>
-                <button class="button small danger table-button table-delete-button" type="button" data-pos-delete="${orderId}">Delete</button>
+                <button class="button small quiet table-button" type="button" data-pos-load="${orderId}" aria-label="Load order ${orderId}">Load</button>
+                <button class="button small danger table-button table-delete-button" type="button" data-pos-delete="${orderId}" aria-label="Delete order ${orderId}">Delete</button>
               </div>
               ${receiptActions}
             </div>
