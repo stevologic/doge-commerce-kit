@@ -58,6 +58,7 @@
   const posDeleteArmed = new Set();
   const POS_PAYMENT_POLL_INTERVAL_MS = 10000;
   const POS_AUTO_VERIFY_TOLERANCE_DOGE = 0.00000001;
+  const POS_NEAR_MATCH_MARGIN_DOGE = 1;
   let posPaymentPollTimer = null;
   let posPaymentPollToken = 0;
   const posPaymentPollOrderIds = new Set();
@@ -1850,6 +1851,9 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       validation: order?.validation || "",
       validation_source: order?.validation_source || "",
       validation_errors: order?.validation_errors || [],
+      near_match: order?.near_match === true,
+      near_match_difference: Number(order?.near_match_difference || 0),
+      near_match_approved: order?.near_match_approved === true,
     };
   }
 
@@ -2140,6 +2144,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posCancelPayment")) $id("posCancelPayment").disabled = !activeOrder;
     if ($id("posAbandonPayment")) $id("posAbandonPayment").hidden = !activeOrder;
     if ($id("posReviewPayment")) $id("posReviewPayment").hidden = order?.status !== "needs review";
+    if ($id("posConfirmTransaction")) $id("posConfirmTransaction").textContent = order?.near_match ? "Yes, verify near-match" : "Confirm tx";
     if ($id("posWorkflow")) $id("posWorkflow").dataset.posLifecycleStage = String(lifecycleStage);
   }
 
@@ -2588,19 +2593,25 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   const POS_AUTO_VERIFY_WINDOW_MS = 60 * 60 * 1000;
 
-  function posTransactionMatchesOrder(transaction, order, now = Date.now()) {
+  function posTransactionMatchQuality(transaction, order, now = Date.now()) {
     const txid = String(transaction?.txid || "").trim();
-    if (!isRealDogeTxid(txid)) return false;
-    if ((order?.baseline_txids || []).includes(txid)) return false;
-    if (posOrders().some((item) => item.id !== order?.id && item.txid === txid && item.status !== "cancelled")) return false;
+    if (!isRealDogeTxid(txid)) return "";
+    if ((order?.baseline_txids || []).includes(txid)) return "";
+    if (posOrders().some((item) => item.id !== order?.id && item.txid === txid && item.status !== "cancelled")) return "";
     const expected = Number(order?.doge || 0);
     const doge = Number(transaction?.doge || 0);
-    if (!(expected > 0) || !Number.isFinite(doge)) return false;
-    if (Math.abs(doge - expected) > POS_AUTO_VERIFY_TOLERANCE_DOGE) return false;
+    if (!(expected > 0) || !Number.isFinite(doge)) return "";
+    const difference = Math.abs(doge - expected);
+    if (difference > POS_NEAR_MATCH_MARGIN_DOGE) return "";
     const seenAt = Date.parse(transaction?.time || "");
     const startedAt = Date.parse(order?.payment_started_at || "");
-    if (Number.isFinite(startedAt) && Number.isFinite(seenAt)) return seenAt >= startedAt - 60000;
-    return Number.isFinite(seenAt) ? now - seenAt <= POS_AUTO_VERIFY_WINDOW_MS : true;
+    if (Number.isFinite(startedAt) && Number.isFinite(seenAt) && seenAt < startedAt - 60000) return "";
+    if (!Number.isFinite(startedAt) && Number.isFinite(seenAt) && now - seenAt > POS_AUTO_VERIFY_WINDOW_MS) return "";
+    return difference <= POS_AUTO_VERIFY_TOLERANCE_DOGE ? "exact" : "near";
+  }
+
+  function posTransactionMatchesOrder(transaction, order, now = Date.now()) {
+    return Boolean(posTransactionMatchQuality(transaction, order, now));
   }
 
   async function confirmPosTransaction({ automatic = false, orderId = "", expectedToken = posPaymentPollToken } = {}) {
@@ -2662,7 +2673,35 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         if (selected()) setPosConfirmNote(`${payload.error || "Transaction lookup failed."} Automatic payment monitoring is still running.`);
         return;
       }
-      if (payload.passed) {
+      const matchedDoge = Number(payload.matched_doge || 0);
+      const amountDifference = Math.abs(matchedDoge - Number(order.doge || 0));
+      const nearMatch = amountDifference > POS_AUTO_VERIFY_TOLERANCE_DOGE && amountDifference <= POS_NEAR_MATCH_MARGIN_DOGE;
+      const nonAmountErrors = validationErrors.filter((error) => !/amount|expected doge|expected.*DOGE/i.test(String(error)));
+      const nearMatchApproved = nearMatch && !automatic && matchedDoge > 0
+        && Number(payload.confirmations || 0) >= minConfirmations
+        && nonAmountErrors.length === 0;
+      if (nearMatch && !nearMatchApproved) {
+        order = {
+          ...order,
+          txid: payload.txid || txid,
+          confirmations: Number(payload.confirmations || 0),
+          min_confirmations: minConfirmations,
+          status: "needs review",
+          near_match: true,
+          near_match_difference: amountDifference,
+          payment_detected_at: order.payment_detected_at || new Date().toISOString(),
+          validation: "near amount match requires confirmation",
+          validation_source: payload.source || "",
+          validation_errors: validationErrors.length ? validationErrors : [`Transaction amount is ${matchedDoge.toFixed(8)} DOGE; expected ${Number(order.doge).toFixed(8)} DOGE.`],
+        };
+        upsertPosOrder(order);
+        if (selected()) {
+          syncPosStageControls(order, 3);
+          setPosConfirmNote(`This transaction is ${amountDifference.toFixed(8)} DOGE away from the expected amount. Is this the correct transaction? Review the details, then click Yes, verify near-match to approve it.`);
+        }
+        return;
+      }
+      if (payload.passed && !nearMatch) {
         order = {
           ...order,
           txid: payload.txid || txid,
@@ -2674,6 +2713,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           validation: "blockchain",
           validation_source: payload.source || "",
           validation_errors: [],
+          near_match: false,
+          near_match_difference: 0,
         };
         if (isRealDogeTxid(order.txid)) {
           markPosOrderPaid(order, `Blockchain validation passed and order marked paid: ${payload.matched_doge} DOGE matched with ${payload.confirmations} confirmation(s).`);
@@ -2681,6 +2722,23 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         }
         upsertPosOrder(order);
         setPosConfirmNote(`Blockchain validation passed: ${payload.matched_doge} DOGE matched with ${payload.confirmations} confirmation(s).`);
+      } else if (nearMatchApproved) {
+        order = {
+          ...order,
+          txid: payload.txid || txid,
+          confirmations: Number(payload.confirmations || 0),
+          min_confirmations: minConfirmations,
+          status: "confirmed",
+          near_match: false,
+          near_match_difference: 0,
+          payment_detected_at: order.payment_detected_at || new Date().toISOString(),
+          confirmed_at: now,
+          validation: "blockchain validation accepted within one DOGE by operator",
+          validation_source: payload.source || "",
+          validation_errors: [],
+        };
+        markPosOrderPaid(order, `Near-match approved: ${matchedDoge.toFixed(8)} DOGE received versus ${Number(order.doge).toFixed(8)} DOGE expected.`);
+        return;
       } else if (confirmationPending) {
         order = {
           ...order,
@@ -2692,6 +2750,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           validation: "blockchain",
           validation_source: payload.source || "",
           validation_errors: validationErrors,
+          near_match: false,
+          near_match_difference: 0,
         };
         upsertPosOrder(order);
         if (selected()) {
@@ -2709,6 +2769,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           validation: "blockchain",
           validation_source: payload.source || "",
           validation_errors: validationErrors,
+          near_match: false,
+          near_match_difference: 0,
         };
         upsertPosOrder(order);
         if (selected()) setPosConfirmNote(`Needs review: ${(payload.errors || ["transaction did not match the order"]).join(" ")} Automatic payment monitoring is still running.`);
@@ -3191,16 +3253,22 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (window.dogeAnnounce) window.dogeAnnounce("Payment started. Customer QR is ready and automatic detection is active.");
   }
 
-  function detectedPosOrder(order, transaction) {
+  function detectedPosOrder(order, transaction, quality = "exact") {
+    const expected = Number(order?.doge || 0);
+    const received = Number(transaction?.doge || 0);
+    const difference = Math.abs(received - expected);
+    const near = quality === "near";
     return normalizePosOrder({
       ...order,
       txid: transaction.txid,
       confirmations: Number(transaction.confirmations || 0),
-      status: "pending",
+      status: near ? "needs review" : "pending",
       payment_detected_at: order.payment_detected_at || new Date().toISOString(),
-      validation: "automatic payment detection",
+      validation: near ? "automatic near amount match requires confirmation" : "automatic payment detection",
       validation_source: transaction.source || "",
-      validation_errors: [],
+      validation_errors: near ? [`Received ${received.toFixed(8)} DOGE; expected ${expected.toFixed(8)} DOGE.`] : [],
+      near_match: near,
+      near_match_difference: near ? difference : 0,
     });
   }
 
@@ -3211,6 +3279,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     posPaymentPollInFlight.add(orderId);
     try {
       if (isRealDogeTxid(order.txid)) {
+        if (order.near_match && !order.near_match_approved) return;
         await confirmPosTransaction({ automatic: true, orderId: order.id, expectedToken });
         return;
       }
@@ -3236,13 +3305,17 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         }
         return;
       }
-      const candidates = (payload.transactions || []).filter((transaction) => posTransactionMatchesOrder(transaction, order));
+      const candidates = (payload.transactions || [])
+        .map((transaction) => ({ transaction, quality: posTransactionMatchQuality(transaction, order) }))
+        .filter((item) => item.quality)
+        .sort((a, b) => (a.quality === "exact" ? -1 : 1) - (b.quality === "exact" ? -1 : 1));
       if (!candidates.length) {
         const checkedAt = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
         if (isSelectedPosOrder(order) && $id("posWaitingNote")) $id("posWaitingNote").textContent = `No matching payment yet. Last checked ${checkedAt}; checking again automatically.`;
         return;
       }
-      order = detectedPosOrder(order, candidates[0]);
+      const candidate = candidates[0];
+      order = detectedPosOrder(order, candidate.transaction, candidate.quality);
       upsertPosOrder(order);
       const selected = isSelectedPosOrder(order);
       if (selected) {

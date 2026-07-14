@@ -118,6 +118,13 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("[data-pos-receipt-card] table", site_css)
         self.assertIn("max-width: 480px", site_css)
 
+    def test_pos_validation_has_one_doge_near_match_confirmation_path(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        self.assertIn("POS_NEAR_MATCH_MARGIN_DOGE = 1", doge_tools)
+        self.assertIn("near amount match requires confirmation", doge_tools)
+        self.assertIn("Yes, verify near-match", doge_tools)
+        self.assertIn("nearMatchApproved", doge_tools)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)
