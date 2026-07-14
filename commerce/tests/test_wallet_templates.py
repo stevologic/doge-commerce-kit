@@ -74,8 +74,12 @@ class WalletTemplateStructureTests(SimpleTestCase):
             self.assertIn(f'data-pos-go="{stage}"', pos_html)
         for panel_id in ("dogePosTerminal", "posStage2", "posStage3"):
             self.assertIn(f'id="{panel_id}"', pos_html)
+        self.assertNotIn('id="posStage2" data-pos-panel="2" role="region" aria-labelledby="posStage2Title" hidden', pos_html)
+        self.assertNotIn('id="posStage3" data-pos-panel="3" role="region" aria-labelledby="posStage3Title" hidden', pos_html)
         self.assertIn('id="posStartPayment" type="submit" form="posSaleForm"', pos_html)
         self.assertIn("navigatePosStage", doge_tools)
+        self.assertIn("panel.hidden = false", doge_tools)
+        self.assertIn('panel.classList.toggle("is-active"', doge_tools)
         self.assertIn("setPosSaleLocked(Boolean(activeOrder) || posPaymentStarting)", doge_tools)
         self.assertIn("if (posPaymentStarting)", doge_tools)
         self.assertNotIn("setPosSaleLocked(safeStage !== 1)", doge_tools)

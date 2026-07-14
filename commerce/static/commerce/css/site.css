@@ -8563,13 +8563,21 @@ body[data-page="wallet"] main {
 }
 
 .pos-simple .pos-operator-grid {
-  grid-template-columns: minmax(0, 760px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 1400px;
   justify-content: center;
 }
 
 .pos-checkout-stage {
   width: 100%;
   box-shadow: var(--shadow);
+  scroll-margin-top: 96px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.pos-checkout-stage.is-active {
+  border-color: rgba(150, 105, 14, 0.42);
+  box-shadow: 0 16px 34px rgba(16, 35, 36, 0.14), 0 0 0 2px rgba(244, 189, 42, 0.12);
 }
 
 .pos-sale-lock-note,

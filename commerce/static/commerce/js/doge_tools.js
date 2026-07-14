@@ -2143,7 +2143,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const workflow = $id("posWorkflow");
     if (workflow) workflow.dataset.posStage = String(safeStage);
     document.querySelectorAll("[data-pos-panel]").forEach((panel) => {
-      panel.hidden = Number(panel.dataset.posPanel) !== safeStage;
+      // Keep all three checkout stages visible. Navigation now highlights and
+      // scrolls to a stage instead of removing the other stages from view.
+      panel.hidden = false;
+      panel.classList.toggle("is-active", Number(panel.dataset.posPanel) === safeStage);
     });
     document.querySelectorAll("[data-pos-progress]").forEach((item) => {
       const itemStage = Number(item.dataset.posProgress);
