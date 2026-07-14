@@ -82,6 +82,7 @@ class WalletTemplateStructureTests(SimpleTestCase):
             "walletBackup.fileInputReset=true",
             "walletBackup.publicOnlyPersistence=true",
             "walletBackup.networkCalls=0",
+            "posPayment.postStartBroadcast=true",
         ):
             self.assertIn(marker, result.stdout)
 
@@ -135,6 +136,28 @@ class WalletTemplateStructureTests(SimpleTestCase):
             "min_confirmations",
         ):
             self.assertIn(marker, doge_tools)
+
+    def test_pos_detects_a_broadcast_before_step_three_validation(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        match_block = doge_tools.split("function posTransactionMatchQuality", 1)[1].split(
+            "function posTransactionMatchesOrder", 1
+        )[0]
+        poll_block = doge_tools.split("async function checkPosPayment", 1)[1].split(
+            "function schedulePosPaymentPoll", 1
+        )[0]
+        detected_block = poll_block.split("const candidate = candidates[0];", 1)[1]
+
+        self.assertNotIn("confirmations", match_block)
+        self.assertIn("posTransactionHasPostStartTimestamp", doge_tools)
+        self.assertIn("postStartTransactions", poll_block)
+        self.assertIn("!postStartTxids.has(txid)", poll_block)
+        self.assertNotIn("if (order.near_match && !order.near_match_approved) return;", poll_block)
+        self.assertIn("canApprovePosNearMatch(order)", poll_block)
+        self.assertLess(
+            detected_block.index("setPosWorkflowStage(3"),
+            detected_block.index("await confirmPosTransaction"),
+        )
+        self.assertIn("Blockchain broadcast detected", detected_block)
 
     def test_pos_steps_are_navigable_without_unlocking_active_sale(self):
         pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")

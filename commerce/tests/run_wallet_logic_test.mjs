@@ -61,6 +61,17 @@ globalThis.fetch = async () => {
 };
 const dogeToolsPath = path.resolve(__dirname, "../static/commerce/js/doge_tools.js");
 const dogeToolsSource = fs.readFileSync(dogeToolsPath, "utf8");
+const postStartTimestampSource = dogeToolsSource.slice(
+  dogeToolsSource.indexOf("  function posTransactionHasPostStartTimestamp"),
+  dogeToolsSource.indexOf("  function posTransactionMatchQuality"),
+).trim();
+const hasPostStartTimestamp = (0, eval)(`(${postStartTimestampSource})`);
+const paymentStart = { payment_started_at: "2026-07-14T18:30:00Z" };
+assert.equal(hasPostStartTimestamp({ time: "2026-07-14T18:30:01Z" }, paymentStart), true);
+assert.equal(hasPostStartTimestamp({ time: "2026-07-14T18:29:30Z" }, paymentStart), false);
+assert.equal(hasPostStartTimestamp({ time: "2026-07-14T18:28:00Z" }, paymentStart), false);
+assert.equal(hasPostStartTimestamp({ time: "" }, paymentStart), false);
+log("posPayment.postStartBroadcast=true");
 const importSection = dogeToolsSource.slice(
   dogeToolsSource.indexOf("  function setPosWalletImportStatus"),
   dogeToolsSource.indexOf("  function updatePosProfileStatus"),

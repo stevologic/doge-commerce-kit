@@ -2150,7 +2150,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const confirmations = Number(order?.confirmations || 0);
     subtitle.textContent = confirmations > 0
       ? `Seen with ${confirmations} confirmation${confirmations === 1 ? "" : "s"}. Completing validation now.`
-      : "Waiting for the first blockchain confirmation. This page checks automatically.";
+      : "Broadcast detected with 0 confirmations. Validation continues automatically in this step.";
   }
 
   function syncPosStageControls(order = selectedPosOrder(), viewedStage = Number($id("posWorkflow")?.dataset.posStage || 1)) {
@@ -2942,6 +2942,15 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   const POS_AUTO_VERIFY_WINDOW_MS = 60 * 60 * 1000;
+
+  function posTransactionHasPostStartTimestamp(transaction, order) {
+    const seenAt = Date.parse(transaction?.time || "");
+    const startedAt = Date.parse(order?.payment_started_at || "");
+    // With no trusted baseline, only a provider timestamp at or after Start is
+    // safe to treat as new. The normal one-minute clock-skew allowance applies
+    // only after a real baseline has already excluded older transactions.
+    return Number.isFinite(seenAt) && Number.isFinite(startedAt) && seenAt >= startedAt;
+  }
 
   function posTransactionMatchQuality(transaction, order, now = Date.now()) {
     const txid = String(transaction?.txid || "").trim();
@@ -3842,7 +3851,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     setPosStatusDisplay("Unpaid");
     setPosConfirmNote("Payment started. Monitoring the Dogecoin network automatically.");
     if ($id("posWaitingNote")) {
-      $id("posWaitingNote").textContent = baseline.warning || "Watching for this exact amount. Keep this page open while the customer pays.";
+      $id("posWaitingNote").textContent = baseline.warning || "Watching for this payment to be broadcast. Confirmation and validation happen in Step 3.";
     }
     updatePosCustomerDisplay(order);
     openPosCustomerDisplay();
@@ -3877,7 +3886,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     posPaymentPollInFlight.add(orderId);
     try {
       if (isRealDogeTxid(order.txid)) {
-        if (order.near_match && !order.near_match_approved) return;
+        if (order.near_match && !order.near_match_approved && canApprovePosNearMatch(order)) return;
         await confirmPosTransaction({ automatic: true, orderId: order.id, expectedToken });
         return;
       }
@@ -3887,23 +3896,36 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (expectedToken !== posPaymentPollToken) return;
       order = posOrders().find((item) => item.id === orderId);
       if (!order || ["paid", "cancelled"].includes(order.status)) return;
+      if (isRealDogeTxid(order.txid)) {
+        if (order.near_match && !order.near_match_approved && canApprovePosNearMatch(order)) return;
+        await confirmPosTransaction({ automatic: true, orderId: order.id, expectedToken });
+        return;
+      }
+      const transactions = Array.isArray(payload.transactions) ? payload.transactions : [];
       if (!order.baseline_ready) {
         const selected = isSelectedPosOrder(order);
         const keepManualStage = selected && $id("posWorkflow")?.dataset.posStage === "3";
+        const postStartTransactions = transactions.filter((transaction) => posTransactionHasPostStartTimestamp(transaction, order));
+        const postStartTxids = new Set(postStartTransactions.map((transaction) => transaction.txid).filter(isRealDogeTxid));
         order = normalizePosOrder({
           ...order,
-          baseline_txids: (payload.transactions || []).map((transaction) => transaction.txid).filter(isRealDogeTxid).slice(0, 25),
+          baseline_txids: transactions
+            .map((transaction) => transaction.txid)
+            .filter((txid) => isRealDogeTxid(txid) && !postStartTxids.has(txid))
+            .slice(0, 25),
           baseline_ready: true,
         });
         upsertPosOrder(order, { select: selected });
         if (keepManualStage) setPosWorkflowStage(3, order);
         if (selected) {
-          if ($id("posWaitingNote")) $id("posWaitingNote").textContent = "Automatic detection is online. Watching for the next exact incoming payment.";
+          if ($id("posWaitingNote")) $id("posWaitingNote").textContent = postStartTransactions.length
+            ? "Monitoring reconnected and found new blockchain activity. Checking whether it belongs to this sale."
+            : "Automatic detection is online. Watching for the next matching blockchain broadcast.";
           setPosConfirmNote("Automatic payment detection is online.");
         }
-        return;
+        if (!postStartTransactions.length) return;
       }
-      const candidates = (payload.transactions || [])
+      const candidates = transactions
         .map((transaction) => ({ transaction, quality: posTransactionMatchQuality(transaction, order) }))
         .filter((item) => item.quality)
         .sort((a, b) => (a.quality === "exact" ? -1 : 1) - (b.quality === "exact" ? -1 : 1));
@@ -3919,7 +3941,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (selected) {
         setPosStatusDisplay("Verification pending");
         setPosVerificationCopy(order);
-        setPosConfirmNote("Payment detected. Checking its address, amount, and confirmation count now.");
+        setPosConfirmNote("Blockchain broadcast detected. Verifying its address, amount, and confirmations in Step 3.");
         updatePosCustomerDisplay(order);
       }
       const customerDisplayWasOpen = selected && !$id("posCustomerDisplayModal")?.hidden;
@@ -3932,7 +3954,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         if ($id("posManualDetails")) $id("posManualDetails").open = false;
         closePosCustomerDisplay({ restoreFocus: false });
         setPosWorkflowStage(3, order, { focus: focusVerification });
-        if (window.dogeAnnounce) window.dogeAnnounce("Payment detected. Verification is pending.");
+        if (window.dogeAnnounce) window.dogeAnnounce("Blockchain broadcast detected. Verification is pending in Step 3.");
       }
       await confirmPosTransaction({ automatic: true, orderId: order.id, expectedToken });
     } catch (error) {

@@ -100,6 +100,23 @@ class BlockchairProviderTests(SimpleTestCase):
         self.assertEqual(result["transactions"][0]["confirmations"], 3)
         self.assertEqual(result["transactions"][0]["time"], "2026-07-12T12:34:56Z")
 
+    def test_blockchair_unconfirmed_payment_is_available_for_detection(self):
+        address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        txid = "0" * 64
+        address_data = {
+            "address": {"transaction_count": 1},
+            "transactions": [{
+                "hash": txid,
+                "balance_change": 125000000,
+                "block_id": -1,
+                "time": "2026-07-14 18:30:00",
+            }],
+        }
+        with patch("commerce.views.blockchair_address_payload", return_value=(address_data, "https://example.test", {})):
+            result = views.blockchair_address_transactions(address, 10)
+        self.assertEqual(result["transactions"][0]["status"], "pending")
+        self.assertEqual(result["transactions"][0]["confirmations"], 0)
+
     def test_blockchair_transaction_parses_direct_schema_and_chain_height(self):
         txid = "1" * 64
         address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
@@ -133,6 +150,104 @@ class BlockchairProviderTests(SimpleTestCase):
             result = views.blockcypher_address_transactions("DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK", 10)
         self.assertEqual([row["txid"] for row in result["transactions"]], [incoming_txid])
 
+    def test_blockcypher_unconfirmed_payment_is_available_for_detection(self):
+        incoming_txid = "9" * 64
+        outgoing_txid = "8" * 64
+        payload = {
+            "n_tx": 2,
+            "unconfirmed_txrefs": [
+                {
+                    "tx_hash": incoming_txid,
+                    "value": 225000000,
+                    "tx_input_n": -1,
+                    "confirmations": 0,
+                    "received": "2026-07-14T18:30:00Z",
+                    "block_height": -1,
+                },
+                {
+                    "tx_hash": outgoing_txid,
+                    "value": 225000000,
+                    "tx_input_n": 0,
+                    "confirmations": 0,
+                    "received": "2026-07-14T18:30:00Z",
+                    "block_height": -1,
+                },
+            ],
+        }
+        with patch("commerce.views.cached_provider_lookup", return_value=payload):
+            result = views.blockcypher_address_transactions("DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK", 10)
+        self.assertEqual(len(result["transactions"]), 1)
+        self.assertEqual(result["transactions"][0]["txid"], incoming_txid)
+        self.assertEqual(result["transactions"][0]["status"], "pending")
+        self.assertEqual(result["transactions"][0]["confirmations"], 0)
+
+    def test_fresh_payment_activity_prefers_mempool_capable_provider(self):
+        address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        sample = {"address": address, "transactions": [{"txid": "7" * 64, "confirmations": 0}]}
+        with patch.object(views, "DOGE_BLOCKBOOK_BASE_URL", ""), patch.object(
+            views, "DOGE_ENABLE_BLOCKCYPHER_FALLBACK", True
+        ), patch("commerce.views.blockcypher_address_transactions", return_value=sample) as pending_lookup, patch(
+            "commerce.views.blockchair_address_transactions"
+        ) as blockchair_lookup:
+            result = views.latest_transactions(address, 25, cache_ttl=5, prefer_pending=True)
+        self.assertEqual(result, sample)
+        pending_lookup.assert_called_once_with(address, 25, cache_ttl=5, allow_stale=False)
+        blockchair_lookup.assert_not_called()
+
+    def test_fresh_provider_failure_does_not_reuse_stale_activity(self):
+        cache_key = ("test-no-stale-payment-activity",)
+        views.DOGE_LOOKUP_CACHE[cache_key] = {
+            "loaded_at": 0,
+            "payload": {"transactions": [{"txid": "6" * 64}]},
+        }
+
+        def unavailable():
+            raise RuntimeError("provider unavailable")
+
+        try:
+            with self.assertRaises(RuntimeError):
+                views.cached_provider_lookup(
+                    cache_key,
+                    unavailable,
+                    ttl=0,
+                    allow_stale=False,
+                )
+        finally:
+            views.DOGE_LOOKUP_CACHE.pop(cache_key, None)
+
+    def test_missing_blockchair_transaction_is_not_treated_as_valid(self):
+        txid = "5" * 64
+        with patch("commerce.views.cached_provider_lookup", return_value={"data": {}}), patch(
+            "commerce.views.throttle_server_provider"
+        ):
+            with self.assertRaises(views.DogeLookupError):
+                views.blockchair_transaction(txid)
+
+    def test_fresh_payment_activity_falls_back_when_mempool_provider_fails(self):
+        address = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        sample = {"address": address, "transactions": []}
+        with patch.object(views, "DOGE_BLOCKBOOK_BASE_URL", ""), patch.object(
+            views, "DOGE_ENABLE_BLOCKCYPHER_FALLBACK", True
+        ), patch("commerce.views.blockcypher_address_transactions", side_effect=RuntimeError("rate limited")), patch(
+            "commerce.views.blockchair_address_transactions", return_value=sample
+        ) as blockchair_lookup:
+            result = views.latest_transactions(address, 25, cache_ttl=5, prefer_pending=True)
+        self.assertEqual(result, sample)
+        blockchair_lookup.assert_called_once_with(address, 25, cache_ttl=5, allow_stale=False)
+
+    def test_fresh_transaction_lookup_prefers_mempool_capable_provider(self):
+        txid = "4" * 64
+        sample = ({"hash": txid, "confirmations": 0, "outputs": [{}]}, "https://example.test", "test")
+        with patch.object(views, "DOGE_BLOCKBOOK_BASE_URL", ""), patch.object(
+            views, "DOGE_ENABLE_BLOCKCYPHER_FALLBACK", True
+        ), patch("commerce.views.blockcypher_transaction", return_value=sample) as pending_lookup, patch(
+            "commerce.views.blockchair_transaction"
+        ) as blockchair_lookup:
+            result = views.latest_transaction(txid, cache_ttl=5, prefer_pending=True)
+        self.assertEqual(result, sample)
+        pending_lookup.assert_called_once_with(txid, cache_ttl=5, allow_stale=False)
+        blockchair_lookup.assert_not_called()
+
     def test_fresh_wallet_activity_uses_short_payment_cache(self):
         client = Client()
         sample = {
@@ -149,6 +264,7 @@ class BlockchairProviderTests(SimpleTestCase):
             "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK",
             25,
             cache_ttl=views.DOGE_PAYMENT_POLL_CACHE_TTL,
+            prefer_pending=True,
         )
 
     def test_transaction_validation_reports_confirmation_pending(self):
@@ -186,7 +302,11 @@ class BlockchairProviderTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(payload["passed"])
         self.assertEqual(payload["status"], "pending")
-        lookup.assert_called_once_with(txid, cache_ttl=views.DOGE_PAYMENT_POLL_CACHE_TTL)
+        lookup.assert_called_once_with(
+            txid,
+            cache_ttl=views.DOGE_PAYMENT_POLL_CACHE_TTL,
+            prefer_pending=True,
+        )
 
     def test_known_provider_urls_are_declared(self):
         source = open(views.__file__, encoding="utf-8").read()

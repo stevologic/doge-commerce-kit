@@ -48,7 +48,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20260714-mobile-order-history-v12"
+ASSET_VERSION = "20260714-pos-broadcast-detection-v13"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -497,7 +497,7 @@ def doge_lookup_failure(errors, noun="Dogecoin lookup"):
     return str(preferred)
 
 
-def cached_provider_lookup(cache_key, fetcher, ttl=DOGE_LOOKUP_CACHE_TTL):
+def cached_provider_lookup(cache_key, fetcher, ttl=DOGE_LOOKUP_CACHE_TTL, allow_stale=True):
     now = time.time()
     cached = DOGE_LOOKUP_CACHE.get(cache_key)
     if cached and now - cached["loaded_at"] < ttl:
@@ -505,7 +505,7 @@ def cached_provider_lookup(cache_key, fetcher, ttl=DOGE_LOOKUP_CACHE_TTL):
     try:
         payload = fetcher()
     except Exception:
-        if cached:
+        if cached and allow_stale:
             stale = dict(cached["payload"])
             stale["_stale"] = True
             return stale
@@ -521,13 +521,14 @@ def blockchair_api_url(path, params=None):
     return url
 
 
-def blockchair_address_payload(address, cache_ttl=None, **params):
+def blockchair_address_payload(address, cache_ttl=None, allow_stale=True, **params):
     throttle_server_provider("blockchair", 1.2)
     url = blockchair_api_url(f"/dashboards/address/{quote(address)}", params or None)
     payload = cached_provider_lookup(
         ("blockchair-address", address, tuple(sorted((params or {}).items()))),
         lambda: fetch_json(url),
         ttl=DOGE_LOOKUP_CACHE_TTL if cache_ttl is None else cache_ttl,
+        allow_stale=allow_stale,
     )
     data = payload.get("data") or {}
     address_data = data.get(address) or ((data.get("addresses") or {}).get(address)) or {}
@@ -557,12 +558,13 @@ def blockchair_balance(address):
     }
 
 
-def blockchair_address_transactions(address, limit, cache_ttl=None):
+def blockchair_address_transactions(address, limit, cache_ttl=None, allow_stale=True):
     address_data, url, _payload = blockchair_address_payload(
         address,
         transaction_details="true",
         limit=limit,
         cache_ttl=cache_ttl,
+        allow_stale=allow_stale,
     )
     transactions = []
     for tx in address_data.get("transactions") or []:
@@ -598,17 +600,25 @@ def blockchair_address_transactions(address, limit, cache_ttl=None):
     }
 
 
-def blockchair_transaction(txid, cache_ttl=None):
+def blockchair_transaction(txid, cache_ttl=None, allow_stale=True):
     throttle_server_provider("blockchair", 1.2)
     url = blockchair_api_url(f"/dashboards/transaction/{quote(txid)}")
     payload = cached_provider_lookup(
         ("blockchair-tx", txid),
         lambda: fetch_json(url),
         ttl=DOGE_LOOKUP_CACHE_TTL if cache_ttl is None else cache_ttl,
+        allow_stale=allow_stale,
     )
     data = payload.get("data") or {}
     tx_data = data.get(txid) or ((data.get("transactions") or {}).get(txid)) or {}
     transaction = tx_data.get("transaction") or {}
+    outputs = tx_data.get("outputs")
+    if not transaction or not isinstance(outputs, list) or not outputs:
+        raise DogeLookupError(
+            "Blockchair has not indexed this transaction yet.",
+            provider=BLOCKCHAIR_PROVIDER_NAME,
+            source=url,
+        )
     normalized = {
         "hash": txid,
         "confirmations": blockchair_confirmations(
@@ -618,7 +628,7 @@ def blockchair_transaction(txid, cache_ttl=None):
         ),
         "outputs": [],
     }
-    for output in tx_data.get("outputs") or []:
+    for output in outputs:
         normalized["outputs"].append(
             {
                 "value": output.get("value"),
@@ -847,12 +857,13 @@ def blockbook_address_transactions(address, limit):
     }
 
 
-def blockcypher_address_transactions(address, limit, cache_ttl=None):
+def blockcypher_address_transactions(address, limit, cache_ttl=None, allow_stale=True):
     url = f"{BLOCKCYPHER_ADDRESS_URL.format(address=quote(address))}?limit={limit}"
     payload = cached_provider_lookup(
         ("blockcypher-transactions", address, limit),
         lambda: fetch_json(url),
         ttl=DOGE_LOOKUP_CACHE_TTL if cache_ttl is None else cache_ttl,
+        allow_stale=allow_stale,
     )
     grouped = {}
     for ref_type in ("unconfirmed_txrefs", "txrefs"):
@@ -904,22 +915,37 @@ def blockcypher_address_transactions(address, limit, cache_ttl=None):
     }
 
 
-def latest_transactions(address, limit, cache_ttl=None):
+def latest_transactions(address, limit, cache_ttl=None, prefer_pending=False):
     errors = []
-    try:
-        return blockchair_address_transactions(address, limit, cache_ttl=cache_ttl)
-    except Exception as exc:
-        errors.append(DogeLookupError(provider_error_message(BLOCKCHAIR_PROVIDER_NAME, exc), provider=BLOCKCHAIR_PROVIDER_NAME))
-    if DOGE_BLOCKBOOK_BASE_URL:
+    providers = []
+    if prefer_pending:
+        if DOGE_BLOCKBOOK_BASE_URL:
+            providers.append((DOGE_BLOCKCHAIN_PROVIDER_NAME, lambda: blockbook_address_transactions(address, limit)))
+        if DOGE_ENABLE_BLOCKCYPHER_FALLBACK:
+            providers.append((BLOCKCYPHER_PROVIDER_NAME, lambda: blockcypher_address_transactions(
+                address,
+                limit,
+                cache_ttl=cache_ttl,
+                allow_stale=False,
+            )))
+        providers.append((BLOCKCHAIR_PROVIDER_NAME, lambda: blockchair_address_transactions(
+            address,
+            limit,
+            cache_ttl=cache_ttl,
+            allow_stale=False,
+        )))
+    else:
+        providers.append((BLOCKCHAIR_PROVIDER_NAME, lambda: blockchair_address_transactions(address, limit, cache_ttl=cache_ttl)))
+        if DOGE_BLOCKBOOK_BASE_URL:
+            providers.append((DOGE_BLOCKCHAIN_PROVIDER_NAME, lambda: blockbook_address_transactions(address, limit)))
+        if DOGE_ENABLE_BLOCKCYPHER_FALLBACK:
+            providers.append((BLOCKCYPHER_PROVIDER_NAME, lambda: blockcypher_address_transactions(address, limit, cache_ttl=cache_ttl)))
+
+    for provider_name, lookup in providers:
         try:
-            return blockbook_address_transactions(address, limit)
+            return lookup()
         except Exception as exc:
-            errors.append(DogeLookupError(provider_error_message(DOGE_BLOCKCHAIN_PROVIDER_NAME, exc), provider=DOGE_BLOCKCHAIN_PROVIDER_NAME))
-    if DOGE_ENABLE_BLOCKCYPHER_FALLBACK:
-        try:
-            return blockcypher_address_transactions(address, limit, cache_ttl=cache_ttl)
-        except Exception as exc:
-            errors.append(DogeLookupError(provider_error_message(BLOCKCYPHER_PROVIDER_NAME, exc), provider=BLOCKCYPHER_PROVIDER_NAME))
+            errors.append(DogeLookupError(provider_error_message(provider_name, exc), provider=provider_name))
     raise DogeLookupError(doge_lookup_failure(errors, "Transaction lookup"))
 
 
@@ -929,32 +955,46 @@ def blockbook_transaction(txid):
     return payload, url, DOGE_BLOCKCHAIN_PROVIDER_NAME
 
 
-def blockcypher_transaction(txid, cache_ttl=None):
+def blockcypher_transaction(txid, cache_ttl=None, allow_stale=True):
     url = BLOCKCYPHER_TX_URL.format(txid=quote(txid))
     payload = cached_provider_lookup(
         ("blockcypher-tx", txid),
         lambda: fetch_json(url),
         ttl=DOGE_LOOKUP_CACHE_TTL if cache_ttl is None else cache_ttl,
+        allow_stale=allow_stale,
     )
     return payload, url, BLOCKCYPHER_PROVIDER_NAME
 
 
-def latest_transaction(txid, cache_ttl=None):
+def latest_transaction(txid, cache_ttl=None, prefer_pending=False):
     errors = []
-    try:
-        return blockchair_transaction(txid, cache_ttl=cache_ttl)
-    except Exception as exc:
-        errors.append(DogeLookupError(provider_error_message(BLOCKCHAIR_PROVIDER_NAME, exc), provider=BLOCKCHAIR_PROVIDER_NAME))
-    if DOGE_BLOCKBOOK_BASE_URL:
+    providers = []
+    if prefer_pending:
+        if DOGE_BLOCKBOOK_BASE_URL:
+            providers.append((DOGE_BLOCKCHAIN_PROVIDER_NAME, lambda: blockbook_transaction(txid)))
+        if DOGE_ENABLE_BLOCKCYPHER_FALLBACK:
+            providers.append((BLOCKCYPHER_PROVIDER_NAME, lambda: blockcypher_transaction(
+                txid,
+                cache_ttl=cache_ttl,
+                allow_stale=False,
+            )))
+        providers.append((BLOCKCHAIR_PROVIDER_NAME, lambda: blockchair_transaction(
+            txid,
+            cache_ttl=cache_ttl,
+            allow_stale=False,
+        )))
+    else:
+        providers.append((BLOCKCHAIR_PROVIDER_NAME, lambda: blockchair_transaction(txid, cache_ttl=cache_ttl)))
+        if DOGE_BLOCKBOOK_BASE_URL:
+            providers.append((DOGE_BLOCKCHAIN_PROVIDER_NAME, lambda: blockbook_transaction(txid)))
+        if DOGE_ENABLE_BLOCKCYPHER_FALLBACK:
+            providers.append((BLOCKCYPHER_PROVIDER_NAME, lambda: blockcypher_transaction(txid, cache_ttl=cache_ttl)))
+
+    for provider_name, lookup in providers:
         try:
-            return blockbook_transaction(txid)
+            return lookup()
         except Exception as exc:
-            errors.append(DogeLookupError(provider_error_message(DOGE_BLOCKCHAIN_PROVIDER_NAME, exc), provider=DOGE_BLOCKCHAIN_PROVIDER_NAME))
-    if DOGE_ENABLE_BLOCKCYPHER_FALLBACK:
-        try:
-            return blockcypher_transaction(txid, cache_ttl=cache_ttl)
-        except Exception as exc:
-            errors.append(DogeLookupError(provider_error_message(BLOCKCYPHER_PROVIDER_NAME, exc), provider=BLOCKCYPHER_PROVIDER_NAME))
+            errors.append(DogeLookupError(provider_error_message(provider_name, exc), provider=provider_name))
     raise DogeLookupError(doge_lookup_failure(errors, "Transaction lookup"))
 
 
@@ -2821,7 +2861,12 @@ def wallet_transactions(request):
     fresh = request.GET.get("fresh", "").lower() in {"1", "true", "yes", "on"}
     cache_ttl = DOGE_PAYMENT_POLL_CACHE_TTL if fresh else None
     try:
-        return JsonResponse(latest_transactions(address, limit, cache_ttl=cache_ttl))
+        return JsonResponse(latest_transactions(
+            address,
+            limit,
+            cache_ttl=cache_ttl,
+            prefer_pending=fresh,
+        ))
     except DogeLookupError as exc:
         return JsonResponse({"error": str(exc)}, status=503)
 
@@ -2909,7 +2954,11 @@ def transaction_validate(request):
     fresh = body.get("fresh") is True or str(body.get("fresh", "")).lower() in {"1", "true", "yes", "on"}
     cache_ttl = DOGE_PAYMENT_POLL_CACHE_TTL if fresh else None
     try:
-        payload, source_url, provider_name = latest_transaction(txid, cache_ttl=cache_ttl)
+        payload, source_url, provider_name = latest_transaction(
+            txid,
+            cache_ttl=cache_ttl,
+            prefer_pending=fresh,
+        )
     except DogeLookupError as exc:
         return JsonResponse({"error": str(exc)}, status=503)
 
