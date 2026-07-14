@@ -363,7 +363,9 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 timeout=20000,
             )
             self.assertTrue(page.is_hidden("#posApprovePayment"))
-            self.assertTrue(page.is_visible("#posReviewPayment"))
+            self.assertTrue(page.is_hidden("#posReviewPayment"))
+            self.assertIsNotNone(page.locator("#posManualDetails").get_attribute("open"))
+            self.assertIsNotNone(page.locator("#posManualTools").get_attribute("open"))
             self.assertEqual(page.locator("#posVerifyTitle").inner_text(), "Review this payment")
             selected_after_mismatch = page.evaluate(
                 """() => {

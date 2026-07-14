@@ -2014,6 +2014,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       button.setAttribute("aria-label", `Mark paid. ${reason}`);
     }
     if (hint) {
+      hint.hidden = !enabled;
       hint.title = reason;
       hint.setAttribute("aria-label", reason);
     }
@@ -2144,8 +2145,16 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (!manual) return;
     const visible = Boolean(startedPosOrder(order) && posManualReviewVisible);
     manual.hidden = !visible;
-    if (!visible && manual.open) manual.open = false;
-    if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", String(visible && manual.open));
+    if (!visible) {
+      if (manual.open) manual.open = false;
+      if ($id("posManualTools")?.open) $id("posManualTools").open = false;
+      closePosTransactionPicker();
+    }
+    if ($id("posReviewPayment")) {
+      const expanded = Boolean(visible && manual.open);
+      $id("posReviewPayment").hidden = expanded;
+      $id("posReviewPayment").setAttribute("aria-expanded", String(expanded));
+    }
   }
 
   function setPosVerificationCopy(order) {
@@ -3041,7 +3050,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         near_match_difference: 0,
       };
       upsertPosOrder(order);
-      if (selected()) setPosConfirmNote(txid === "sample-local-test" ? "Sample transaction check passed for testing." : "Manual register check recorded. Mark paid is now available.");
+      if (selected()) setPosConfirmNote(txid === "sample-local-test" ? "Sample transaction check passed for testing." : "Manual register check recorded. Complete sale is now available.");
       return;
     }
 
@@ -4119,7 +4128,11 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       manual.hidden = false;
       manual.open = true;
     }
-    if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", "true");
+    if ($id("posManualTools")) $id("posManualTools").open = true;
+    if ($id("posReviewPayment")) {
+      $id("posReviewPayment").hidden = true;
+      $id("posReviewPayment").setAttribute("aria-expanded", "true");
+    }
     setPosConfirmNote("Paste the buyer's transaction ID and confirm it, or record a manual register check.");
     $id("posTxId")?.focus();
   }
@@ -4140,7 +4153,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       manual.open = true;
       manual.querySelector("summary")?.focus({ preventScroll: true });
     }
-    if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", "true");
+    if ($id("posManualTools")) $id("posManualTools").open = false;
+    closePosTransactionPicker();
+    if ($id("posReviewPayment")) {
+      $id("posReviewPayment").hidden = true;
+      $id("posReviewPayment").setAttribute("aria-expanded", "true");
+    }
   }
 
   async function approvePosNearMatch() {
@@ -4522,16 +4540,24 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     });
     $id("posManualDetails")?.addEventListener("toggle", () => {
       const manual = $id("posManualDetails");
-      if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", String(Boolean(manual?.open)));
+      if ($id("posReviewPayment")) {
+        $id("posReviewPayment").hidden = Boolean(manual?.open);
+        $id("posReviewPayment").setAttribute("aria-expanded", String(Boolean(manual?.open)));
+      }
       if (manual && !manual.open && posManualReviewVisible) {
         posManualReviewVisible = false;
         manual.hidden = true;
+        if ($id("posManualTools")?.open) $id("posManualTools").open = false;
+        closePosTransactionPicker();
         if ($id("posWorkflow")?.dataset.posStage === "3" && !$id("posReviewActions")?.hidden) {
           $id("posReviewPayment")?.focus({ preventScroll: true });
         } else if ($id("posWorkflow")?.dataset.posStage === "3") {
           $id("posStage3Title")?.focus({ preventScroll: true });
         }
       }
+    });
+    $id("posManualTools")?.addEventListener("toggle", () => {
+      if (!$id("posManualTools")?.open) closePosTransactionPicker();
     });
     $id("posMarkPaid")?.addEventListener("click", markSelectedPosOrderPaid);
     $id("posEmailReceipt")?.addEventListener("click", () => openPosReceiptModal(currentPosReceipt()));
@@ -4549,7 +4575,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       const txid = $id("posTxId").value.trim();
       if ($id("posExplorerLink")) $id("posExplorerLink").href = explorerUrl(txid, order?.wallet || posState().wallet);
       if (txid && isRealDogeTxid(txid)) {
-        setPosConfirmNote("Transaction ID entered. Click Confirm tx to validate, then Mark paid when you are ready to hand off goods.");
+        setPosConfirmNote("Transaction ID entered. Click Verify transaction; manual completion appears only if it is needed.");
       } else if (!txid) {
         setPosConfirmNote("");
       }

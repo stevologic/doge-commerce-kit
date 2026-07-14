@@ -199,7 +199,7 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("function abandonPosPayment", doge_tools)
         self.assertIn("const posPricePromise = fetchDogePrice()", doge_tools)
         self.assertNotIn("await fetchDogePrice();", doge_tools)
-        self.assertIn("Payment details &amp; manual verification", pos_html)
+        self.assertIn("Manual verification options", pos_html)
 
     def test_pos_recent_activity_has_narrow_screen_layout_rules(self):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
@@ -247,12 +247,54 @@ class WalletTemplateStructureTests(SimpleTestCase):
     def test_pos_review_details_are_hidden_until_requested(self):
         pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
         self.assertIn('id="posReviewActions"', pos_html)
         self.assertIn('id="posManualDetails" hidden', pos_html)
+        self.assertIn('class="pos-manual-tools" id="posManualTools"', pos_html)
         self.assertIn("posReviewExpected", pos_html)
         self.assertIn("posReviewReceived", pos_html)
+        review_start = pos_html.index('id="posManualDetails"')
+        manual_tools_start = pos_html.index('id="posManualTools"', review_start)
+        manual_tools_tag_start = pos_html.rfind("<details", review_start, manual_tools_start)
+        manual_tools_open_end = pos_html.index(">", manual_tools_start)
+        manual_tools_end = pos_html.index("</details>", manual_tools_open_end)
+        manual_tools_open_tag = pos_html[manual_tools_tag_start:manual_tools_open_end]
+        self.assertNotIn(" open", manual_tools_open_tag)
+        self.assertNotIn(" hidden", manual_tools_open_tag)
+        for fact in ("posReviewExpected", "posReviewReceived", "posReviewDifference", "posReviewConfirmations"):
+            self.assertLess(pos_html.index(f'id="{fact}"', review_start), manual_tools_start)
+        for control in (
+            "posTxId",
+            "posMinConfirmations",
+            "posAutoVerify",
+            "posConfirmTransaction",
+            "posShowTransactions",
+            "posExplorerLink",
+            "posAbandonPayment",
+            "posTransactionDrawer",
+        ):
+            control_index = pos_html.index(f'id="{control}"', manual_tools_start)
+            self.assertGreater(control_index, manual_tools_start)
+            self.assertLess(control_index, manual_tools_end)
+        mark_paid_index = pos_html.index('id="posMarkPaid"', review_start)
+        self.assertLess(mark_paid_index, manual_tools_start)
+        self.assertIn('id="posMarkPaidHint" title=', pos_html)
+        self.assertIn('before marking paid." hidden>', pos_html)
+        self.assertIn("hint.hidden = !enabled", doge_tools)
         self.assertIn("openPosPaymentReview", doge_tools)
         self.assertIn("posManualReviewVisible", doge_tools)
+        manual_open_block = doge_tools.split("function openPosManualVerification", 1)[1].split(
+            "function openPosPaymentReview", 1
+        )[0]
+        review_open_block = doge_tools.split("function openPosPaymentReview", 1)[1].split(
+            "async function approvePosNearMatch", 1
+        )[0]
+        self.assertIn('$id("posManualTools").open = true', manual_open_block)
+        self.assertIn('$id("posManualTools").open = false', review_open_block)
+        self.assertIn('$id("posReviewPayment").hidden = true', review_open_block)
+        self.assertIn("closePosTransactionPicker()", review_open_block)
+        self.assertIn(".pos-manual-tools", site_css)
+        self.assertIn(".pos-manual-link", site_css)
         self.assertIn('["pending", "needs review", "confirmed"]', doge_tools)
         self.assertIn('setPosVerificationCopy(order)', doge_tools)
 

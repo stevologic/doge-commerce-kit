@@ -8921,10 +8921,9 @@ body[data-page="wallet"] main {
 }
 
 .pos-verification-copy {
-  padding: 12px 14px;
-  border: 1px solid rgba(14, 91, 99, 0.16);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.66);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .pos-verification-copy > strong {
@@ -9176,9 +9175,19 @@ body[data-page="wallet"] main {
 }
 
 #posApprovePayment {
+  justify-content: center;
   border-color: rgba(15, 143, 120, 0.34);
   background: rgba(15, 143, 120, 0.12);
   color: var(--mint);
+}
+
+#posReviewPayment {
+  flex: 0 0 auto;
+  justify-content: center;
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+  color: var(--teal);
 }
 
 .pos-review-icon {
@@ -9203,17 +9212,24 @@ body[data-page="wallet"] main {
 .pos-review-facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 0;
+  padding: 6px 0;
+  border-block: 1px solid var(--line);
 }
 
 .pos-review-facts > span {
   display: grid;
   gap: 2px;
   min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.76);
+  padding: 6px 10px;
+}
+
+.pos-review-facts > span:nth-child(even) {
+  border-left: 1px solid var(--line);
+}
+
+.pos-review-facts > span:nth-child(n + 3) {
+  border-top: 1px solid var(--line);
 }
 
 .pos-review-facts small {
@@ -9234,6 +9250,86 @@ body[data-page="wallet"] main {
   padding: 8px 10px;
   border-left: 3px solid var(--gold);
   background: rgba(244, 189, 42, 0.08);
+}
+
+.pos-manual-fallback[open] {
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.pos-manual-tools {
+  width: 100%;
+  margin-top: 2px;
+  border-top: 1px solid var(--line);
+}
+
+.pos-manual-tools > summary {
+  min-height: 44px;
+  padding: 10px 2px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.pos-manual-tools[open] > summary {
+  color: var(--teal);
+}
+
+.pos-manual-tools-body {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.pos-manual-tools-body > .note {
+  margin: 0;
+}
+
+.pos-confirm-panel .pos-manual-actions .button {
+  flex: 1 1 130px;
+  min-height: 40px;
+}
+
+.pos-manual-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.pos-review-complete {
+  width: 100%;
+}
+
+.pos-review-complete #posMarkPaid {
+  width: 100%;
+  min-height: 44px;
+}
+
+.pos-manual-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--teal);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.pos-manual-danger {
+  margin-left: auto;
+  color: var(--muted);
 }
 
 .pos-verify-actions .button,
@@ -10049,7 +10145,7 @@ body[data-page="wallet"] main {
     height: min(72vw, 48dvh, 320px);
   }
 
-  body[data-page="pos_terminal"] .pos-more-details summary {
+  body[data-page="pos_terminal"] .pos-more-details > summary {
     min-height: 38px;
     padding: 7px 4px;
   }
@@ -10059,6 +10155,7 @@ body[data-page="wallet"] main {
   }
 
   body[data-page="pos_terminal"] .pos-verify-hero {
+    grid-template-columns: 1fr;
     gap: 6px;
     margin-bottom: 6px;
   }
@@ -10085,7 +10182,27 @@ body[data-page="wallet"] main {
     height: 22px;
   }
 
-  body[data-page="pos_terminal"] .pos-verification-copy,
+  body[data-page="pos_terminal"] .pos-manual-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  body[data-page="pos_terminal"] .pos-manual-actions .button {
+    width: 100%;
+    min-height: 42px;
+    padding-inline: 6px;
+    font-size: 0.76rem;
+  }
+
+  body[data-page="pos_terminal"] #posShowTransactions {
+    grid-column: 1 / -1;
+  }
+
+  body[data-page="pos_terminal"] .pos-manual-secondary-actions {
+    gap: 6px 12px;
+  }
+
   body[data-page="pos_terminal"] .pos-stage-empty,
   body[data-page="pos_terminal"] .pos-sale-lock-note,
   body[data-page="pos_terminal"] .pos-payment-closed {
