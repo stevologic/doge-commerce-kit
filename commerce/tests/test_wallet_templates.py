@@ -95,6 +95,12 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertNotIn("await fetchDogePrice();", doge_tools)
         self.assertIn("Verification options", pos_html)
 
+    def test_pos_recent_activity_has_narrow_screen_layout_rules(self):
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        self.assertIn("pos-transaction-picker .wallet-activity-item", site_css)
+        self.assertIn("grid-template-columns: minmax(0, 1fr) minmax(86px, auto)", site_css)
+        self.assertIn("text-overflow: ellipsis", site_css)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)

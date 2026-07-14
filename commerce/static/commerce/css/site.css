@@ -8907,6 +8907,48 @@ body[data-page="wallet"] main {
 }
 
 @media (max-width: 700px) {
+  /* Keep recent transaction rows readable on narrow POS screens. The
+     transaction metadata owns the left column while status and value form a
+     compact, right-aligned stack instead of competing for one line. */
+  .pos-transaction-picker .wallet-activity-item {
+    grid-template-columns: minmax(0, 1fr) minmax(86px, auto);
+    gap: 5px 8px;
+    min-height: 66px;
+    align-items: center;
+  }
+
+  .pos-transaction-picker .wallet-activity-item > span:first-child {
+    grid-row: 1 / span 2;
+    min-width: 0;
+  }
+
+  .pos-transaction-picker .wallet-activity-item > span:first-child strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pos-transaction-picker .wallet-activity-item .status-pill {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-height: 22px;
+    padding: 0 8px;
+    font-size: 0.66rem;
+  }
+
+  .pos-transaction-picker .wallet-activity-item .wallet-activity-amount {
+    grid-column: 2;
+    grid-row: 2;
+    justify-items: end;
+    min-width: 0;
+  }
+
+  .pos-transaction-picker .wallet-activity-item .wallet-activity-amount b,
+  .pos-transaction-picker .wallet-activity-item .wallet-activity-amount small {
+    white-space: nowrap;
+  }
+
   .pos-progress button {
     justify-content: center;
     gap: 6px;
