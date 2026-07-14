@@ -78,7 +78,16 @@
             <span class="footer-note">A free, open-source tool to help people and small businesses accept Dogecoin for goods and services and add it to their websites and shops. MIT-licensed and built with love. Do Only Good Everyday!!!! 🐕 Donate if this helps, but better yet send and receive Dogecoin so it keeps becoming more useful in everyday commerce. Much wow.</span>
           </div>
         </div>
-        <div class="footer-actions" aria-label="Community links">
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="{% url 'commerce:home' %}">Start</a>
+        <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
+        <a href="{% url 'commerce:merchant_kit' %}">Tools</a>
+        <a href="{% url 'commerce:playbook' %}">Playbook</a>
+        <a href="{% url 'commerce:faq' %}">FAQ</a>
+        <a href="{% url 'commerce:statistics' %}">Statistics</a>
+        <a href="{% url 'commerce:technical_details' %}">Technical</a>
+        <div class="footer-actions" role="group" aria-label="Community links">
           <a class="footer-button donate" href="dogecoin:{{ donation_address }}?message=DOGE%20Commerce%20Kit%20donation" data-doge-donate data-address="{{ donation_address }}" data-memo="DOGE Commerce Kit donation" title="Donate DOGE to {{ donation_address }}">
             Donate DOGE
           </a>
@@ -89,15 +98,6 @@
             <span>Contribute</span>
           </a>
         </div>
-      </div>
-      <nav class="footer-nav" aria-label="Footer navigation">
-        <a href="{% url 'commerce:home' %}">Start</a>
-        <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
-        <a href="{% url 'commerce:merchant_kit' %}">Tools</a>
-        <a href="{% url 'commerce:playbook' %}">Playbook</a>
-        <a href="{% url 'commerce:faq' %}">FAQ</a>
-        <a href="{% url 'commerce:statistics' %}">Statistics</a>
-        <a href="{% url 'commerce:technical_details' %}">Technical</a>
       </nav>
     </footer>
 

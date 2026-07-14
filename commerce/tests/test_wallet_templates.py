@@ -162,6 +162,18 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("body[data-page=\"pos_terminal\"] .site-footer", site_css)
         self.assertIn("width: min(1360px, calc(100% - 80px))", site_css)
 
+    def test_footer_community_actions_live_at_the_right_of_bottom_nav(self):
+        base_html = (ROOT / "templates" / "commerce" / "base.html").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        footer = base_html.split('<footer class="site-footer">', 1)[1].split("</footer>", 1)[0]
+        footer_top, footer_nav = footer.split('<nav class="footer-nav"', 1)
+        self.assertNotIn('class="footer-actions"', footer_top)
+        self.assertIn('class="footer-actions"', footer_nav)
+        self.assertGreater(footer_nav.index('class="footer-actions"'), footer_nav.index("Technical"))
+        self.assertIn('class="footer-actions" role="group" aria-label="Community links"', footer_nav)
+        self.assertIn(".footer-nav > .footer-actions", site_css)
+        self.assertIn("margin-left: auto", site_css)
+
     def test_pos_has_mobile_counter_carousel_layout(self):
         pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
