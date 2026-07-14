@@ -8740,7 +8740,43 @@ body[data-page="wallet"] main {
 }
 
 .pos-paid-receipt > [data-pos-receipt-card] {
+  width: 100% !important;
+  max-width: 480px;
+  overflow: hidden;
   margin: 0 auto !important;
+}
+
+.pos-paid-receipt [data-pos-receipt-card] table,
+.pos-receipt-preview [data-pos-receipt-card] table {
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.pos-paid-receipt [data-pos-receipt-card] td,
+.pos-receipt-preview [data-pos-receipt-card] td {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 700px) {
+  .pos-paid-receipt > [data-pos-receipt-card] {
+    padding: 16px !important;
+  }
+
+  .pos-paid-receipt [data-pos-receipt-card] table:first-of-type td:last-child span {
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .pos-paid-receipt [data-pos-receipt-card] table:nth-of-type(2) td {
+    font-size: 12px !important;
+  }
+
+  .pos-paid-receipt [data-pos-receipt-card] table:nth-of-type(2) td:first-child {
+    font-size: 25px !important;
+  }
 }
 
 .customer-display-detection-note {

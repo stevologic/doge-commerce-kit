@@ -2781,11 +2781,11 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function posReceiptRow(label, value, mono = false) {
     const valueStyle = mono
-      ? "font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow-wrap:anywhere;"
+      ? "font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;"
       : "";
     return `<tr>
       <td style="padding:7px 0;color:#5d625f;font-size:13px;vertical-align:top;white-space:nowrap">${escapeHtml(label)}</td>
-      <td style="padding:7px 0 7px 14px;color:#171715;font-size:13px;font-weight:700;text-align:right;${valueStyle}">${value}</td>
+      <td style="padding:7px 0 7px 14px;color:#171715;font-size:13px;font-weight:700;text-align:right;overflow-wrap:anywhere;word-break:break-word;max-width:0;${valueStyle}">${value}</td>
     </tr>`;
   }
 
@@ -2800,8 +2800,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const explorerButton = data.realTx
       ? `<a href="${escapeHtml(data.explorer)}" style="display:inline-block;margin-top:4px;padding:10px 16px;border-radius:8px;background:#f4bd2a;color:#221900;font-weight:800;font-size:13px;text-decoration:none">View on the Dogecoin blockchain</a>`
       : "";
-    return `<div data-pos-receipt-card style="box-sizing:border-box;max-width:480px;margin:0 auto;padding:22px;border:1px solid #dfe4dd;border-radius:14px;background:#ffffff;color:#171715;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-shadow:0 14px 34px rgba(23,23,21,.10)">
-  <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:14px">
+    return `<div data-pos-receipt-card style="box-sizing:border-box;width:100%;max-width:480px;overflow:hidden;margin:0 auto;padding:22px;border:1px solid #dfe4dd;border-radius:14px;background:#ffffff;color:#171715;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-shadow:0 14px 34px rgba(23,23,21,.10)">
+  <table role="presentation" style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:14px">
     <tr>
       <td style="width:44px;vertical-align:middle"><span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#f4bd2a;color:#221900;font-size:23px;font-weight:900;line-height:36px;text-align:center">&#208;</span></td>
       <td style="vertical-align:middle">
@@ -2811,14 +2811,14 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       <td style="vertical-align:middle;text-align:right"><span style="display:inline-block;padding:6px 12px;border-radius:999px;background:#e7f7ef;color:#0f8f78;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(data.status)}</span></td>
     </tr>
   </table>
-  <table role="presentation" style="width:100%;border-collapse:separate;border-spacing:0;margin-bottom:14px;border:1px solid #e2e6dd;border-radius:12px;background:#fbfcf7">
+  <table role="presentation" style="width:100%;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;margin-bottom:14px;border:1px solid #e2e6dd;border-radius:12px;background:#fbfcf7">
     <tr><td colspan="2" style="padding:15px 16px 4px;color:#5d625f;font-size:13px">${escapeHtml(data.memo)}</td></tr>
     <tr>
       <td style="padding:0 8px 16px 16px;font-size:30px;font-weight:900;line-height:1">${escapeHtml(moneyCents.format(data.usd))}</td>
       <td style="padding:0 16px 16px 8px;color:#0f8f78;font-size:15px;font-weight:800;text-align:right;vertical-align:bottom">${escapeHtml(data.doge.toFixed(4))} DOGE</td>
     </tr>
   </table>
-  <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:14px">
+  <table role="presentation" style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:14px">
     ${posReceiptRow("Date", escapeHtml(data.paidAt))}
     ${orderRow}
     ${posReceiptRow("Item total", `${escapeHtml(data.baseDoge.toFixed(8))} DOGE`)}

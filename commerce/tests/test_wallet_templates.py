@@ -110,6 +110,14 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("@keyframes pos-waiting-sheen", site_css)
         self.assertIn(".pos-live-dot,\n  .pos-waiting-card", site_css)
 
+    def test_pos_receipt_wraps_long_values_inside_step_three(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        self.assertIn("table-layout:fixed", doge_tools)
+        self.assertIn("overflow-wrap:anywhere;word-break:break-word", doge_tools)
+        self.assertIn("[data-pos-receipt-card] table", site_css)
+        self.assertIn("max-width: 480px", site_css)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)
