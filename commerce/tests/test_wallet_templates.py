@@ -27,11 +27,14 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("wallet_core.js", base_html)
         self.assertNotIn("rateLimitStatus", base_html)
 
-    def test_rate_limit_indicator_renders_on_data_pages(self):
-        for template in ("statistics.html", "pos_terminal.html", "merchant_kit.html"):
+    def test_rate_limit_indicator_stays_off_the_pos_checkout(self):
+        for template in ("statistics.html", "merchant_kit.html"):
             html = (ROOT / "templates" / "commerce" / template).read_text(encoding="utf-8")
             self.assertIn("rateLimitStatus", html, template)
             self.assertIn("data-source-status", html, template)
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        self.assertNotIn("rateLimitStatus", pos_html)
+        self.assertNotIn("data-source-status", pos_html)
 
     def test_js_declares_known_provider_urls(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
@@ -96,7 +99,7 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("function abandonPosPayment", doge_tools)
         self.assertIn("const posPricePromise = fetchDogePrice()", doge_tools)
         self.assertNotIn("await fetchDogePrice();", doge_tools)
-        self.assertIn("Verification options", pos_html)
+        self.assertIn("Payment details &amp; manual verification", pos_html)
 
     def test_pos_recent_activity_has_narrow_screen_layout_rules(self):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
@@ -119,11 +122,30 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("max-width: 480px", site_css)
 
     def test_pos_validation_has_one_doge_near_match_confirmation_path(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("POS_NEAR_MATCH_MARGIN_DOGE = 1", doge_tools)
         self.assertIn("near amount match requires confirmation", doge_tools)
-        self.assertIn("Yes, verify near-match", doge_tools)
+        self.assertIn('id="posApprovePayment"', pos_html)
+        self.assertIn('id="posReviewPayment"', pos_html)
+        self.assertIn("approvePosNearMatch", doge_tools)
+        self.assertIn("txidOverride: order.txid", doge_tools)
+        self.assertIn("canApprovePosNearMatch", doge_tools)
+        self.assertIn('order.validation === "near amount match requires confirmation"', doge_tools)
+        self.assertIn('Number(order?.confirmations || 0) >= required', doge_tools)
         self.assertIn("nearMatchApproved", doge_tools)
+
+    def test_pos_review_details_are_hidden_until_requested(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        self.assertIn('id="posReviewActions"', pos_html)
+        self.assertIn('id="posManualDetails" hidden', pos_html)
+        self.assertIn("posReviewExpected", pos_html)
+        self.assertIn("posReviewReceived", pos_html)
+        self.assertIn("openPosPaymentReview", doge_tools)
+        self.assertIn("posManualReviewVisible", doge_tools)
+        self.assertIn('["pending", "needs review", "confirmed"]', doge_tools)
+        self.assertIn('setPosVerificationCopy(order)', doge_tools)
 
     def test_footer_tracks_body_content_width(self):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")

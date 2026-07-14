@@ -178,17 +178,33 @@
         <span>Start the payment in Step 1. Verification begins automatically when the payment appears.</span>
         <button class="button primary small" id="posStep3StartSale" type="button">Set amount and start</button>
       </div>
-      <button class="button small" id="posReviewPayment" type="button" hidden>Review payment</button>
+      <div class="pos-review-actions" id="posReviewActions" role="group" aria-label="Payment review actions" aria-describedby="posConfirmNote" hidden>
+        <button class="button primary small pos-review-action" id="posApprovePayment" type="button" hidden>
+          <span class="pos-review-icon" aria-hidden="true">&#10003;</span>
+          <span>Approve</span>
+        </button>
+        <button class="button small quiet pos-review-action" id="posReviewPayment" type="button" aria-controls="posManualDetails" aria-expanded="false">
+          <span class="pos-review-icon" aria-hidden="true">i</span>
+          <span>Review Payment</span>
+        </button>
+      </div>
       <div class="pos-paid-receipt" id="posPaidReceipt" hidden aria-live="polite"></div>
       <div class="inline-actions pos-receipt-actions" id="posReceiptActions" hidden>
         <button class="button primary small" id="posNewSale" type="button">New sale</button>
         <button class="button primary small" id="posEmailReceipt" type="button" aria-haspopup="dialog" aria-controls="posReceiptModal">Share rich receipt</button>
         <button class="button small" id="posPrintReceipt" type="button">Print / Save PDF</button>
       </div>
-      <details class="tool-details pos-more-details pos-manual-fallback" id="posManualDetails">
-        <summary>Verification options</summary>
-        <p class="note compact-note">Automatic verification keeps running unless you confirm a transaction manually.</p>
+      <details class="tool-details pos-more-details pos-manual-fallback" id="posManualDetails" hidden>
+        <summary>Payment details &amp; manual verification</summary>
+        <p class="note compact-note">Automatic verification is still running. Use these tools only if you need to check or verify the payment manually.</p>
         <p class="note" id="posSelectedOrder">No local order loaded. Save an order or load one from the table below.</p>
+        <div class="pos-review-facts" aria-label="Payment comparison">
+          <span><small>Expected</small><strong id="posReviewExpected">&mdash;</strong></span>
+          <span><small>Received</small><strong id="posReviewReceived">&mdash;</strong></span>
+          <span><small>Difference</small><strong id="posReviewDifference">&mdash;</strong></span>
+          <span><small>Confirmations</small><strong id="posReviewConfirmations">&mdash;</strong></span>
+        </div>
+        <p class="note compact-note pos-review-reason" id="posReviewReason" hidden></p>
         <form class="form-grid compact" id="posManualForm">
           <label>
             <span>Transaction ID</span>
@@ -200,9 +216,9 @@
           </label>
         </form>
         <div class="inline-actions">
-          <button class="button small" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Check blockchain now</button>
-          <button class="button small" id="posConfirmTransaction" type="button">Confirm tx</button>
-          <button class="button small" id="posShowTransactions" type="button" aria-controls="posTransactionDrawer" aria-expanded="false">Show recent activity</button>
+          <button class="button small" id="posAutoVerify" type="button" title="Check the blockchain immediately instead of waiting for the next automatic check.">Check again</button>
+          <button class="button small" id="posConfirmTransaction" type="button">Verify transaction</button>
+          <button class="button small" id="posShowTransactions" type="button" aria-controls="posTransactionDrawer" aria-expanded="false">Recent payments</button>
           <a class="button small verify-link" id="posExplorerLink" href="https://blockchair.com/dogecoin" target="_blank" rel="noreferrer">Explorer</a>
         </div>
         <span class="disabled-button-hint" id="posMarkPaidHint" title="Load or confirm a matching transaction before marking paid.">
@@ -223,12 +239,8 @@
           <p class="note" id="posTransactionsStatus">Pick a recent wallet transaction to load its transaction ID for this sale.</p>
           <div class="wallet-activity-list" id="posTransactionList" aria-live="polite"></div>
         </div>
-        <p class="note compact-note pos-rate-note">DOGE/USD rate: <strong id="posPriceOut">Loading</strong></p>
-        <div class="data-source-status" aria-label="Live data source status">
-          <span>Data sources</span>
-          <div class="rate-limit-status" id="rateLimitStatus" role="status" aria-live="polite" aria-label="API rate status loading"></div>
-        </div>
       </details>
+      <span id="posPriceOut" hidden>Loading</span>
       <div class="pos-stage-navigation">
         <button class="button small quiet" id="posBackToScan" type="button">Back to customer QR</button>
       </div>

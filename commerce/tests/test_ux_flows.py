@@ -362,6 +362,9 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase() === 'needs review'",
                 timeout=20000,
             )
+            self.assertTrue(page.is_hidden("#posApprovePayment"))
+            self.assertTrue(page.is_visible("#posReviewPayment"))
+            self.assertEqual(page.locator("#posVerifyTitle").inner_text(), "Review this payment")
             selected_after_mismatch = page.evaluate(
                 """() => {
                   const id = localStorage.getItem('doge-pos:selected-order');
@@ -484,6 +487,103 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertEqual(page.locator("#posStartPayment").inner_text(), "Start payment")
             browser.close()
 
+    def test_pos_near_match_quick_approve_revalidates_the_detected_transaction(self):
+        base = self.live_server_url
+        detected_txid = "c" * 64
+        edited_txid = "d" * 64
+        expected_doge = 70.0
+        received_doge = 69.5
+        base_order = {
+            "id": "near-match-sale",
+            "merchant": "DOGE Merchant",
+            "wallet": "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK",
+            "usd": 5,
+            "doge": expected_doge,
+            "matched_doge": received_doge,
+            "memo": "Near match",
+            "status": "needs review",
+            "payment_started_at": "2099-01-01T00:00:00Z",
+            "payment_detected_at": "2099-01-01T00:00:01Z",
+            "baseline_ready": True,
+            "txid": detected_txid,
+            "confirmations": 1,
+            "min_confirmations": 1,
+            "near_match": True,
+            "near_match_difference": 0.5,
+            "validation": "near amount match requires confirmation",
+            "validation_errors": [
+                "Matched output is below the expected DOGE amount.",
+            ],
+        }
+
+        def prepare_page(browser, validation_errors):
+            captured_requests = []
+            context = browser.new_context()
+            page = context.new_page()
+            page.add_init_script(
+                f"""
+                  localStorage.setItem('doge-pos:orders', JSON.stringify([{json.dumps(base_order)}]));
+                  localStorage.setItem('doge-pos:selected-order', 'near-match-sale');
+                """
+            )
+
+            def validate_transaction(route):
+                captured_requests.append(route.request.post_data_json)
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({
+                        "passed": False,
+                        "txid": detected_txid,
+                        "matched_doge": received_doge,
+                        "confirmations": 1,
+                        "errors": validation_errors,
+                        "source": "browser test",
+                    }),
+                )
+
+            page.route("**/api/transaction/validate/", validate_transaction)
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            page.wait_for_selector("#posApprovePayment", state="visible", timeout=20000)
+            self.assertFalse(page.is_disabled("#posApprovePayment"))
+            page.evaluate("(txid) => { document.getElementById('posTxId').value = txid; }", edited_txid)
+            return context, page, captured_requests
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+
+            accepted_context, accepted_page, accepted_requests = prepare_page(
+                browser,
+                ["Matched output is below the expected DOGE amount."],
+            )
+            accepted_page.click("#posApprovePayment")
+            accepted_page.wait_for_function(
+                "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase() === 'paid'",
+                timeout=20000,
+            )
+            self.assertEqual(accepted_requests[-1]["txid"], detected_txid)
+            self.assertTrue(accepted_page.locator("#posPaidReceipt [data-pos-receipt-card]").is_visible())
+            accepted_context.close()
+
+            rejected_context, rejected_page, rejected_requests = prepare_page(
+                browser,
+                [
+                    "Matched output is below the expected DOGE amount.",
+                    "No output pays the loaded merchant address.",
+                ],
+            )
+            rejected_page.click("#posApprovePayment")
+            rejected_page.wait_for_function(
+                "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase() === 'needs review'",
+                timeout=20000,
+            )
+            self.assertEqual(rejected_requests[-1]["txid"], detected_txid)
+            self.assertTrue(rejected_page.is_hidden("#posApprovePayment"))
+            self.assertTrue(rejected_page.is_visible("#posReviewPayment"))
+            self.assertTrue(rejected_page.is_hidden("#posPaidReceipt"))
+            rejected_context.close()
+            browser.close()
+
     def test_pos_detected_payment_requires_confirmed_abandon(self):
         base = self.live_server_url
         txid = "b" * 64
@@ -545,12 +645,13 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "() => document.getElementById('posStatus')?.textContent?.trim().toLowerCase().includes('pending')",
                 timeout=20000,
             )
-            page.click("#posManualDetails summary")
-            page.click("#posAbandonPayment")
+            page.click('[data-pos-go="2"]')
+            page.click("#posSaleOptions summary")
+            page.click("#posCancelPayment")
             self.assertIn("pending", page.locator("#posStatus").inner_text().strip().lower())
             self.assertTrue(page.is_disabled("#posUsd"))
-            self.assertEqual(page.locator("#posAbandonPayment").inner_text(), "Confirm abandon payment")
-            page.click("#posAbandonPayment")
+            self.assertEqual(page.locator("#posCancelPayment").inner_text(), "Confirm abandon payment")
+            page.click("#posCancelPayment")
             self.assertEqual(page.locator("#posWorkflow").get_attribute("data-pos-stage"), "1")
             self.assertFalse(page.is_disabled("#posUsd"))
             self.assertEqual(page.locator("#posStartPayment").inner_text(), "Start payment")

@@ -72,6 +72,7 @@
   let posRestartArmed = false;
   let posRestartTimer = null;
   let posWorkflowScrollTimer = null;
+  let posManualReviewVisible = false;
 
   function logo() {
     return document.body.dataset.dogeLogo || "";
@@ -1820,6 +1821,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   function normalizePosOrder(order, index = 0) {
     const usd = Number(order?.usd || 0);
     const doge = Number(order?.doge || 0);
+    const matchedDoge = Number(order?.matched_doge || 0);
     const feeDoge = Number(order?.fee_doge || 0);
     const baseDoge = Number(order?.base_doge ?? Math.max(0, doge - feeDoge));
     const wallet = order?.wallet || donationAddress();
@@ -1832,6 +1834,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       base_doge: Number.isFinite(baseDoge) ? baseDoge : 0,
       fee_doge: Number.isFinite(feeDoge) ? feeDoge : 0,
       doge: Number.isFinite(doge) ? doge : 0,
+      matched_doge: Number.isFinite(matchedDoge) ? matchedDoge : 0,
       memo,
       status: order?.status || "unpaid",
       time: order?.time || new Date().toLocaleString(),
@@ -2054,6 +2057,55 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if (button) button.textContent = "Start payment";
   }
 
+  function isPosNearMatchApprovalCandidate(order) {
+    const difference = Number(order?.near_match_difference || 0);
+    const errors = Array.isArray(order?.validation_errors) ? order.validation_errors : [];
+    const hasUnsafeError = errors.some((error) => !/amount|expected doge|fewer confirmations/i.test(String(error)));
+    return Boolean(
+      order?.status === "needs review"
+      && order.near_match
+      && order.validation === "near amount match requires confirmation"
+      && isRealDogeTxid(order.txid)
+      && Number(order.matched_doge || 0) > 0
+      && difference > POS_AUTO_VERIFY_TOLERANCE_DOGE
+      && difference <= POS_NEAR_MATCH_MARGIN_DOGE
+      && !hasUnsafeError
+    );
+  }
+
+  function canApprovePosNearMatch(order) {
+    const required = Math.max(0, Number(order?.min_confirmations ?? 1) || 0);
+    return isPosNearMatchApprovalCandidate(order) && Number(order?.confirmations || 0) >= required;
+  }
+
+  function updatePosReviewDetails(order) {
+    const expected = Number(order?.doge || 0);
+    const received = Number(order?.matched_doge || 0);
+    const difference = Number(order?.near_match_difference || (received > 0 ? Math.abs(received - expected) : 0));
+    if ($id("posReviewExpected")) $id("posReviewExpected").textContent = expected > 0 ? `${expected.toFixed(8)} DOGE` : "Not available";
+    if ($id("posReviewReceived")) $id("posReviewReceived").textContent = received > 0 ? `${received.toFixed(8)} DOGE` : "Not available";
+    if ($id("posReviewDifference")) $id("posReviewDifference").textContent = difference > 0 ? `${difference.toFixed(8)} DOGE` : "Exact or unavailable";
+    if ($id("posReviewConfirmations")) {
+      const required = Math.max(0, Number(order?.min_confirmations ?? 1) || 0);
+      $id("posReviewConfirmations").textContent = `${Math.max(0, Number(order?.confirmations || 0))} seen / ${required} required`;
+    }
+    const reason = $id("posReviewReason");
+    if (reason) {
+      const errors = Array.isArray(order?.validation_errors) ? order.validation_errors.filter(Boolean) : [];
+      reason.textContent = errors.join(" ") || (order?.near_match ? "The amount is close to this sale but is not an exact match." : "No additional verification issue was reported.");
+      reason.hidden = !order || (!errors.length && !order.near_match);
+    }
+  }
+
+  function syncPosManualReviewDisclosure(order = selectedPosOrder()) {
+    const manual = $id("posManualDetails");
+    if (!manual) return;
+    const visible = Boolean(startedPosOrder(order) && posManualReviewVisible);
+    manual.hidden = !visible;
+    if (!visible && manual.open) manual.open = false;
+    if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", String(visible && manual.open));
+  }
+
   function setPosVerificationCopy(order) {
     const title = $id("posVerifyTitle");
     const subtitle = $id("posVerifySubtitle");
@@ -2069,8 +2121,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       return;
     }
     if (order?.status === "needs review") {
-      title.textContent = "Payment needs review";
-      subtitle.textContent = "Review the verification options, or abandon this request and start over.";
+      title.textContent = order.near_match ? "Is this the customer's payment?" : "Review this payment";
+      subtitle.textContent = order.near_match
+        ? "The amount is close to this sale. Approve it or review the payment details."
+        : "One or more checks need attention. Review the details before continuing.";
       return;
     }
     if (!activePosOrder(order) || order.status === "unpaid") {
@@ -2123,7 +2177,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
     if ($id("posStep2Empty")) $id("posStep2Empty").hidden = Boolean(startedOrder);
     if ($id("posStep3Empty")) $id("posStep3Empty").hidden = Boolean(startedOrder);
-    if ($id("posManualDetails")) $id("posManualDetails").hidden = !startedOrder;
+    syncPosManualReviewDisclosure(order);
     if ($id("posWaitingTitle")) $id("posWaitingTitle").textContent = startedOrder ? "Waiting for the payment" : "Payment not started";
     if ($id("posPaymentClosedMessage")) {
       $id("posPaymentClosedMessage").hidden = !paymentDetected;
@@ -2144,9 +2198,20 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posTroubleDetails")) $id("posTroubleDetails").hidden = !activeOrder || paymentDetected;
     if ($id("posCancelPayment")) $id("posCancelPayment").disabled = !activeOrder;
     if ($id("posAbandonPayment")) $id("posAbandonPayment").hidden = !activeOrder;
-    if ($id("posReviewPayment")) $id("posReviewPayment").hidden = order?.status !== "needs review";
-    if ($id("posConfirmTransaction")) $id("posConfirmTransaction").textContent = order?.near_match ? "Yes, verify near-match" : "Confirm tx";
+    const reviewAvailable = ["pending", "needs review", "confirmed"].includes(order?.status);
+    const approvalCandidate = isPosNearMatchApprovalCandidate(order);
+    const canApprove = canApprovePosNearMatch(order);
+    if ($id("posReviewActions")) $id("posReviewActions").hidden = !reviewAvailable;
+    if ($id("posApprovePayment")) {
+      $id("posApprovePayment").hidden = !approvalCandidate;
+      $id("posApprovePayment").disabled = !canApprove;
+      $id("posApprovePayment").title = canApprove
+        ? "Recheck and approve this near-match payment"
+        : "Waiting for the required blockchain confirmation";
+    }
+    if ($id("posConfirmTransaction")) $id("posConfirmTransaction").textContent = order?.near_match ? "Approve near-match" : "Verify transaction";
     if ($id("posWorkflow")) $id("posWorkflow").dataset.posLifecycleStage = String(lifecycleStage);
+    if (Number($id("posWorkflow")?.dataset.posStage || 1) === 3) setPosVerificationCopy(order);
   }
 
   function setPosWorkflowStage(stage, order = selectedPosOrder(), { focus = false, scroll = true } = {}) {
@@ -2219,10 +2284,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       }
       updatePosBlockchainAddressLink(order.wallet);
       updatePosReceiptButton(order);
+      updatePosReviewDetails(order);
       syncPosStageControls(order);
       return;
     }
     localStorage.removeItem("doge-pos:selected-order");
+    posManualReviewVisible = false;
     if ($id("posTxId")) $id("posTxId").value = "";
     if ($id("posMinConfirmations")) $id("posMinConfirmations").value = "1";
     setPosStatusDisplay("Unpaid");
@@ -2234,6 +2301,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     }
     updatePosBlockchainAddressLink(posState().wallet);
     updatePosReceiptButton(null);
+    updatePosReviewDetails(null);
     setPosWorkflowStage(1, null);
   }
 
@@ -2300,6 +2368,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       setPosConfirmNote("A payment is still being monitored. Finish it or use Edit / restart sale before loading another order.");
       return;
     }
+    posManualReviewVisible = false;
+    syncPosManualReviewDisclosure(order);
     if ($id("posMerchant")) $id("posMerchant").value = order.merchant;
     if ($id("posWallet")) $id("posWallet").value = order.wallet;
     if ($id("posUsd")) $id("posUsd").value = order.usd.toFixed(2);
@@ -2594,7 +2664,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       downloadText(`doge-pos-orders-${scopeLabel}-${stamp}.json`, JSON.stringify(orders, null, 2), "application/json");
       return;
     }
-    const fields = ["id", "time", "merchant", "wallet", "usd", "base_doge", "fee_doge", "doge", "price_reference_usd", "quote_issued_at", "quote_expires_at", "payment_started_at", "payment_detected_at", "status", "memo", "uri", "txid", "confirmations", "min_confirmations", "confirmed_at", "paid_at", "cancelled_at", "validation", "validation_source", "validation_errors"];
+    const fields = ["id", "time", "merchant", "wallet", "usd", "base_doge", "fee_doge", "doge", "matched_doge", "price_reference_usd", "quote_issued_at", "quote_expires_at", "payment_started_at", "payment_detected_at", "status", "memo", "uri", "txid", "confirmations", "min_confirmations", "confirmed_at", "paid_at", "cancelled_at", "validation", "validation_source", "validation_errors"];
     const rows = [
       fields.join(","),
       ...orders.map((order) => fields.map((field) => csvCell(Array.isArray(order[field]) ? order[field].join("; ") : order[field])).join(",")),
@@ -2625,14 +2695,23 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return Boolean(posTransactionMatchQuality(transaction, order, now));
   }
 
-  async function confirmPosTransaction({ automatic = false, orderId = "", expectedToken = posPaymentPollToken } = {}) {
+  async function confirmPosTransaction({ automatic = false, orderId = "", expectedToken = posPaymentPollToken, txidOverride = "" } = {}) {
     let order = (orderId ? posOrders().find((item) => item.id === orderId) : null) || selectedPosOrder();
     if (!activePosOrder(order)) {
       setPosConfirmNote("Start a payment before verifying a transaction.");
       return;
     }
-    const txid = automatic ? String(order.txid || "").trim() : $id("posTxId")?.value.trim() || "";
-    const requestedConfirmations = Number(automatic ? order.min_confirmations : $id("posMinConfirmations")?.value || 0);
+    const storedApproval = Boolean(txidOverride);
+    const txid = automatic
+      ? String(order.txid || "").trim()
+      : storedApproval
+        ? String(txidOverride).trim()
+        : $id("posTxId")?.value.trim() || "";
+    const requestedConfirmations = Number(
+      automatic || storedApproval
+        ? order.min_confirmations
+        : $id("posMinConfirmations")?.value || 0,
+    );
     const minConfirmations = Number.isFinite(requestedConfirmations) ? Math.max(0, requestedConfirmations) : 0;
     const now = new Date().toLocaleString();
     const selected = () => selectedPosOrderId() === order.id;
@@ -2672,6 +2751,10 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (!liveOrder || ["paid", "cancelled"].includes(liveOrder.status)) return;
       if (automatic && liveOrder.txid !== txid) return;
       if (automatic && Number(liveOrder.min_confirmations) !== minConfirmations) return;
+      if (storedApproval && (!liveOrder.near_match || liveOrder.txid !== txid)) {
+        if (selected()) setPosConfirmNote("The detected payment changed. Review it before approving.");
+        return;
+      }
       if (!automatic && selectedPosOrderId() !== order.id) return;
       order = liveOrder;
       const validationErrors = payload.errors || (payload.error ? [payload.error] : []);
@@ -2695,6 +2778,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         order = {
           ...order,
           txid: payload.txid || txid,
+          matched_doge: matchedDoge,
           confirmations: Number(payload.confirmations || 0),
           min_confirmations: minConfirmations,
           status: "needs review",
@@ -2708,7 +2792,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         upsertPosOrder(order, { select: !automatic || selected() });
         if (selected()) {
           syncPosStageControls(order, 3);
-          setPosConfirmNote(`This transaction is ${amountDifference.toFixed(8)} DOGE away from the expected amount. Is this the correct transaction? Review the details, then click Yes, verify near-match to approve it.`);
+          setPosConfirmNote(`This payment is ${amountDifference.toFixed(8)} DOGE from the sale total. Approve it or review the payment details.`);
         }
         return;
       }
@@ -2716,6 +2800,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         order = {
           ...order,
           txid: payload.txid || txid,
+          matched_doge: matchedDoge,
           confirmations: Number(payload.confirmations || 0),
           min_confirmations: minConfirmations,
           status: "confirmed",
@@ -2737,6 +2822,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         order = {
           ...order,
           txid: payload.txid || txid,
+          matched_doge: matchedDoge,
           confirmations: Number(payload.confirmations || 0),
           min_confirmations: minConfirmations,
           status: "confirmed",
@@ -2754,6 +2840,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         order = {
           ...order,
           txid: payload.txid || txid,
+          matched_doge: matchedDoge,
           confirmations: Number(payload.confirmations || 0),
           min_confirmations: minConfirmations,
           status: "pending",
@@ -2774,6 +2861,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         order = {
           ...order,
           txid: automatic ? (payload.txid || txid) : order.txid,
+          matched_doge: matchedDoge > 0 ? matchedDoge : order.matched_doge,
           confirmations: automatic ? Number(payload.confirmations || 0) : order.confirmations,
           min_confirmations: minConfirmations,
           status: "needs review",
@@ -2784,7 +2872,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
           near_match_difference: 0,
         };
         upsertPosOrder(order, { select: !automatic || selected() });
-        if (selected()) setPosConfirmNote(`Needs review: ${(payload.errors || ["transaction did not match the order"]).join(" ")} Automatic payment monitoring is still running.`);
+        if (selected()) setPosConfirmNote("This payment did not pass every check. Review the payment details before continuing.");
       }
     } catch (error) {
       if (automatic && expectedToken !== posPaymentPollToken) return;
@@ -2794,6 +2882,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
 
   function markPosOrderPaid(order, message = "Order marked paid and ready for fulfillment.") {
     if (!order) return;
+    posManualReviewVisible = false;
     const paidOrder = normalizePosOrder({
       ...order,
       status: "paid",
@@ -3281,6 +3370,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     return normalizePosOrder({
       ...order,
       txid: transaction.txid,
+      matched_doge: received,
       confirmations: Number(transaction.confirmations || 0),
       status: near ? "needs review" : "pending",
       payment_detected_at: order.payment_detected_at || new Date().toISOString(),
@@ -3407,7 +3497,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       button.disabled = true;
       button.textContent = "Checking...";
     }
-    await checkPosPayment(order.id);
+    if (order.near_match) await confirmPosTransaction({ automatic: true, orderId: order.id });
+    else await checkPosPayment(order.id);
     if (button) {
       button.disabled = false;
       button.textContent = originalText;
@@ -3462,7 +3553,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     closePosCustomerDisplay();
     if ($id("posTroubleDetails")) $id("posTroubleDetails").open = false;
     if ($id("posSaleOptions")) $id("posSaleOptions").open = false;
-    if ($id("posManualDetails")) $id("posManualDetails").open = false;
+    posManualReviewVisible = false;
+    syncPosManualReviewDisclosure(null);
     closePosTransactionPicker();
     setSelectedPosOrder(null);
     setPosStatusDisplay("Unpaid");
@@ -3482,9 +3574,56 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     setPosWorkflowStage(3, order, { focus: true });
     closePosCustomerDisplay();
     const manual = $id("posManualDetails");
-    if (manual) manual.open = true;
+    posManualReviewVisible = true;
+    if (manual) {
+      manual.hidden = false;
+      manual.open = true;
+    }
+    if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", "true");
     setPosConfirmNote("Paste the buyer's transaction ID and confirm it, or record a manual register check.");
     $id("posTxId")?.focus();
+  }
+
+  function openPosPaymentReview() {
+    const order = selectedPosOrder();
+    if (!activePosOrder(order)) {
+      setPosConfirmNote("Start a payment before reviewing it.");
+      navigatePosStage(1);
+      return;
+    }
+    setPosWorkflowStage(3, order, { focus: false });
+    closePosCustomerDisplay();
+    posManualReviewVisible = true;
+    const manual = $id("posManualDetails");
+    if (manual) {
+      manual.hidden = false;
+      manual.open = true;
+      manual.querySelector("summary")?.focus({ preventScroll: true });
+    }
+    if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", "true");
+  }
+
+  async function approvePosNearMatch() {
+    const order = selectedPosOrder();
+    if (!canApprovePosNearMatch(order)) {
+      setPosConfirmNote("Review this payment before continuing; it cannot be approved from the quick action.");
+      openPosPaymentReview();
+      return;
+    }
+    const button = $id("posApprovePayment");
+    if (button) {
+      button.disabled = true;
+      button.querySelector("span:last-child").textContent = "Approving...";
+    }
+    try {
+      await confirmPosTransaction({ orderId: order.id, txidOverride: order.txid });
+    } finally {
+      const current = selectedPosOrder();
+      if (button) {
+        button.querySelector("span:last-child").textContent = "Approve";
+        button.disabled = !canApprovePosNearMatch(current);
+      }
+    }
   }
 
   function updatePos() {
@@ -3753,7 +3892,23 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       checkSelectedPosPaymentNow().catch((error) => setPosConfirmNote(error.message));
     });
     $id("posStep2ManualVerify")?.addEventListener("click", openPosManualVerification);
-    $id("posReviewPayment")?.addEventListener("click", openPosManualVerification);
+    $id("posReviewPayment")?.addEventListener("click", openPosPaymentReview);
+    $id("posApprovePayment")?.addEventListener("click", () => {
+      approvePosNearMatch().catch((error) => setPosConfirmNote(error.message));
+    });
+    $id("posManualDetails")?.addEventListener("toggle", () => {
+      const manual = $id("posManualDetails");
+      if ($id("posReviewPayment")) $id("posReviewPayment").setAttribute("aria-expanded", String(Boolean(manual?.open)));
+      if (manual && !manual.open && posManualReviewVisible) {
+        posManualReviewVisible = false;
+        manual.hidden = true;
+        if ($id("posWorkflow")?.dataset.posStage === "3" && !$id("posReviewActions")?.hidden) {
+          $id("posReviewPayment")?.focus({ preventScroll: true });
+        } else if ($id("posWorkflow")?.dataset.posStage === "3") {
+          $id("posStage3Title")?.focus({ preventScroll: true });
+        }
+      }
+    });
     $id("posMarkPaid")?.addEventListener("click", markSelectedPosOrderPaid);
     $id("posEmailReceipt")?.addEventListener("click", openPosReceiptModal);
     $id("posPrintReceipt")?.addEventListener("click", printPosReceipt);

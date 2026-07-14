@@ -8916,6 +8916,83 @@ body[data-page="wallet"] main {
   padding: 10px 16px;
 }
 
+.pos-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 8px;
+}
+
+.pos-review-action {
+  flex: 1 1 150px;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 10px;
+}
+
+#posApprovePayment {
+  border-color: rgba(15, 143, 120, 0.34);
+  background: rgba(15, 143, 120, 0.12);
+  color: var(--mint);
+}
+
+.pos-review-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(14, 91, 99, 0.1);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+#posApprovePayment .pos-review-icon {
+  background: var(--mint);
+  color: #fff;
+}
+
+.pos-review-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pos-review-facts > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.pos-review-facts small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pos-review-facts strong {
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+}
+
+.pos-review-reason {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--gold);
+  background: rgba(244, 189, 42, 0.08);
+}
+
 .pos-verify-actions .button,
 .pos-verify-actions .disabled-button-hint {
   flex: 1 1 130px;
@@ -9349,6 +9426,23 @@ body[data-page="wallet"] main {
   body[data-page="pos_terminal"] .pos-verify-hero .pos-status-pill {
     padding: 7px 10px;
     font-size: 0.88rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-review-actions {
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+
+  body[data-page="pos_terminal"] .pos-review-action {
+    flex-basis: 130px;
+    min-height: 42px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+  }
+
+  body[data-page="pos_terminal"] .pos-review-icon {
+    width: 22px;
+    height: 22px;
   }
 
   body[data-page="pos_terminal"] .pos-verification-copy,
