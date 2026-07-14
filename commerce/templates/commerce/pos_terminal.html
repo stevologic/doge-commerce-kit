@@ -76,8 +76,9 @@
           <button class="button primary small" id="posDownloadWallet" type="button">Download backup</button>
           <button class="button small" id="posCopyWalletWif" type="button">Copy WIF</button>
           <button class="button small quiet" id="posDismissNewWallet" type="button">I saved it</button>
+          <button class="button small quiet" id="posDiscardNewWallet" type="button" aria-describedby="posNewWalletWarning" title="Discard this generated wallet and restore the previous receiving address.">Dismiss</button>
         </div>
-        <p class="note compact-note">This site never stores the private key — anyone holding the WIF can spend the funds, so keep the backup offline. For meaningful balances prefer a hardware or dedicated wallet and paste its address here instead.</p>
+        <p class="note compact-note" id="posNewWalletWarning">This site never stores the private key — anyone holding the WIF can spend the funds, so keep the backup offline. For meaningful balances prefer a hardware or dedicated wallet and paste its address here instead.</p>
       </div>
     </div>
   </section>

@@ -86,6 +86,7 @@
   let posEmailOrdersSnapshot = null;
   let posEmailOrdersReturnFocus = null;
   let posGeneratedWallet = null;
+  let previousPosWalletBeforeGeneration = "";
   let pendingPosWalletImport = null;
   let posWalletOperationBusy = false;
   let posWalletOperationToken = 0;
@@ -3874,9 +3875,8 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const merchant = ($id("posMerchant")?.value || "").trim() || "DOGE Merchant";
     persistPosImportedWallet({ address, clearLegacyWif }, merchant);
     if ($id("posWallet")) $id("posWallet").value = address;
-    posGeneratedWallet = null;
-    if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = "••• hidden •••";
-    if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
+    previousPosWalletBeforeGeneration = "";
+    clearPosGeneratedWalletSecret();
     clearPosWalletImportReview();
     resetPosTransactions("Wallet imported. Open recent wallet activity to load transactions for this address.");
     if (isPosTransactionPickerOpen()) refreshPosTransactions().catch((error) => setPosTransactionsStatus(error.message));
@@ -3917,6 +3917,12 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posWalletSetupBody")) $id("posWalletSetupBody").hidden = collapsed;
     const setup = $id("posWalletSetup");
     if (setup) setup.classList.toggle("is-collapsed", collapsed);
+  }
+
+  function clearPosGeneratedWalletSecret() {
+    posGeneratedWallet = null;
+    if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = "••• hidden •••";
+    if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
   }
 
   function resetMobilePosViewport() {
@@ -4520,6 +4526,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         return;
       }
       const token = beginPosWalletOperation();
+      const walletBeforeGeneration = ($id("posWallet")?.value || "").trim() || browserSavedPosWallet();
       const button = $id("posGenerateWallet");
       let failed = false;
       let generatedSuccessfully = false;
@@ -4531,6 +4538,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
         const generatedWallet = await core.generateWallet();
         if (token !== posWalletOperationToken) return;
         if (posPaymentStarting || activePosOrder()) throw new Error("A payment started before wallet creation finished. The new wallet was not applied.");
+        previousPosWalletBeforeGeneration = walletBeforeGeneration;
         posGeneratedWallet = generatedWallet;
         if ($id("posWallet")) $id("posWallet").value = posGeneratedWallet.address;
         localStorage.setItem("doge-wallet:address", posGeneratedWallet.address);
@@ -4576,12 +4584,38 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       if (posGeneratedWallet) copy(posGeneratedWallet.wif, "WIF copied — store it somewhere safe.");
     });
     $id("posDismissNewWallet")?.addEventListener("click", () => {
-      posGeneratedWallet = null;
-      if ($id("posNewWalletWif")) $id("posNewWalletWif").textContent = "••• hidden •••";
-      if ($id("posNewWallet")) $id("posNewWallet").hidden = true;
+      previousPosWalletBeforeGeneration = "";
+      clearPosGeneratedWalletSecret();
       posWalletPanelOpen = false;
       syncPosWalletSetup();
       resetMobilePosViewport();
+      window.requestAnimationFrame(() => $id("posChangeWallet")?.focus({ preventScroll: true }));
+      if (window.dogeAnnounce) window.dogeAnnounce("Wallet backup acknowledged. The private key is now hidden.");
+    });
+    $id("posDiscardNewWallet")?.addEventListener("click", () => {
+      const previousWallet = previousPosWalletBeforeGeneration;
+      previousPosWalletBeforeGeneration = "";
+      clearPosGeneratedWalletSecret();
+      if ($id("posWallet")) $id("posWallet").value = previousWallet;
+      if (previousWallet) {
+        localStorage.setItem("doge-wallet:address", previousWallet);
+        localStorage.setItem("doge-pos:wallet", previousWallet);
+      } else {
+        localStorage.removeItem("doge-wallet:address");
+        localStorage.removeItem("doge-pos:wallet");
+      }
+      posWalletPanelOpen = !previousWallet;
+      updatePos();
+      resetMobilePosViewport();
+      const message = previousWallet
+        ? "Generated wallet dismissed. Your previous receiving address was restored."
+        : "Generated wallet dismissed. Add or generate a wallet when you are ready.";
+      if ($id("posProfileStatus")) $id("posProfileStatus").textContent = message;
+      window.requestAnimationFrame(() => {
+        const focusTarget = previousWallet ? $id("posChangeWallet") : $id("posWallet");
+        focusTarget?.focus({ preventScroll: true });
+      });
+      if (window.dogeAnnounce) window.dogeAnnounce(message);
     });
     $id("posImportWallet")?.addEventListener("click", () => {
       if (posWalletOperationBusy) return;

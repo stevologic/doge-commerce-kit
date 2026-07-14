@@ -23,8 +23,24 @@ class WalletTemplateStructureTests(SimpleTestCase):
             "posNewWalletWif",
             "posDownloadWallet",
             "posDismissNewWallet",
+            "posDiscardNewWallet",
         ):
             self.assertIn(marker, pos_html)
+
+        saved_button = '<button class="button small quiet" id="posDismissNewWallet" type="button">I saved it</button>'
+        dismiss_button = '<button class="button small quiet" id="posDiscardNewWallet"'
+        self.assertIn(saved_button, pos_html)
+        self.assertIn(dismiss_button, pos_html)
+        self.assertLess(pos_html.index(saved_button), pos_html.index(dismiss_button))
+
+    def test_pos_generated_wallet_can_be_safely_dismissed(self):
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        self.assertIn('let previousPosWalletBeforeGeneration = "";', doge_tools)
+        self.assertIn("function clearPosGeneratedWalletSecret()", doge_tools)
+        self.assertIn('$id("posDiscardNewWallet")?.addEventListener("click"', doge_tools)
+        self.assertIn('localStorage.setItem("doge-wallet:address", previousWallet)', doge_tools)
+        self.assertIn('localStorage.removeItem("doge-wallet:address")', doge_tools)
+        self.assertIn("Generated wallet dismissed. Your previous receiving address was restored.", doge_tools)
 
     def test_pos_wallet_json_import_is_local_validated_and_confirmation_gated(self):
         pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")

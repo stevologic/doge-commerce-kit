@@ -28,6 +28,7 @@ class HumanCentricPageTests(SimpleTestCase):
                 "posNewWallet",
                 "posNewWalletWif",
                 "posDownloadWallet",
+                "posDiscardNewWallet",
                 # Business name now lives in the wallet setup, next to the address.
                 "Business name",
                 "posMerchant",
