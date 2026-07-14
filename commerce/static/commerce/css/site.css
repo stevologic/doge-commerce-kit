@@ -5325,11 +5325,24 @@ tr:last-child td {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  width: min(1180px, calc(100% - 32px));
+  width: min(1280px, calc(100% - clamp(24px, 3vw, 64px)));
   margin: 36px auto 0;
   padding: 26px 0 34px;
   border-top: 1px solid var(--line);
   color: var(--muted);
+}
+
+body[data-page="playbook"] .site-footer {
+  width: min(1120px, calc(100% - clamp(24px, 3vw, 64px)));
+}
+
+body[data-page="technical_details"] .site-footer {
+  width: min(1080px, calc(100% - clamp(24px, 3vw, 64px)));
+}
+
+body[data-page="pos_terminal"] .site-footer,
+body[data-page="merchant_kit"] .site-footer {
+  width: min(1280px, calc(100% - 24px));
 }
 
 .footer-top {
@@ -8450,7 +8463,13 @@ body[data-page="wallet"] main {
   }
 
   .site-footer {
-    padding: 22px max(20px, calc((100vw - 1360px) / 2));
+    width: min(1360px, calc(100% - 80px));
+    padding: 22px 0 34px;
+  }
+
+  body[data-page="playbook"] .site-footer,
+  body[data-page="technical_details"] .site-footer {
+    width: min(1360px, calc(100% - 80px));
   }
 
   .wallet-workspace-grid,

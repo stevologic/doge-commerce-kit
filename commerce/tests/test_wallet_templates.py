@@ -125,6 +125,12 @@ class WalletTemplateStructureTests(SimpleTestCase):
         self.assertIn("Yes, verify near-match", doge_tools)
         self.assertIn("nearMatchApproved", doge_tools)
 
+    def test_footer_tracks_body_content_width(self):
+        site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
+        self.assertIn("width: min(1280px, calc(100% - clamp(24px, 3vw, 64px)))", site_css)
+        self.assertIn("body[data-page=\"pos_terminal\"] .site-footer", site_css)
+        self.assertIn("width: min(1360px, calc(100% - 80px))", site_css)
+
     def test_pos_receipt_keeps_html_as_the_primary_format(self):
         doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
         self.assertIn("data-pos-receipt-card", doge_tools)
