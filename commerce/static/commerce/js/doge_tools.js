@@ -1785,12 +1785,45 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   // Auto fee buffer: one typical 1-input/2-output Dogecoin transaction
-  // (~226 bytes) at the same 1000 atoms/byte rate the Wallet send form uses.
+  // (~226 bytes) at the same 1000 atoms/byte rate the Wallet send form uses,
+  // plus a tiny fixed cushion for fee variation.
+  const DOGE_ATOMS_PER_DOGE = 1e8;
   const POS_AUTO_FEE_TX_BYTES = 226;
   const POS_AUTO_FEE_ATOMS_PER_BYTE = 1000;
+  const POS_AUTO_FEE_SAFETY_ATOMS = 10_000;
+  // Customer-facing POS amounts use four decimal places. Freeze the quote on
+  // that same boundary so manual entry can never be lower than the QR amount.
+  const POS_CUSTOMER_AMOUNT_QUANTUM_ATOMS = 10_000;
+
+  function posAutoFeeAtoms() {
+    return (POS_AUTO_FEE_TX_BYTES * POS_AUTO_FEE_ATOMS_PER_BYTE) + POS_AUTO_FEE_SAFETY_ATOMS;
+  }
 
   function posAutoFeeDoge() {
-    return (POS_AUTO_FEE_TX_BYTES * POS_AUTO_FEE_ATOMS_PER_BYTE) / 1e8;
+    return posAutoFeeAtoms() / DOGE_ATOMS_PER_DOGE;
+  }
+
+  function posDogeAtomsRoundedUp(value) {
+    const scaled = positiveNumber(value) * DOGE_ATOMS_PER_DOGE;
+    // Remove only multiplication noise near an exact atom; a real fractional
+    // atom still rounds upward so the quote never understates the conversion.
+    const floatingPointSlack = Math.max(1, Math.abs(scaled)) * Number.EPSILON * 4;
+    return Math.max(0, Math.ceil(scaled - floatingPointSlack));
+  }
+
+  function posPaymentAmountBreakdown(baseDoge, requestedFeeDoge) {
+    const baseAtoms = posDogeAtomsRoundedUp(baseDoge);
+    const requestedFeeAtoms = posDogeAtomsRoundedUp(requestedFeeDoge);
+    const unalignedTotalAtoms = baseAtoms + requestedFeeAtoms;
+    const totalAtoms = Math.ceil(unalignedTotalAtoms / POS_CUSTOMER_AMOUNT_QUANTUM_ATOMS)
+      * POS_CUSTOMER_AMOUNT_QUANTUM_ATOMS;
+    return {
+      base_doge: baseAtoms / DOGE_ATOMS_PER_DOGE,
+      // Include the final upward alignment in the recorded fee so every
+      // receipt and export reconciles exactly to the frozen payment total.
+      fee_doge: (totalAtoms - baseAtoms) / DOGE_ATOMS_PER_DOGE,
+      doge: totalAtoms / DOGE_ATOMS_PER_DOGE,
+    };
   }
 
   function posState() {
@@ -1814,19 +1847,16 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   }
 
   function buildPosPayment(state = posState()) {
-    const baseDoge = dogeUsd > 0 ? positiveNumber(state.usd) / dogeUsd : 0;
-    const feeDoge = positiveNumber(state.fee_doge);
-    const amount = Math.round((positiveNumber(baseDoge) + feeDoge) * 1e8) / 1e8;
+    const rawBaseDoge = dogeUsd > 0 ? positiveNumber(state.usd) / dogeUsd : 0;
+    const amounts = posPaymentAmountBreakdown(rawBaseDoge, state.fee_doge);
     const quote = checkoutQuote();
     return {
       ...state,
-      base_doge: baseDoge,
-      fee_doge: feeDoge,
-      doge: amount,
+      ...amounts,
       price_reference_usd: dogeUsd,
       quote_issued_at: quote.issued_at,
       quote_expires_at: quote.expires_at,
-      uri: state.wallet ? dogeUri(state.wallet, amount, state.memo) : "",
+      uri: state.wallet ? dogeUri(state.wallet, amounts.doge, state.memo) : "",
     };
   }
 
@@ -4183,7 +4213,7 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     if ($id("posPriceOut")) $id("posPriceOut").textContent = money.format(dogeUsd);
     renderDogeConversionChart("pos", state.usd);
     if ($id("posQuoteMeta")) {
-      const feeMeta = state.fee_doge > 0 ? ` Includes a ${state.fee_doge.toFixed(8)} DOGE network-fee estimate so you receive the full sale amount.` : " No extra DOGE fee included.";
+      const feeMeta = state.fee_doge > 0 ? ` Includes a ${state.fee_doge.toFixed(8)} DOGE buffered network-fee estimate. The customer total is rounded up, never down, to the four-decimal amount shown.` : " No extra DOGE fee included.";
       $id("posQuoteMeta").textContent = state.wallet ? `${quoteMetaText({ issued_at: state.quote_issued_at, expires_at: state.quote_expires_at }, state.price_reference_usd)}${feeMeta}` : "Set a wallet before creating a Dogecoin payment request.";
     }
     if (!selectedPosOrderId()) {

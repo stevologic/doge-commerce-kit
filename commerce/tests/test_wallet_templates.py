@@ -83,8 +83,19 @@ class WalletTemplateStructureTests(SimpleTestCase):
             "walletBackup.publicOnlyPersistence=true",
             "walletBackup.networkCalls=0",
             "posPayment.postStartBroadcast=true",
+            "posPayment.feeSafetyAndAlignedTotal=true",
         ):
             self.assertIn(marker, result.stdout)
+
+    def test_pos_buffers_fee_and_aligns_the_frozen_customer_total(self):
+        pos_html = (ROOT / "templates" / "commerce" / "pos_terminal.html").read_text(encoding="utf-8")
+        doge_tools = (ROOT / "static" / "commerce" / "js" / "doge_tools.js").read_text(encoding="utf-8")
+        self.assertIn("POS_AUTO_FEE_SAFETY_ATOMS = 10_000", doge_tools)
+        self.assertIn("POS_CUSTOMER_AMOUNT_QUANTUM_ATOMS = 10_000", doge_tools)
+        self.assertIn("function posDogeAtomsRoundedUp", doge_tools)
+        self.assertIn("function posPaymentAmountBreakdown", doge_tools)
+        self.assertIn("fee_doge: (totalAtoms - baseAtoms) / DOGE_ATOMS_PER_DOGE", doge_tools)
+        self.assertIn("rounded up so manual entry cannot come up slightly short", pos_html)
 
     def test_base_loads_rate_limit_scripts_without_header_indicator(self):
         base_html = (ROOT / "templates" / "commerce" / "base.html").read_text(encoding="utf-8")

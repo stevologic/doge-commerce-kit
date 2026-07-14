@@ -61,6 +61,109 @@ globalThis.fetch = async () => {
 };
 const dogeToolsPath = path.resolve(__dirname, "../static/commerce/js/doge_tools.js");
 const dogeToolsSource = fs.readFileSync(dogeToolsPath, "utf8");
+const posFeeSource = dogeToolsSource.slice(
+  dogeToolsSource.indexOf("  const DOGE_ATOMS_PER_DOGE"),
+  dogeToolsSource.indexOf("  function posState"),
+);
+const posFeeModel = (0, eval)(`(() => {
+  const positiveNumber = (value) => {
+    const number = Number(value || 0);
+    return Number.isFinite(number) && number > 0 ? number : 0;
+  };
+  ${posFeeSource}
+  return { posAutoFeeAtoms, posAutoFeeDoge, posDogeAtomsRoundedUp, posPaymentAmountBreakdown };
+})()`);
+assert.equal(posFeeModel.posAutoFeeAtoms(), 236000);
+assert.equal(posFeeModel.posAutoFeeAtoms() - 226000, 10000);
+assert.ok(posFeeModel.posAutoFeeAtoms() - 226000 > 3790);
+assert.equal(posFeeModel.posDogeAtomsRoundedUp(69.4), 6940000000);
+assert.equal(posFeeModel.posDogeAtomsRoundedUp(1.000000004), 100000001);
+const bufferedWholeQuote = posFeeModel.posPaymentAmountBreakdown(40, posFeeModel.posAutoFeeDoge());
+assert.deepEqual(bufferedWholeQuote, {
+  base_doge: 40,
+  fee_doge: 0.0024,
+  doge: 40.0024,
+});
+const legacyExplicitFeeQuote = posFeeModel.posPaymentAmountBreakdown(40, 0.005);
+assert.deepEqual(legacyExplicitFeeQuote, {
+  base_doge: 40,
+  fee_doge: 0.005,
+  doge: 40.005,
+});
+const unalignedReportedTotalAtoms = 6941783790;
+const reportedShortfallBaseAtoms = unalignedReportedTotalAtoms - posFeeModel.posAutoFeeAtoms();
+const reportedShortfallBase = reportedShortfallBaseAtoms / 1e8;
+const unalignedReportedTotal = unalignedReportedTotalAtoms / 1e8;
+const fourDecimalManualEntryAtoms = Math.round(Number(unalignedReportedTotal.toFixed(4)) * 1e8);
+assert.equal(unalignedReportedTotalAtoms - fourDecimalManualEntryAtoms, 3790);
+const alignedReportedQuote = posFeeModel.posPaymentAmountBreakdown(
+  reportedShortfallBase,
+  posFeeModel.posAutoFeeDoge(),
+);
+const alignedBaseAtoms = Math.round(alignedReportedQuote.base_doge * 1e8);
+const alignedFeeAtoms = Math.round(alignedReportedQuote.fee_doge * 1e8);
+const alignedTotalAtoms = Math.round(alignedReportedQuote.doge * 1e8);
+assert.equal(alignedTotalAtoms % 10000, 0);
+assert.equal(alignedBaseAtoms + alignedFeeAtoms, alignedTotalAtoms);
+assert.equal(Number(alignedReportedQuote.doge.toFixed(4)), alignedReportedQuote.doge);
+assert.ok(alignedReportedQuote.doge >= unalignedReportedTotal);
+for (let remainder = 0; remainder < 10000; remainder += 1) {
+  const baseAtoms = 4000000000 + remainder;
+  const quote = posFeeModel.posPaymentAmountBreakdown(baseAtoms / 1e8, posFeeModel.posAutoFeeDoge());
+  const quoteBaseAtoms = Math.round(quote.base_doge * 1e8);
+  const quoteFeeAtoms = Math.round(quote.fee_doge * 1e8);
+  const quoteTotalAtoms = Math.round(quote.doge * 1e8);
+  assert.equal(quoteBaseAtoms, baseAtoms);
+  assert.equal(quoteTotalAtoms % 10000, 0);
+  assert.ok(quoteTotalAtoms >= baseAtoms + 236000);
+  assert.ok(quoteFeeAtoms >= 236000 && quoteFeeAtoms <= 245999);
+  assert.equal(quoteBaseAtoms + quoteFeeAtoms, quoteTotalAtoms);
+}
+const dogeUriSource = dogeToolsSource.slice(
+  dogeToolsSource.indexOf("  function dogeUri"),
+  dogeToolsSource.indexOf("  function checkoutQuote"),
+).trim();
+const makeDogeUri = (0, eval)(`(${dogeUriSource})`);
+assert.equal(
+  makeDogeUri("DTestWallet", alignedReportedQuote.doge, "Test sale"),
+  "dogecoin:DTestWallet?amount=69.41790000&message=Test+sale",
+);
+const buildPosPaymentSource = dogeToolsSource.slice(
+  dogeToolsSource.indexOf("  function buildPosPayment"),
+  dogeToolsSource.indexOf("  function normalizePosOrder"),
+).trim();
+const buildPosPaymentForTest = (0, eval)(`(() => {
+  const dogeUsd = 0.125;
+  const positiveNumber = (value) => {
+    const number = Number(value || 0);
+    return Number.isFinite(number) && number > 0 ? number : 0;
+  };
+  const checkoutQuote = () => ({
+    issued_at: "2026-07-14T12:00:00.000Z",
+    expires_at: "2026-07-14T12:10:00.000Z",
+  });
+  ${dogeUriSource}
+  ${posFeeSource}
+  const posState = () => ({
+    merchant: "Test Merchant",
+    wallet: "DTestWallet",
+    usd: 5,
+    fee_doge: posAutoFeeDoge(),
+    memo: "Test sale",
+  });
+  ${buildPosPaymentSource}
+  return buildPosPayment;
+})()`);
+const frozenPayment = buildPosPaymentForTest();
+assert.equal(Math.round(frozenPayment.base_doge * 1e8), 4000000000);
+assert.equal(Math.round(frozenPayment.fee_doge * 1e8), 240000);
+assert.equal(Math.round(frozenPayment.doge * 1e8), 4000240000);
+assert.equal(
+  Math.round((frozenPayment.base_doge + frozenPayment.fee_doge) * 1e8),
+  Math.round(frozenPayment.doge * 1e8),
+);
+assert.equal(frozenPayment.uri, "dogecoin:DTestWallet?amount=40.00240000&message=Test+sale");
+log("posPayment.feeSafetyAndAlignedTotal=true");
 const postStartTimestampSource = dogeToolsSource.slice(
   dogeToolsSource.indexOf("  function posTransactionHasPostStartTimestamp"),
   dogeToolsSource.indexOf("  function posTransactionMatchQuality"),
