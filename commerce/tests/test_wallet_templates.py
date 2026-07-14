@@ -118,7 +118,16 @@ class WalletTemplateStructureTests(SimpleTestCase):
         site_css = (ROOT / "static" / "commerce" / "css" / "site.css").read_text(encoding="utf-8")
         self.assertIn("table-layout:fixed", doge_tools)
         self.assertIn("overflow-wrap:anywhere;word-break:break-word", doge_tools)
+        self.assertIn("data-pos-receipt-details", doge_tools)
+        receipt_row_function = doge_tools.split("function posReceiptRow", 1)[1].split(
+            "function posReceiptHtml", 1
+        )[0]
+        self.assertNotIn("max-width:0", receipt_row_function)
         self.assertIn("[data-pos-receipt-card] table", site_css)
+        receipt_table_rule = site_css.split(
+            ".pos-paid-receipt [data-pos-receipt-card] table,", 1
+        )[1].split("}", 1)[0]
+        self.assertIn("min-width: 0 !important", receipt_table_rule)
         self.assertIn("max-width: 480px", site_css)
 
     def test_pos_validation_has_one_doge_near_match_confirmation_path(self):

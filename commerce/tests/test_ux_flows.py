@@ -487,6 +487,98 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
             self.assertEqual(page.locator("#posStartPayment").inner_text(), "Start payment")
             browser.close()
 
+    def test_pos_paid_receipt_shows_every_value_inside_mobile_card(self):
+        base = self.live_server_url
+        txid = "0123456789abcdef" * 4
+        wallet = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
+        paid_order = {
+            "id": "mobile-receipt-order-12345",
+            "merchant": "Mobile Merchant",
+            "wallet": wallet,
+            "usd": 5,
+            "base_doge": 69.4,
+            "fee_doge": 0.1,
+            "doge": 69.5,
+            "matched_doge": 69.5,
+            "memo": "Mobile receipt test",
+            "status": "paid",
+            "txid": txid,
+            "confirmations": 2,
+            "min_confirmations": 1,
+            "paid_at": "7/14/2026, 1:15:00 PM",
+        }
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            context = browser.new_context(viewport={"width": 390, "height": 844})
+            page = context.new_page()
+            page.add_init_script(
+                f"""
+                  localStorage.setItem('doge-pos:orders', JSON.stringify([{json.dumps(paid_order)}]));
+                  localStorage.setItem('doge-pos:selected-order', 'mobile-receipt-order-12345');
+                """
+            )
+            page.goto(f"{base}/pos/", wait_until="domcontentloaded", timeout=45000)
+            receipt = page.locator("#posPaidReceipt [data-pos-receipt-card]")
+            receipt.wait_for(state="visible", timeout=20000)
+
+            receipt_text = receipt.inner_text()
+            for expected_text in (
+                "Mobile Merchant",
+                "Mobile receipt test",
+                "$5.00",
+                "69.5000 DOGE",
+            ):
+                self.assertIn(expected_text, receipt_text)
+            self.assertEqual(receipt.locator("[data-pos-receipt-status]").inner_text().strip(), "Paid")
+
+            rows = receipt.locator("[data-pos-receipt-row]").evaluate_all(
+                """(items) => Object.fromEntries(items.map((row) => {
+                  const label = row.querySelector('[data-pos-receipt-label]')?.textContent?.trim() || '';
+                  const value = row.querySelector('[data-pos-receipt-value]')?.textContent?.trim() || '';
+                  return [label, value];
+                }))"""
+            )
+            self.assertEqual(rows["Date"], "7/14/2026, 1:15:00 PM")
+            self.assertEqual(rows["Order"], "mobile-receipt-order-12345")
+            self.assertEqual(rows["Item total"], "69.40000000 DOGE")
+            self.assertEqual(rows["Network fee"], "0.10000000 DOGE")
+            self.assertEqual(rows["Total paid"], "69.50000000 DOGE")
+            self.assertEqual(rows["Confirmations"], "2")
+            self.assertEqual(rows["Transaction"], f"{txid[:10]}…{txid[-8:]}")
+            self.assertEqual(rows["Receiving address"], wallet)
+
+            geometry = receipt.evaluate(
+                """(card) => {
+                  const cardBox = card.getBoundingClientRect();
+                  const tables = Array.from(card.querySelectorAll('table'));
+                  const values = Array.from(card.querySelectorAll(
+                    '[data-pos-receipt-status], [data-pos-receipt-doge], [data-pos-receipt-value]'
+                  ));
+                  return {
+                    tablesFit: tables.every((table) => {
+                      const box = table.getBoundingClientRect();
+                      return box.width > 0
+                        && box.left >= cardBox.left - 1
+                        && box.right <= cardBox.right + 1
+                        && table.scrollWidth <= table.clientWidth + 1;
+                    }),
+                    valuesFit: values.every((value) => {
+                      const box = value.getBoundingClientRect();
+                      return box.width > 0
+                        && box.left >= cardBox.left - 1
+                        && box.right <= cardBox.right + 1
+                        && value.scrollWidth <= value.clientWidth + 1;
+                    }),
+                  };
+                }"""
+            )
+            self.assertTrue(geometry["tablesFit"])
+            self.assertTrue(geometry["valuesFit"])
+            self.assertIn(txid, page.locator("[data-pos-receipt-explorer]").get_attribute("href") or "")
+            context.close()
+            browser.close()
+
     def test_pos_near_match_quick_approve_revalidates_the_detected_transaction(self):
         base = self.live_server_url
         detected_txid = "c" * 64
@@ -562,7 +654,16 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 timeout=20000,
             )
             self.assertEqual(accepted_requests[-1]["txid"], detected_txid)
-            self.assertTrue(accepted_page.locator("#posPaidReceipt [data-pos-receipt-card]").is_visible())
+            accepted_receipt = accepted_page.locator("#posPaidReceipt [data-pos-receipt-card]")
+            self.assertTrue(accepted_receipt.is_visible())
+            accepted_rows = accepted_receipt.locator("[data-pos-receipt-row]").evaluate_all(
+                """(items) => Object.fromEntries(items.map((row) => [
+                  row.querySelector('[data-pos-receipt-label]')?.textContent?.trim() || '',
+                  row.querySelector('[data-pos-receipt-value]')?.textContent?.trim() || '',
+                ]))"""
+            )
+            self.assertEqual(accepted_rows["Amount requested"], "70.00000000 DOGE")
+            self.assertEqual(accepted_rows["Amount received"], "69.50000000 DOGE")
             accepted_context.close()
 
             rejected_context, rejected_page, rejected_requests = prepare_page(

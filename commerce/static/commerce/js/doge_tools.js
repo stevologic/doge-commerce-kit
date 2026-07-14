@@ -2720,12 +2720,17 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       order = {
         ...order,
         txid,
+        matched_doge: 0,
         confirmations: minConfirmations,
         min_confirmations: minConfirmations,
         status: "confirmed",
         confirmed_at: now,
         validation: txid === "sample-local-test" ? "sample" : "manual",
+        validation_source: "",
         validation_errors: [],
+        near_match: false,
+        near_match_approved: false,
+        near_match_difference: 0,
       };
       upsertPosOrder(order);
       if (selected()) setPosConfirmNote(txid === "sample-local-test" ? "Sample transaction check passed for testing." : "Manual register check recorded. Mark paid is now available.");
@@ -2919,10 +2924,16 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
   // through this site and the customer's email is never stored.
   function posReceiptData(order) {
     const usd = positiveNumber(order?.usd);
-    const doge = positiveNumber(order?.doge);
-    const feeDoge = positiveNumber(order?.fee_doge);
-    const baseDoge = positiveNumber(order?.base_doge) || Math.max(0, doge - feeDoge);
+    const quotedDoge = positiveNumber(order?.doge);
     const txid = String(order?.txid || "").trim();
+    const realTx = isRealDogeTxid(txid);
+    const matchedDoge = positiveNumber(order?.matched_doge);
+    const doge = realTx && matchedDoge > 0 ? matchedDoge : quotedDoge;
+    const amountAdjusted = realTx
+      && matchedDoge > 0
+      && Math.abs(matchedDoge - quotedDoge) > POS_AUTO_VERIFY_TOLERANCE_DOGE;
+    const feeDoge = positiveNumber(order?.fee_doge);
+    const baseDoge = positiveNumber(order?.base_doge) || Math.max(0, quotedDoge - feeDoge);
     const address = String(order?.wallet || "").trim();
     return {
       orderId: String(order?.id || "").trim(),
@@ -2930,10 +2941,13 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       memo: (order?.memo || "").trim() || "DOGE sale",
       usd,
       doge,
+      quotedDoge,
+      matchedDoge,
+      amountAdjusted,
       baseDoge,
       feeDoge,
       txid,
-      realTx: isRealDogeTxid(txid),
+      realTx,
       address,
       paidAt: order?.paid_at || order?.confirmed_at || order?.time || new Date().toLocaleString(),
       status: order?.status === "paid" ? "Paid" : "Confirmed",
@@ -2946,47 +2960,50 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
     const valueStyle = mono
       ? "font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;"
       : "";
-    return `<tr>
-      <td style="padding:7px 0;color:#5d625f;font-size:13px;vertical-align:top;white-space:nowrap">${escapeHtml(label)}</td>
-      <td style="padding:7px 0 7px 14px;color:#171715;font-size:13px;font-weight:700;text-align:right;overflow-wrap:anywhere;word-break:break-word;max-width:0;${valueStyle}">${value}</td>
+    return `<tr data-pos-receipt-row>
+      <td data-pos-receipt-label style="box-sizing:border-box;width:38%;padding:7px 8px 7px 0;color:#5d625f;font-size:13px;vertical-align:top;white-space:normal">${escapeHtml(label)}</td>
+      <td data-pos-receipt-value style="box-sizing:border-box;width:62%;min-width:0;padding:7px 0 7px 8px;color:#171715;font-size:13px;font-weight:700;text-align:right;overflow-wrap:anywhere;word-break:break-word;${valueStyle}">${value}</td>
     </tr>`;
   }
 
   function posReceiptHtml(data) {
     const txRow = data.realTx
-      ? posReceiptRow("Transaction", `<a href="${escapeHtml(data.explorer)}" style="color:#0f8f78;text-decoration:none;overflow-wrap:anywhere">${escapeHtml(`${data.txid.slice(0, 10)}…${data.txid.slice(-8)}`)}</a>`)
+      ? posReceiptRow("Transaction", `<a href="${escapeHtml(data.explorer)}" aria-label="Transaction ${escapeHtml(data.txid)}" style="color:#0f8f78;text-decoration:none;overflow-wrap:anywhere">${escapeHtml(`${data.txid.slice(0, 10)}…${data.txid.slice(-8)}`)}</a>`)
       : "";
     const feeRow = data.feeDoge > 0 ? posReceiptRow("Network fee", `${escapeHtml(data.feeDoge.toFixed(8))} DOGE`) : "";
     const addrRow = data.address ? posReceiptRow("Receiving address", escapeHtml(data.address), true) : "";
-    const orderRow = data.orderId ? posReceiptRow("Order", escapeHtml(data.orderId.slice(0, 18)), true) : "";
+    const orderRow = data.orderId ? posReceiptRow("Order", escapeHtml(data.orderId), true) : "";
     const confirmationRow = data.realTx ? posReceiptRow("Confirmations", escapeHtml(String(data.confirmations))) : "";
+    const paymentRows = data.amountAdjusted
+      ? `${posReceiptRow("Amount requested", `${escapeHtml(data.quotedDoge.toFixed(8))} DOGE`)}${posReceiptRow("Amount received", `${escapeHtml(data.doge.toFixed(8))} DOGE`)}`
+      : posReceiptRow("Total paid", `${escapeHtml(data.doge.toFixed(8))} DOGE`);
     const explorerButton = data.realTx
-      ? `<a href="${escapeHtml(data.explorer)}" style="display:inline-block;margin-top:4px;padding:10px 16px;border-radius:8px;background:#f4bd2a;color:#221900;font-weight:800;font-size:13px;text-decoration:none">View on the Dogecoin blockchain</a>`
+      ? `<a data-pos-receipt-explorer href="${escapeHtml(data.explorer)}" style="box-sizing:border-box;display:inline-block;max-width:100%;min-height:44px;margin-top:4px;padding:12px 16px;border-radius:8px;background:#f4bd2a;color:#221900;font-weight:800;font-size:13px;line-height:20px;text-align:center;text-decoration:none;white-space:normal;overflow-wrap:anywhere">View on the Dogecoin blockchain</a>`
       : "";
     return `<div data-pos-receipt-card style="box-sizing:border-box;width:100%;max-width:480px;overflow:hidden;margin:0 auto;padding:22px;border:1px solid #dfe4dd;border-radius:14px;background:#ffffff;color:#171715;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-shadow:0 14px 34px rgba(23,23,21,.10)">
-  <table role="presentation" style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:14px">
+  <table data-pos-receipt-header role="presentation" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;margin-bottom:14px">
     <tr>
-      <td style="width:44px;vertical-align:middle"><span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#f4bd2a;color:#221900;font-size:23px;font-weight:900;line-height:36px;text-align:center">&#208;</span></td>
-      <td style="vertical-align:middle">
+      <td style="box-sizing:border-box;width:44px;padding:0 8px 0 0;vertical-align:middle"><span style="display:inline-block;width:36px;height:36px;border-radius:50%;background:#f4bd2a;color:#221900;font-size:23px;font-weight:900;line-height:36px;text-align:center">&#208;</span></td>
+      <td data-pos-receipt-merchant style="min-width:0;padding:0 8px 0 0;vertical-align:middle">
         <div style="font-size:11px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;color:#96690e">Dogecoin receipt</div>
         <div style="font-size:19px;font-weight:900;line-height:1.15;overflow-wrap:anywhere">${escapeHtml(data.merchant)}</div>
       </td>
-      <td style="vertical-align:middle;text-align:right"><span style="display:inline-block;padding:6px 12px;border-radius:999px;background:#e7f7ef;color:#0f8f78;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(data.status)}</span></td>
+      <td data-pos-receipt-status style="width:78px;padding:0;vertical-align:middle;text-align:right;white-space:nowrap"><span style="display:inline-block;padding:6px 12px;border-radius:999px;background:#e7f7ef;color:#0f8f78;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(data.status)}</span></td>
     </tr>
   </table>
-  <table role="presentation" style="width:100%;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;margin-bottom:14px;border:1px solid #e2e6dd;border-radius:12px;background:#fbfcf7">
+  <table data-pos-receipt-summary role="presentation" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0;margin-bottom:14px;border:1px solid #e2e6dd;border-radius:12px;background:#fbfcf7">
     <tr><td colspan="2" style="padding:15px 16px 4px;color:#5d625f;font-size:13px">${escapeHtml(data.memo)}</td></tr>
     <tr>
-      <td style="padding:0 8px 16px 16px;font-size:30px;font-weight:900;line-height:1">${escapeHtml(moneyCents.format(data.usd))}</td>
-      <td style="padding:0 16px 16px 8px;color:#0f8f78;font-size:15px;font-weight:800;text-align:right;vertical-align:bottom">${escapeHtml(data.doge.toFixed(4))} DOGE</td>
+      <td data-pos-receipt-usd style="padding:0 8px 16px 16px;font-size:30px;font-weight:900;line-height:1">${escapeHtml(moneyCents.format(data.usd))}</td>
+      <td data-pos-receipt-doge style="width:48%;padding:0 16px 16px 8px;color:#0f8f78;font-size:15px;font-weight:800;text-align:right;vertical-align:bottom;overflow-wrap:anywhere">${escapeHtml(data.doge.toFixed(4))} DOGE</td>
     </tr>
   </table>
-  <table role="presentation" style="width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:14px">
+  <table data-pos-receipt-details role="presentation" style="box-sizing:border-box;width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;margin-bottom:14px">
     ${posReceiptRow("Date", escapeHtml(data.paidAt))}
     ${orderRow}
     ${posReceiptRow("Item total", `${escapeHtml(data.baseDoge.toFixed(8))} DOGE`)}
     ${feeRow}
-    ${posReceiptRow("Total paid", `${escapeHtml(data.doge.toFixed(8))} DOGE`)}
+    ${paymentRows}
     ${confirmationRow}
     ${txRow}
     ${addrRow}
@@ -3003,12 +3020,19 @@ ${JSON.stringify(integrationManifest(state), null, 2)}
       `Receipt from ${data.merchant}`,
       `Status: ${data.status}`,
       `Date: ${data.paidAt}`,
+      ...(data.orderId ? [`Order: ${data.orderId}`] : []),
       "",
       `Item: ${data.memo}`,
-      `Amount: ${moneyCents.format(data.usd)} (${data.doge.toFixed(8)} DOGE)`,
+      `Amount: ${moneyCents.format(data.usd)}`,
     ];
     if (data.feeDoge > 0) lines.push(`Includes network fee: ${data.feeDoge.toFixed(8)} DOGE`);
-    if (data.realTx) lines.push("", `Transaction: ${data.txid}`, `View: ${data.explorer}`);
+    if (data.amountAdjusted) {
+      lines.push(`Amount requested: ${data.quotedDoge.toFixed(8)} DOGE`);
+      lines.push(`Amount received: ${data.doge.toFixed(8)} DOGE`);
+    } else {
+      lines.push(`Total paid: ${data.doge.toFixed(8)} DOGE`);
+    }
+    if (data.realTx) lines.push("", `Confirmations: ${data.confirmations}`, `Transaction: ${data.txid}`, `View: ${data.explorer}`);
     if (data.address) lines.push("", `Receiving address: ${data.address}`);
     lines.push("", "Paid with Dogecoin · https://commerce.dog");
     return lines.join("\n");
