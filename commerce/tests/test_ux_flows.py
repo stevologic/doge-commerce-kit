@@ -535,7 +535,8 @@ class HumanInteractionFlowTests(StaticLiveServerTestCase):
                 "69.5000 DOGE",
             ):
                 self.assertIn(expected_text, receipt_text)
-            self.assertEqual(receipt.locator("[data-pos-receipt-status]").inner_text().strip(), "Paid")
+            # text_content() ignores the pill's CSS text-transform:uppercase; the DOM text is "Paid".
+            self.assertEqual(receipt.locator("[data-pos-receipt-status]").text_content().strip(), "Paid")
 
             rows = receipt.locator("[data-pos-receipt-row]").evaluate_all(
                 """(items) => Object.fromEntries(items.map((row) => {
