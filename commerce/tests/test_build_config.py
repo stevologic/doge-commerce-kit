@@ -30,7 +30,7 @@ class BuildConfigTests(SimpleTestCase):
     def test_requirements_dev_includes_test_packages(self):
         dev = (ROOT / "requirements-dev.txt").read_text(encoding="utf-8")
         self.assertIn("-r requirements.txt", dev)
-        for package in ("ecdsa", "py-mini-racer", "playwright"):
+        for package in ("ecdsa", "mini-racer", "playwright"):
             self.assertIn(package, dev)
 
     def test_dockerfile_runs_collectstatic_and_gunicorn(self):
