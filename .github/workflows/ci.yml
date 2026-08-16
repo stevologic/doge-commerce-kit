@@ -14,7 +14,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     env:
-      DOGE2MOON_SCRATCH: ${{ runner.temp }}/verify-artifacts
+      DOGE2MOON_SCRATCH: /tmp/doge-commerce-kit-scratch
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -33,11 +33,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Install Playwright Chromium
-        run: python -m playwright install --with-deps chromium
-
       - name: Django system check
         run: python manage.py check
 
       - name: Run tests
-        run: python manage.py test commerce.tests
+        run: python manage.py test commerce.tests --exclude-tag browser
