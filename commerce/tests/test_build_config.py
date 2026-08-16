@@ -73,3 +73,10 @@ class BuildConfigTests(SimpleTestCase):
         output = out.getvalue()
         self.assertIn("System check identified no issues", output)
         self.assertRegex(output, r"static files copied|unmodified")
+
+    def test_github_actions_ci_runs_project_checks(self):
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("python -m pip install -r requirements-dev.txt", workflow)
+        self.assertIn("python manage.py check", workflow)
+        self.assertIn("python manage.py test commerce.tests --exclude-tag browser", workflow)
+        self.assertNotIn("runner.temp", workflow)
