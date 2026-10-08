@@ -8,6 +8,7 @@ app_name = "commerce"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("shop/", views.shop, name="shop"),
     path("wallet/", RedirectView.as_view(url="/pos/", permanent=True)),
     path("pos/", views.pos_terminal, name="pos_terminal"),
     path("checkout/embed/", views.checkout_embed, name="checkout_embed"),

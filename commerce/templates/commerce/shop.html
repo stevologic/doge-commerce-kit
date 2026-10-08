@@ -1,0 +1,106 @@
+{% extends "commerce/base.html" %}
+{% load static %}
+
+{% block extra_scripts %}
+<script defer src="{% static 'commerce/js/doge_checkout.js' %}?v={{ asset_version }}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="hero shop-hero shop-diamond-hatch">
+  <div class="hero-copy shop-hero-copy">
+    <p class="eyebrow">Limited pineapple-Doge pen run</p>
+    <h1>Pineapple pens for the DOGE on X Money campaign.</h1>
+    <p class="hero-lede">A limited run of {{ pen_run_total }} <strong>{{ pen_design_name }}</strong> pineapple-Doge pens — a nod to the pineapple pen.</p>
+    <div class="shop-pen-counts" aria-label="Limited pen counts">
+      <div>
+        <strong>{{ pen_run_total }}</strong>
+        <span>pens total</span>
+      </div>
+      <div>
+        <strong>{{ pen_promo_limit }}</strong>
+        <span>for the first senders</span>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <a class="button primary" href="#pen-promo">How to get a pen</a>
+      <a class="button" href="#pay-with-doge">Pay with DOGE</a>
+    </div>
+  </div>
+  <figure class="shop-hero-art">
+    <img src="{% static pen_hero_image %}" alt="{{ pen_hero_alt }}" width="{{ pen_hero_width }}" height="{{ pen_hero_height }}">
+  </figure>
+</section>
+
+<section class="panel shop-promo" id="pen-promo">
+  <div class="shop-promo-copy">
+    <p class="eyebrow">X Money campaign</p>
+    <h2>X Money has the rails. Dogecoin has the currency.</h2>
+    <p>The X Money recipient is {{ x_money_recipient }}. The first {{ pen_promo_limit }} X Money sends of any amount to {{ x_money_recipient }}, or DOGE sends to <code>{{ donation_address }}</code>, get a pen, counted in the order they arrive. People who send after the first {{ pen_promo_limit }} are supporting the push for DOGE on X Money.</p>
+    <p>X Money sends to {{ x_money_recipient }} and direct DOGE sends to the address can be any amount. The $5 checkout is just a quick option.</p>
+    <p class="shop-ship-by" id="penShipBy">{{ pen_ship_by_label }}</p>
+    <p class="shop-privacy-note">Address details are only requested from eligible senders, used only to mail the pen, and deleted after delivery. This page does not collect names or mailing addresses.</p>
+    <div class="inline-actions">
+      <a class="button primary small" href="#pay-with-doge">Send DOGE</a>
+      <a class="button small" href="{{ x_money_profile_url }}" target="_blank" rel="noreferrer">Open X</a>
+    </div>
+  </div>
+</section>
+
+<section class="page-section shop-catalog" id="printful-catalog">
+  <div class="section-heading">
+    <p class="eyebrow">Printful merch</p>
+    <h2>Mugs, stickers, a tee, and a poster.</h2>
+    <p>These designs are ready. Checkout opens when a separate commerce.dog Printful store exists.</p>
+  </div>
+  <div class="shop-product-grid">
+    {% for product in shop_products %}
+      <article class="shop-product">
+        <div class="shop-product-media">
+          <img src="{% static product.image %}" alt="{{ product.alt }}">
+        </div>
+        <h3>{{ product.name }}</h3>
+        <p class="shop-price">${{ product.price }}</p>
+        {% if printful_catalog_live %}
+          <a class="button primary small" href="#pay-with-doge">Pay with DOGE</a>
+        {% else %}
+          <p class="shop-soon">Launching soon</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel accent-panel shop-pay" id="pay-with-doge">
+  <div class="shop-pay-copy">
+    <p class="eyebrow">Pay with DOGE</p>
+    <h2>Send Dogecoin to commerce.dog.</h2>
+    <p>Use the QR or copy the address. Sends to this address count toward the pineapple-Doge pen campaign and the push for DOGE on X Money.</p>
+    <code class="shop-pay-address">{{ donation_address }}</code>
+    <div class="inline-actions">
+      <a class="button primary small" href="dogecoin:{{ donation_address }}">Open wallet</a>
+      <a class="button small" href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
+      <a class="button small" href="{% url 'commerce:merchant_kit' %}">Merchant kit</a>
+    </div>
+  </div>
+  <div class="shop-pay-tools">
+    <a class="shop-pay-qr" href="dogecoin:{{ donation_address }}" aria-label="Open a Dogecoin wallet for the commerce.dog address">
+      <img src="{% url 'commerce:qr_svg' %}?data=dogecoin%3A{{ donation_address|urlencode }}" alt="QR code for the commerce.dog Dogecoin address">
+    </a>
+    <div class="shop-pay-checkout">
+      <h3 class="shop-checkout-label">Quick $5 DOGE checkout</h3>
+      <p>X Money sends to {{ x_money_recipient }} and direct DOGE sends to the address can be any amount. The $5 checkout is just a quick option.</p>
+      <doge-checkout
+        merchant="commerce.dog"
+        address="{{ donation_address }}"
+        offer="commerce.dog shop"
+        usd="5.00"
+        memo="commerce.dog shop"
+        confirmations="1"
+        button-text="Pay with DOGE"
+        embed-url="{{ site_url }}/checkout/embed/">
+        <a href="dogecoin:{{ donation_address }}" style="display:inline-flex;min-height:46px;align-items:center;padding:11px 16px;border-radius:10px;background:#f4bd2a;color:#171715;font:800 15px/1.2 system-ui,sans-serif;text-decoration:none">Pay with DOGE</a>
+      </doge-checkout>
+    </div>
+  </div>
+</section>
+{% endblock %}

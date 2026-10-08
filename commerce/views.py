@@ -20,6 +20,8 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.templatetags.static import static
 
+from . import shop as shop_catalog
+
 
 DONATION_ADDRESS = "DTW2M5oEW97WbmYJRM71qD7uE6xfJs1MUK"
 BLOCKCHAIR_BASE_URL = "https://api.blockchair.com/dogecoin"
@@ -50,7 +52,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20260714-pos-stage-nav-v19"
+ASSET_VERSION = "20261008-shop-v5"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -67,6 +69,15 @@ SEO_PAGES = [
         "changefreq": "weekly",
         "title": "DOGE Commerce Kit | Accept Dogecoin in a Few Minutes",
         "description": "Free MIT-licensed Dogecoin commerce kit for QR payments, POS checkout, wallet balance checks, snippets, adoption playbooks, and DOGE market stats.",
+    },
+    {
+        "active": "shop",
+        "path": "/shop/",
+        "nav": "Shop",
+        "priority": "0.95",
+        "changefreq": "weekly",
+        "title": "Shop | Limited Pineapple Pens and DOGE Merch | commerce.dog",
+        "description": "Limited pineapple-Doge pen run and upcoming Dogecoin merch on commerce.dog. Support the campaign to get X Money to accept Dogecoin.",
     },
     {
         "active": "pos_terminal",
@@ -2720,6 +2731,25 @@ def home(request):
         "commerce_packs": COMMERCE_PACKS[:5],
     }
     return render(request, "commerce/home.html", context)
+
+
+def shop(request):
+    context = base_context("shop", request) | {
+        "printful_catalog_live": shop_catalog.PRINTFUL_CATALOG_LIVE,
+        "pen_ship_by": shop_catalog.PEN_SHIP_BY,
+        "pen_ship_by_label": shop_catalog.PEN_SHIP_BY_LABEL,
+        "pen_run_total": shop_catalog.PEN_RUN_TOTAL,
+        "pen_promo_limit": shop_catalog.PEN_PROMO_LIMIT,
+        "pen_design_name": shop_catalog.PEN_DESIGN_NAME,
+        "x_money_recipient": shop_catalog.X_MONEY_RECIPIENT,
+        "x_money_profile_url": shop_catalog.X_MONEY_PROFILE_URL,
+        "pen_hero_image": shop_catalog.PEN_HERO_IMAGE,
+        "pen_hero_alt": shop_catalog.PEN_HERO_ALT,
+        "pen_hero_width": shop_catalog.PEN_HERO_WIDTH,
+        "pen_hero_height": shop_catalog.PEN_HERO_HEIGHT,
+        "shop_products": shop_catalog.SHOP_PRODUCTS,
+    }
+    return render(request, "commerce/shop.html", context)
 
 
 def merchant_kit(request):

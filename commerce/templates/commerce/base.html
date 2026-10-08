@@ -49,6 +49,7 @@
       </a>
       <nav class="main-nav" id="primaryNav" aria-label="Primary navigation">
         <a class="{% if active == 'home' %}active{% endif %}" {% if active == 'home' %}aria-current="page"{% endif %} href="{% url 'commerce:home' %}">Start</a>
+        <a class="{% if active == 'shop' %}active{% endif %}" {% if active == 'shop' %}aria-current="page"{% endif %} href="{% url 'commerce:shop' %}">Shop</a>
         <a class="{% if active == 'pos_terminal' %}active{% endif %}" {% if active == 'pos_terminal' %}aria-current="page"{% endif %} href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
         <a class="{% if active == 'merchant_kit' %}active{% endif %}" {% if active == 'merchant_kit' %}aria-current="page"{% endif %} href="{% url 'commerce:merchant_kit' %}">Tools</a>
         <a class="{% if active == 'playbook' %}active{% endif %}" {% if active == 'playbook' %}aria-current="page"{% endif %} href="{% url 'commerce:playbook' %}">Playbook</a>
@@ -81,6 +82,7 @@
       </div>
       <nav class="footer-nav" aria-label="Footer navigation">
         <a href="{% url 'commerce:home' %}">Start</a>
+        <a href="{% url 'commerce:shop' %}">Shop</a>
         <a href="{% url 'commerce:pos_terminal' %}">POS Terminal</a>
         <a href="{% url 'commerce:merchant_kit' %}">Tools</a>
         <a href="{% url 'commerce:playbook' %}">Playbook</a>
