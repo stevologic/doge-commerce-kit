@@ -52,7 +52,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20261008-shop-v2"
+ASSET_VERSION = "20261008-shop-v3"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -2743,6 +2743,8 @@ def shop(request):
         "pen_promo_limit": shop_catalog.PEN_PROMO_LIMIT,
         "pen_hero_image": shop_catalog.PEN_HERO_IMAGE,
         "pen_hero_alt": shop_catalog.PEN_HERO_ALT,
+        "pen_hero_width": shop_catalog.PEN_HERO_WIDTH,
+        "pen_hero_height": shop_catalog.PEN_HERO_HEIGHT,
         "pen_variants": shop_catalog.PEN_VARIANTS,
         "shop_products": shop_catalog.SHOP_PRODUCTS,
     }

@@ -10443,15 +10443,7 @@ body[data-page="wallet"] main {
   z-index: 1;
   width: 100%;
   height: auto;
-}
-
-.shop-hero-art figcaption {
-  position: relative;
-  z-index: 1;
-  padding: 10px 12px 12px;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 700;
+  aspect-ratio: 1400 / 1024;
 }
 
 .shop-promo {

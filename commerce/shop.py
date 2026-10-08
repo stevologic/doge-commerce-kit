@@ -4,8 +4,7 @@ Edit PEN_SHIP_BY when a mail date is set. Flip PRINTFUL_CATALOG_LIVE when a
 separate commerce.dog Printful store exists and product cards should stop
 showing the launching-soon state.
 
-Swap the hero mockup by replacing the file at PEN_HERO_IMAGE
-(commerce/img/shop/pineapple-pen-variants.png).
+The hero mockup lives at PEN_HERO_IMAGE.
 """
 
 PRINTFUL_CATALOG_LIVE = False
@@ -14,11 +13,10 @@ PEN_SHIP_BY_LABEL = f"Pens ship by: {PEN_SHIP_BY}"
 PEN_RUN_TOTAL = 120
 PEN_VARIANT_COUNT = 60
 PEN_PROMO_LIMIT = 100
-PEN_HERO_IMAGE = "commerce/img/shop/pineapple-pen-variants.png"
-PEN_HERO_ALT = (
-    "Placeholder for the pineapple-Doge pen mockup. "
-    "Replace pineapple-pen-variants.png when the art is ready."
-)
+PEN_HERO_IMAGE = "commerce/img/shop/pineapple-pen-variants.webp"
+PEN_HERO_WIDTH = 1400
+PEN_HERO_HEIGHT = 1024
+PEN_HERO_ALT = "Two pineapple-Doge pens: DOGE PINEAPPLE and PINEAPPLE DOGE"
 
 PEN_VARIANTS = [
     {"name": "DOGE PINEAPPLE", "count": PEN_VARIANT_COUNT},
