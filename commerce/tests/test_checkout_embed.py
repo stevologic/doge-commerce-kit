@@ -39,6 +39,7 @@ class CheckoutEmbedRouteTests(SimpleTestCase):
 
         for path in (
             "/",
+            "/shop/",
             "/pos/",
             "/merchant-kit/",
             "/statistics/",
