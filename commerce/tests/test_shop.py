@@ -70,6 +70,11 @@ class ShopPageTests(SimpleTestCase):
         self.assertIn('width="710"', html)
         self.assertIn('height="934"', html)
         self.assertIn('usd="5.00"', html)
+        self.assertIn("Quick $5 DOGE checkout", html)
+        self.assertIn(
+            "X Money sends to @MadeItHappenX and direct DOGE sends to the address can be any amount. The $5 checkout is just a quick option.",
+            html,
+        )
         self.assertNotIn("PLACEHOLDER", html)
         self.assertNotIn("Swap this file", html)
         self.assertNotIn("placeholder", html.lower())
@@ -94,10 +99,23 @@ class ShopPageTests(SimpleTestCase):
         self.assertIn("doge-checkout", html)
         self.assertIn("/qr.svg", html)
         self.assertIn('id="pay-with-doge"', html)
+        self.assertIn("Quick $5 DOGE checkout", html)
+        self.assertIn('usd="5.00"', html)
         self.assertNotIn("<form", html)
         self.assertNotIn('name="address"', html)
         self.assertNotIn('name="mailing"', html)
         self.assertNotIn('name="name"', html)
+
+    def test_any_amount_line_names_x_money_and_doge(self):
+        html = self._shop_html()
+        line = (
+            "X Money sends to @MadeItHappenX and direct DOGE sends to the address "
+            "can be any amount. The $5 checkout is just a quick option."
+        )
+        self.assertIn(line, html)
+        self.assertIn("X Money", line)
+        self.assertIn("DOGE", line)
+        self.assertGreaterEqual(html.count(line), 2)
 
     def test_shop_is_in_nav_and_sitemap(self):
         home = self.client.get("/").content.decode("utf-8")

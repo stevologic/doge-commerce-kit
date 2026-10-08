@@ -10606,6 +10606,19 @@ body[data-page="wallet"] main {
   height: auto;
 }
 
+.shop-pay-checkout {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 440px);
+}
+
+.shop-checkout-label {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
 .shop-pay-tools doge-checkout {
   width: min(100%, 440px);
 }

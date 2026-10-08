@@ -36,6 +36,7 @@
     <p class="eyebrow">X Money campaign</p>
     <h2>X Money has the rails. Dogecoin has the currency.</h2>
     <p>The X Money recipient is {{ x_money_recipient }}. The first {{ pen_promo_limit }} X Money sends of any amount to {{ x_money_recipient }}, or DOGE sends to <code>{{ donation_address }}</code>, get a pen, counted in the order they arrive. People who send after the first {{ pen_promo_limit }} are supporting the push for DOGE on X Money.</p>
+    <p>X Money sends to {{ x_money_recipient }} and direct DOGE sends to the address can be any amount. The $5 checkout is just a quick option.</p>
     <p class="shop-ship-by" id="penShipBy">{{ pen_ship_by_label }}</p>
     <p class="shop-privacy-note">Address details are only requested from eligible senders, used only to mail the pen, and deleted after delivery. This page does not collect names or mailing addresses.</p>
     <div class="inline-actions">
@@ -73,7 +74,7 @@
   <div class="shop-pay-copy">
     <p class="eyebrow">Pay with DOGE</p>
     <h2>Send Dogecoin to commerce.dog.</h2>
-    <p>Use the QR, copy the address, or open the checkout element. Any amount sent to this address counts toward the pineapple-Doge pen campaign and the push for DOGE on X Money.</p>
+    <p>Use the QR or copy the address. Sends to this address count toward the pineapple-Doge pen campaign and the push for DOGE on X Money.</p>
     <code class="shop-pay-address">{{ donation_address }}</code>
     <div class="inline-actions">
       <a class="button primary small" href="dogecoin:{{ donation_address }}">Open wallet</a>
@@ -85,17 +86,21 @@
     <a class="shop-pay-qr" href="dogecoin:{{ donation_address }}" aria-label="Open a Dogecoin wallet for the commerce.dog address">
       <img src="{% url 'commerce:qr_svg' %}?data=dogecoin%3A{{ donation_address|urlencode }}" alt="QR code for the commerce.dog Dogecoin address">
     </a>
-    <doge-checkout
-      merchant="commerce.dog"
-      address="{{ donation_address }}"
-      offer="commerce.dog shop"
-      usd="5.00"
-      memo="commerce.dog shop"
-      confirmations="1"
-      button-text="Pay with DOGE"
-      embed-url="{{ site_url }}/checkout/embed/">
-      <a href="dogecoin:{{ donation_address }}" style="display:inline-flex;min-height:46px;align-items:center;padding:11px 16px;border-radius:10px;background:#f4bd2a;color:#171715;font:800 15px/1.2 system-ui,sans-serif;text-decoration:none">Pay with DOGE</a>
-    </doge-checkout>
+    <div class="shop-pay-checkout">
+      <h3 class="shop-checkout-label">Quick $5 DOGE checkout</h3>
+      <p>X Money sends to {{ x_money_recipient }} and direct DOGE sends to the address can be any amount. The $5 checkout is just a quick option.</p>
+      <doge-checkout
+        merchant="commerce.dog"
+        address="{{ donation_address }}"
+        offer="commerce.dog shop"
+        usd="5.00"
+        memo="commerce.dog shop"
+        confirmations="1"
+        button-text="Pay with DOGE"
+        embed-url="{{ site_url }}/checkout/embed/">
+        <a href="dogecoin:{{ donation_address }}" style="display:inline-flex;min-height:46px;align-items:center;padding:11px 16px;border-radius:10px;background:#f4bd2a;color:#171715;font:800 15px/1.2 system-ui,sans-serif;text-decoration:none">Pay with DOGE</a>
+      </doge-checkout>
+    </div>
   </div>
 </section>
 {% endblock %}
