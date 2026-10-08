@@ -11,17 +11,14 @@ PRINTFUL_CATALOG_LIVE = False
 PEN_SHIP_BY = "TBA"
 PEN_SHIP_BY_LABEL = f"Pens ship by: {PEN_SHIP_BY}"
 PEN_RUN_TOTAL = 120
-PEN_VARIANT_COUNT = 60
 PEN_PROMO_LIMIT = 100
-PEN_HERO_IMAGE = "commerce/img/shop/pineapple-pen-variants.webp"
-PEN_HERO_WIDTH = 1400
-PEN_HERO_HEIGHT = 1024
-PEN_HERO_ALT = "Two pineapple-Doge pens: DOGE PINEAPPLE and PINEAPPLE DOGE"
-
-PEN_VARIANTS = [
-    {"name": "DOGE PINEAPPLE", "count": PEN_VARIANT_COUNT},
-    {"name": "PINEAPPLE DOGE", "count": PEN_VARIANT_COUNT},
-]
+PEN_DESIGN_NAME = "PINEAPPLE DOGE"
+X_MONEY_RECIPIENT = "@MadeItHappenX"
+X_MONEY_PROFILE_URL = "https://x.com/MadeItHappenX"
+PEN_HERO_IMAGE = "commerce/img/shop/pineapple-pen-single.webp"
+PEN_HERO_WIDTH = 710
+PEN_HERO_HEIGHT = 934
+PEN_HERO_ALT = "PINEAPPLE DOGE pineapple-Doge pen"
 
 SHOP_PRODUCTS = [
     {

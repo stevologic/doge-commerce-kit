@@ -52,7 +52,7 @@ RICH_LIST_CACHE = {"loaded_at": 0, "payload": None}
 BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 DOGE_ADDRESS_PREFIX = b"\x1e"
 SITE_NAME = "DOGE Commerce Kit"
-ASSET_VERSION = "20261008-shop-v3"
+ASSET_VERSION = "20261008-shop-v4"
 SERVER_RATE_STATE = {}
 SITE_URL = os.environ.get("DOGE_SITE_URL") or os.environ.get("SITE_URL") or ""
 SEO_KEYWORDS = (
@@ -2739,13 +2739,14 @@ def shop(request):
         "pen_ship_by": shop_catalog.PEN_SHIP_BY,
         "pen_ship_by_label": shop_catalog.PEN_SHIP_BY_LABEL,
         "pen_run_total": shop_catalog.PEN_RUN_TOTAL,
-        "pen_variant_count": shop_catalog.PEN_VARIANT_COUNT,
         "pen_promo_limit": shop_catalog.PEN_PROMO_LIMIT,
+        "pen_design_name": shop_catalog.PEN_DESIGN_NAME,
+        "x_money_recipient": shop_catalog.X_MONEY_RECIPIENT,
+        "x_money_profile_url": shop_catalog.X_MONEY_PROFILE_URL,
         "pen_hero_image": shop_catalog.PEN_HERO_IMAGE,
         "pen_hero_alt": shop_catalog.PEN_HERO_ALT,
         "pen_hero_width": shop_catalog.PEN_HERO_WIDTH,
         "pen_hero_height": shop_catalog.PEN_HERO_HEIGHT,
-        "pen_variants": shop_catalog.PEN_VARIANTS,
         "shop_products": shop_catalog.SHOP_PRODUCTS,
     }
     return render(request, "commerce/shop.html", context)

@@ -13,8 +13,9 @@ SHOP_SOURCES = [
     ROOT / "shop.py",
     ROOT / "templates" / "commerce" / "shop.html",
 ]
-FORBIDDEN_WORD = re.compile(r"\b(?:giveaway|win)\b", re.IGNORECASE)
+FORBIDDEN_WORD = re.compile(r"\b(?:giveaway|win(?:s|ner|ners|ning)?)\b", re.IGNORECASE)
 PIN_WORD = re.compile(r"\bpin\b", re.IGNORECASE)
+TWO_DESIGNS = re.compile(r"two designs", re.IGNORECASE)
 BANNED_IMAGES = ("classic-doge.jpg", "cheems-doge.jpg")
 BANNED_PIN_ART = (
     "pin-doge-pineapple",
@@ -41,9 +42,12 @@ class ShopPageTests(SimpleTestCase):
         html = self._shop_html()
         self.assertIn(DONATION_ADDRESS, html)
         self.assertIn("120", html)
-        self.assertGreaterEqual(html.count("60"), 2)
-        self.assertIn("DOGE PINEAPPLE", html)
+        self.assertIn("100", html)
+        self.assertIn("pens total", html)
+        self.assertIn("for the first senders", html)
         self.assertIn("PINEAPPLE DOGE", html)
+        self.assertNotIn("DOGE PINEAPPLE", html)
+        self.assertIsNone(TWO_DESIGNS.search(html))
         self.assertIn("Launching soon", html)
         self.assertIn("$11.99", html)
         self.assertIn("$8.99", html)
@@ -51,12 +55,21 @@ class ShopPageTests(SimpleTestCase):
         self.assertIn("$17.99", html)
         self.assertIn("Pens ship by: TBA", html)
         self.assertIn("pineapple-Doge pen", html)
-        self.assertIn("get a pen mailed", html)
+        self.assertIn("get a pen, counted in the order they arrive", html)
         self.assertIn("X Money has the rails. Dogecoin has the currency.", html)
-        self.assertRegex(html, r"pineapple-pen-variants(?:\.[0-9a-f]+)?\.webp")
-        self.assertIn("Two pineapple-Doge pens: DOGE PINEAPPLE and PINEAPPLE DOGE", html)
-        self.assertIn('width="1400"', html)
-        self.assertIn('height="1024"', html)
+        self.assertIn("@MadeItHappenX", html)
+        self.assertIn("https://x.com/MadeItHappenX", html)
+        self.assertIn("The first 100 X Money sends of any amount to @MadeItHappenX", html)
+        self.assertIn(
+            f"or DOGE sends to <code>{DONATION_ADDRESS}</code>, get a pen, counted in the order they arrive.",
+            html,
+        )
+        self.assertRegex(html, r"pineapple-pen-single(?:\.[0-9a-f]+)?\.webp")
+        self.assertNotIn("pineapple-pen-variants", html)
+        self.assertIn("PINEAPPLE DOGE pineapple-Doge pen", html)
+        self.assertIn('width="710"', html)
+        self.assertIn('height="934"', html)
+        self.assertIn('usd="5.00"', html)
         self.assertNotIn("PLACEHOLDER", html)
         self.assertNotIn("Swap this file", html)
         self.assertNotIn("placeholder", html.lower())
@@ -70,8 +83,11 @@ class ShopPageTests(SimpleTestCase):
         self.assertIsNotNone(match)
         promo = match.group(0)
         self.assertIn("pen", promo.lower())
-        self.assertIn("get a pen mailed", promo)
+        self.assertIn("get a pen, counted in the order they arrive", promo)
         self.assertIsNone(PIN_WORD.search(promo))
+
+    def test_banned_word_guard_catches_winner_copy(self):
+        self.assertIsNotNone(FORBIDDEN_WORD.search("Every winner is notified."))
 
     def test_shop_page_has_pay_block_and_no_address_form(self):
         html = self._shop_html()
@@ -103,9 +119,12 @@ class ShopPageTests(SimpleTestCase):
             text = path.read_text(encoding="utf-8")
             match = FORBIDDEN_WORD.search(text)
             self.assertIsNone(match, f"{path} contains {match.group(0)!r}" if match else path)
+            self.assertIsNone(TWO_DESIGNS.search(text), path)
+            self.assertNotIn("DOGE PINEAPPLE", text)
             if path.name == "shop.html":
                 for banned in BANNED_IMAGES + BANNED_PIN_ART:
                     self.assertNotIn(banned, text)
                 promo = PROMO_SECTION.search(text)
                 self.assertIsNotNone(promo)
                 self.assertIsNone(PIN_WORD.search(promo.group(0)))
+                self.assertNotIn("pineapple-pen-variants", text)

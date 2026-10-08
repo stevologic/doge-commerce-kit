@@ -6,22 +6,20 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero shop-hero">
+<section class="hero shop-hero shop-diamond-hatch">
   <div class="hero-copy shop-hero-copy">
     <p class="eyebrow">Limited pineapple-Doge pen run</p>
     <h1>Pineapple pens for the DOGE on X Money campaign.</h1>
-    <p class="hero-lede">A limited run of {{ pen_run_total }} pineapple-Doge pens — a nod to the pineapple pen — in two designs: {{ pen_variant_count }} <strong>DOGE PINEAPPLE</strong> and {{ pen_variant_count }} <strong>PINEAPPLE DOGE</strong>.</p>
+    <p class="hero-lede">A limited run of {{ pen_run_total }} <strong>{{ pen_design_name }}</strong> pineapple-Doge pens — a nod to the pineapple pen.</p>
     <div class="shop-pen-counts" aria-label="Limited pen counts">
       <div>
         <strong>{{ pen_run_total }}</strong>
         <span>pens total</span>
       </div>
-      {% for variant in pen_variants %}
-        <div>
-          <strong>{{ variant.count }}</strong>
-          <span>{{ variant.name }}</span>
-        </div>
-      {% endfor %}
+      <div>
+        <strong>{{ pen_promo_limit }}</strong>
+        <span>for the first senders</span>
+      </div>
     </div>
     <div class="hero-actions">
       <a class="button primary" href="#pen-promo">How to get a pen</a>
@@ -37,12 +35,12 @@
   <div class="shop-promo-copy">
     <p class="eyebrow">X Money campaign</p>
     <h2>X Money has the rails. Dogecoin has the currency.</h2>
-    <p>This is a campaign to get X Money to accept Dogecoin. The first {{ pen_promo_limit }} people who send any amount on X Money, or send DOGE to <code>{{ donation_address }}</code>, get a pen mailed to them. People who send after the first {{ pen_promo_limit }} are supporting the push for DOGE on X Money.</p>
+    <p>The X Money recipient is {{ x_money_recipient }}. The first {{ pen_promo_limit }} X Money sends of any amount to {{ x_money_recipient }}, or DOGE sends to <code>{{ donation_address }}</code>, get a pen, counted in the order they arrive. People who send after the first {{ pen_promo_limit }} are supporting the push for DOGE on X Money.</p>
     <p class="shop-ship-by" id="penShipBy">{{ pen_ship_by_label }}</p>
     <p class="shop-privacy-note">Address details are only requested from eligible senders, used only to mail the pen, and deleted after delivery. This page does not collect names or mailing addresses.</p>
     <div class="inline-actions">
       <a class="button primary small" href="#pay-with-doge">Send DOGE</a>
-      <a class="button small" href="https://x.com" target="_blank" rel="noreferrer">Open X</a>
+      <a class="button small" href="{{ x_money_profile_url }}" target="_blank" rel="noreferrer">Open X</a>
     </div>
   </div>
 </section>

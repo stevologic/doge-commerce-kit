@@ -10355,7 +10355,7 @@ body[data-page="wallet"] main {
 
 .shop-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 1.15fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 400px);
   gap: 28px;
   align-items: center;
   min-height: 0;
@@ -10363,16 +10363,24 @@ body[data-page="wallet"] main {
   padding: clamp(22px, 3vw, 34px);
   overflow: hidden;
   color: var(--ink);
-  background:
-    linear-gradient(135deg, rgba(244, 196, 48, 0.2), rgba(15, 143, 120, 0.08)),
-    rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow);
+}
+
+.shop-hero.shop-diamond-hatch {
+  background-color: #f4c430;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(201, 154, 46, 0.42) 0 2px, transparent 2px 13px),
+    repeating-linear-gradient(-45deg, rgba(201, 154, 46, 0.42) 0 2px, transparent 2px 13px);
 }
 
 .shop-hero-copy {
   position: relative;
   z-index: 1;
   width: min(640px, 100%);
+  min-width: 0;
+  padding: 18px 20px;
+  border-radius: 8px;
+  background: rgba(255, 253, 244, 0.88);
 }
 
 .shop-hero .eyebrow {
@@ -10392,7 +10400,7 @@ body[data-page="wallet"] main {
 
 .shop-pen-counts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 18px 0 4px;
 }
@@ -10422,7 +10430,8 @@ body[data-page="wallet"] main {
 
 .shop-hero-art {
   position: relative;
-  display: grid;
+  justify-self: center;
+  width: min(100%, 400px);
   margin: 0;
   overflow: hidden;
   border: 1px solid rgba(201, 154, 46, 0.4);
@@ -10439,11 +10448,12 @@ body[data-page="wallet"] main {
 }
 
 .shop-hero-art img {
-  position: relative;
-  z-index: 1;
-  width: 100%;
+  display: block;
+  width: auto;
   height: auto;
-  aspect-ratio: 1400 / 1024;
+  max-width: 100%;
+  max-height: min(62vh, 560px);
+  object-fit: contain;
 }
 
 .shop-promo {
@@ -10607,6 +10617,10 @@ body[data-page="wallet"] main {
     grid-template-columns: 1fr;
   }
 
+  .shop-hero-art {
+    width: min(100%, 320px);
+  }
+
   .shop-product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -10619,6 +10633,10 @@ body[data-page="wallet"] main {
     padding: 16px;
   }
 
+  .shop-hero-copy {
+    padding: 14px 14px;
+  }
+
   .shop-pen-counts,
   .shop-product-grid {
     grid-template-columns: 1fr;
@@ -10626,5 +10644,20 @@ body[data-page="wallet"] main {
 
   .shop-pay-address {
     font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 400px) {
+  body[data-page="shop"] {
+    overflow-x: clip;
+  }
+
+  body[data-page="shop"] .shop-hero,
+  body[data-page="shop"] .shop-hero-copy,
+  body[data-page="shop"] .shop-promo,
+  body[data-page="shop"] .shop-pay,
+  body[data-page="shop"] .shop-pay-copy,
+  body[data-page="shop"] .shop-product-grid {
+    min-width: 0;
   }
 }
